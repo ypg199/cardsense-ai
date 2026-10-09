@@ -3,24 +3,44 @@
 [![CI](https://github.com/ypg199/cardsense-ai/actions/workflows/ci.yml/badge.svg)](https://github.com/ypg199/cardsense-ai/actions/workflows/ci.yml)
 ![Python](https://img.shields.io/badge/python-3.12-blue)
 ![React](https://img.shields.io/badge/react-18-61dafb)
-![Tests](https://img.shields.io/badge/tests-161%20passing-brightgreen)
+![Tests](https://img.shields.io/badge/tests-215%20passing-brightgreen)
+[![Extraction accuracy](https://img.shields.io/badge/transactions%20found-100%25-brightgreen)](eval/RESULTS.md)
+[![Category accuracy](https://img.shields.io/badge/category%20accuracy-99.3%25-brightgreen)](eval/RESULTS.md)
 
 **Upload your credit card statements, find out how much cashback you're leaving on the table, and see which card would earn you more.**
 
 CardSense reads Indian credit card statement PDFs (including password-protected ones), extracts every transaction with an LLM, asks a few targeted questions about how you use the card, and scores your benefit utilization from 0 to 100. It then searches a database of cards by vector similarity and ranks better-fitting alternatives for your actual spending.
 
 <p align="center">
+  <img src="docs/demo.gif" alt="Demo: uploading four months of statements, answering the quiz, viewing results and exploring the Spend Analyser" width="820">
+</p>
+
+<p align="center">
   <img src="docs/screenshots/results.png" alt="Results page: utilization score, cashback breakdown by category, and card recommendations" width="720">
 </p>
 
-> All screenshots use a generated sample statement ([`tests/fixtures/sample_statement.pdf`](tests/fixtures/sample_statement.pdf)), not real financial data.
+> The demo and screenshots use generated sample statements, not real financial data.
+
+## Accuracy
+
+Statement parsing is measured against 7 synthetic statements from **Axis, HDFC, ICICI and SBI** with known ground truth: 325 spending transactions covering password-protected PDFs, multi-page and 180-row statements, wrapped lines, foreign-currency rows, EMIs and refunds. Each statement is parsed 3 times with the real model.
+
+| Metric | Result |
+|---|---|
+| Spending transactions found (recall) | **100%** |
+| Extracted rows that are real (precision) | **100%** |
+| Spending category correct | **99.3%** |
+| Total spend error | **0.0%** |
+
+The benchmark has already paid for itself: it caught long statements silently losing their last rows (169 of 180 found, a 7.7% spend error) and occasional malformed model replies dropping a whole statement. Both are fixed. Full report in [`eval/RESULTS.md`](eval/RESULTS.md), method in [`eval/README.md`](eval/README.md), and it reruns with `python -m eval.run_eval`.
 
 ---
 
 ## Features
 
-- **Statement parsing with an LLM.** Gemini extracts transactions from free-form PDF text into a strict schema with 16 spending categories, so new bank layouts need no hand-written parser.
+- **Statement parsing with an LLM.** Gemini extracts transactions from free-form PDF text into a strict schema with 16 spending categories, so new bank layouts need no hand-written parser. Long statements are parsed in parts, and replies are requested as JSON and retried if invalid.
 - **Encrypted PDF support.** Most Indian banks password-protect statements. CardSense detects this, asks for the password, and unlocks the file without ever storing the password.
+- **Spend Analyser.** Interactive charts of monthly spend by category, a side-by-side comparison of any two months, top categories and merchants, and the largest purchases. Click a month or category to drill in, filter by card, or switch to a table view.
 - **Multi-month and multi-card analysis.** Upload several months per card, or several cards in one session. Each card is analysed in turn, with a month-by-month trend.
 - **Adaptive quiz.** Questions are generated from the card's reward rules and your detected spend. Anything already visible in the statement is confirmed automatically, so you only answer what the data can't tell.
 - **Utilization score.** A 0–100 score with a per-category breakdown of cashback earned versus missed.
@@ -32,6 +52,10 @@ CardSense reads Indian credit card statement PDFs (including password-protected 
 | Upload | Quiz |
 |---|---|
 | ![Card selection and PDF upload](docs/screenshots/upload.png) | ![Yes/no question about a spending category](docs/screenshots/quiz.png) |
+
+**Spend Analyser**
+
+![Spend Analyser: monthly spend by category with a month selected for comparison](docs/screenshots/analyser.png)
 
 ## Architecture
 
@@ -187,6 +211,7 @@ cd frontend && npm install && npm run dev
 | `POST` | `/session/{id}/password` | Unlock an encrypted statement |
 | `POST` | `/session/{id}/answer` | Answer a quiz question |
 | `GET` | `/session/{id}/status` | Current state, next question or results |
+| `GET` | `/session/{id}/spend` | Spend by month, category and merchant for the Spend Analyser |
 | `POST` | `/session/{id}/add_card` | Add another card to the session |
 | `GET` | `/cards` | List cards |
 | `GET` | `/cards/search?q=` | Search cards by name or bank |
@@ -197,7 +222,7 @@ cd frontend && npm install && npm run dev
 
 ## Testing and CI
 
-All 161 tests run offline. Gemini, MongoDB and Playwright are mocked, so no keys or services are needed.
+All 215 tests run offline. Gemini, MongoDB and Playwright are mocked, so no keys or services are needed.
 
 ```bash
 pytest                                  # full suite with coverage config
@@ -214,8 +239,9 @@ agents/      Pipeline nodes (pdf, parse, question, cashback, compare), shared st
 api/         FastAPI app, settings, Pydantic models, routes (session, cards, crawl)
 crawler/     Playwright crawler, bank sources, one-shot runner
 db/          Motor connection, index setup (TTL and lookups), seed data
-frontend/    React 18 + Vite app (upload, quiz and results pages)
+frontend/    React 18 + Vite app (upload, quiz, results and Spend Analyser pages)
 docker/      Production Dockerfiles and nginx template
+eval/        Extraction accuracy benchmark: synthetic statements, scorer, results
 tests/       pytest suites and a sample statement fixture
 ```
 
