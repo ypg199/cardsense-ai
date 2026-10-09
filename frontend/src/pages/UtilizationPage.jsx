@@ -3,6 +3,7 @@ import { useParams, useLocation, useNavigate } from 'react-router-dom'
 import QuestionCard from '../components/QuestionCard.jsx'
 import UtilizationMeter from '../components/UtilizationMeter.jsx'
 import { submitAnswer, getSessionStatus } from '../api.js'
+import FullScreenLoader, { RESULT_STEPS } from '../components/FullScreenLoader.jsx'
 
 const css = `
 .util-page {
@@ -246,17 +247,7 @@ export default function UtilizationPage() {
     }
   }
 
-  if (loading) return (
-    <>
-      <style>{css}</style>
-      <div className="util-page">
-        <div className="loading-overlay">
-          <div className="spinner-lg" />
-          <p className="loading-text">Loading your analysis…</p>
-        </div>
-      </div>
-    </>
-  )
+  if (loading) return <FullScreenLoader title="Loading your quiz" steps={['Fetching your session']} />
 
   if (!session) return null
 
@@ -267,9 +258,19 @@ export default function UtilizationPage() {
   const score = cr?.utilization_score || 0
   const earned = cr ? Object.values(cr.earned_breakdown || {}).reduce((s, v) => s + v, 0) : 0
 
+  const lastQuestion = questions_total > 0 && questions_answered + 1 >= questions_total
+
   return (
     <>
       <style>{css}</style>
+      {session.ui_action === 'show_loading' && (
+        <FullScreenLoader title="Working out your results" steps={RESULT_STEPS} stepEvery={10} showTime />
+      )}
+      {answerLoading && session.ui_action !== 'show_loading' && (
+        lastQuestion
+          ? <FullScreenLoader title="Working out your results" steps={RESULT_STEPS} stepEvery={10} showTime />
+          : <FullScreenLoader title="Saving your answer" steps={['Updating your quiz']} delay={500} />
+      )}
       <div className="util-page">
         <div className="util-header">
           <div className="util-logo">💳 CardSense</div>
