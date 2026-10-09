@@ -3,15 +3,22 @@ crawler/card_crawler.py
 ─────────────────────────────────────────────────────────────────────────────
 Card crawler — Section 8 spec implementation.
 
+Flow per bank
+─────────────
+1. Open the bank's card listing page and collect product links that match
+   its link_pattern, merged with the bank's known product pages.
+2. Crawl the product pages a few at a time (CRAWL_CONCURRENCY).
+
 Flow per URL
 ────────────
-1. Launch Playwright headless Chromium with realistic user-agent.
-2. Navigate to the page, wait 1.5-2s for JS rendering.
-3. Strip nav/footer/aside/script/style tags with BeautifulSoup.
-4. Truncate cleaned text to 8 000 chars.
-5. Send to Gemini Flash with EXTRACTION_PROMPT → receive JSON.
-6. Generate card slug and gemini-embedding-001 (768-dim) embedding.
-7. Upsert to MongoDB credit_cards collection.
+1. Load the page in headless Chromium (one retry on navigation errors).
+2. Keep the <main> content, strip nav/footer/aside/script/style, drop
+   repeated lines and truncate to PAGE_TEXT_LIMIT chars.
+3. Skip the page if its text hash matches the stored card (no Gemini call).
+4. Send to Gemini Flash with EXTRACTION_PROMPT → JSON.
+5. Validate and normalise the JSON (normalize_card): categories must be ones
+   the statement parser produces, rates become decimals, fees become ints.
+6. Embed with gemini-embedding-001 (768-dim) and upsert to credit_cards.
 
 Error handling
 ──────────────
@@ -23,6 +30,7 @@ Error handling
 from __future__ import annotations
 
 import asyncio
+import hashlib
 import json
 import logging
 import os
@@ -30,12 +38,14 @@ import random
 import re
 from datetime import UTC, datetime
 from typing import Any
+from urllib.parse import urljoin, urlsplit, urlunsplit
 
 from bs4 import BeautifulSoup
 from dotenv import load_dotenv
-from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential
+from tenacity import retry, retry_if_not_exception_type, stop_after_attempt, wait_exponential
 
 from agents.embeddings import EMBEDDING_DIMENSIONS, EMBEDDING_MODEL
+from agents.parse_node import VALID_CATEGORIES
 
 load_dotenv()
 logger = logging.getLogger(__name__)
@@ -44,9 +54,53 @@ logger = logging.getLogger(__name__)
 # Constants
 # ─────────────────────────────────────────────────────────────────────────────
 
-PAGE_TEXT_LIMIT = 8_000  # chars sent to Gemini (spec: 8000)
+PAGE_TEXT_LIMIT = 15_000  # chars sent to Gemini; product details often sit below long menus
 PAGE_WAIT_MIN = 1.5  # seconds after load
 PAGE_WAIT_MAX = 2.0
+CRAWL_CONCURRENCY = 3  # product pages fetched at once
+MAX_LINKS_PER_SOURCE = 50
+MAX_REASONABLE_RATE = 0.5  # no card pays more than 50% back; larger values are parse errors
+
+VALID_NETWORKS = {
+    "visa": "Visa",
+    "mastercard": "Mastercard",
+    "rupay": "RuPay",
+    "amex": "Amex",
+    "diners": "Diners",
+}
+VALID_CARD_TYPES = {"cashback", "travel", "fuel", "lifestyle", "co-branded"}
+VALID_REWARD_TYPES = {"cashback", "points", "miles"}
+
+# Common names Gemini uses for categories, mapped to the statement parser's keys
+CATEGORY_ALIASES = {
+    "online_shopping": "shopping_online",
+    "ecommerce": "shopping_online",
+    "e_commerce": "shopping_online",
+    "offline_shopping": "shopping_offline",
+    "retail": "shopping_offline",
+    "flights": "travel_flights",
+    "air_travel": "travel_flights",
+    "airlines": "travel_flights",
+    "hotels": "travel_hotels",
+    "hotel": "travel_hotels",
+    "utilities": "utility_bills",
+    "utility": "utility_bills",
+    "bill_payments": "utility_bills",
+    "bills": "utility_bills",
+    "food": "food_delivery",
+    "groceries": "grocery",
+    "supermarket": "grocery",
+    "movies": "entertainment",
+    "base": "others",
+    "all_spends": "others",
+    "all_other_spends": "others",
+    "other": "others",
+}
+
+
+class CrawlerConfigError(RuntimeError):
+    """Configuration problem (e.g. missing API key) — retrying will not help."""
+
 
 USER_AGENTS = [
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
@@ -74,7 +128,7 @@ Return ONLY valid JSON in this EXACT format. No markdown. No explanation.
   "min_credit_score": 700,
   "benefits": [
     {{
-      "category": "snake_case_key",
+      "category": "one of the allowed categories below",
       "label": "Human readable label",
       "rate": 0.05,
       "max_cashback_per_month": null,
@@ -98,6 +152,12 @@ Return ONLY valid JSON in this EXACT format. No markdown. No explanation.
 }}
 
 RULES:
+- category must be exactly one of: {categories}
+  Use "others" for the card's base rate on all other spends. Leave out benefits
+  that fit none of these (lounge access, milestone vouchers, insurance covers).
+- maps_to_category must be one of the benefit categories you returned
+- If the page lists several cards or is not a credit card product page, return
+  "name": null
 - rate is always decimal (5% = 0.05, 25% = 0.25)
 - If reward is points, estimate point_value_inr (e.g. 1 point = 0.25 INR)
 - merchant_keywords: lowercase words found in bank statement merchant names
@@ -111,32 +171,88 @@ Page content: {page_content}"""
 # Slug generator
 # ─────────────────────────────────────────────────────────────────────────────
 
+_SLUG_FILLER_WORDS = {"bank", "card", "credit", "the", "of"}
+
 
 def _make_slug(bank: str, name: str) -> str:
     """
-    Generate URL-safe slug: bank-name. Truncated to 80 chars.
-    Example: "axis-airtel-credit-card"
+    Generate a short, stable id: "<bank>-<card words>". Truncated to 80 chars.
+
+    The bank's own words and filler like "Credit Card" are dropped from the
+    card name, so "Flipkart Axis Bank Credit Card" by "Axis Bank" becomes
+    "axis-flipkart" (the same id as the seed card, which it then replaces).
     """
-    raw = f"{bank.lower()}-{name.lower()}"
-    slug = re.sub(r"[^a-z0-9-]", "-", raw)
-    slug = re.sub(r"-+", "-", slug).strip("-")
-    return slug[:80]
+
+    def words(text: str) -> list[str]:
+        return [w for w in re.split(r"[^a-z0-9]+", text.lower()) if w]
+
+    bank_words = [w for w in words(bank) if w not in _SLUG_FILLER_WORDS]
+    name_words = [w for w in words(name) if w not in _SLUG_FILLER_WORDS and w not in bank_words]
+    parts = (bank_words[:1] or words(bank)[:1]) + (name_words or words(name))
+    return "-".join(parts)[:80].strip("-")
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# HTML cleaning
+# HTML cleaning and link discovery
 # ─────────────────────────────────────────────────────────────────────────────
 
 
 def _clean_html(html: str) -> str:
-    """Strip nav/footer/aside/script/style and return plain text."""
+    """
+    Return the page's readable text: the <main> element when it has real
+    content, without nav/header/footer/aside/script/style, with repeated lines
+    (menus rendered twice for mobile and desktop) removed.
+    """
     soup = BeautifulSoup(html, "lxml")
-    for tag in soup.find_all(["nav", "footer", "aside", "script", "style", "header"]):
+    for tag in soup.find_all(["nav", "footer", "aside", "script", "style", "header", "noscript"]):
         tag.decompose()
-    text = soup.get_text(separator="\n", strip=True)
-    # Collapse excessive whitespace
-    text = re.sub(r"\n{3,}", "\n\n", text)
-    return text[:PAGE_TEXT_LIMIT]
+
+    root = soup.find("main")
+    if root is None or len(root.get_text(strip=True)) < 200:
+        root = soup
+
+    seen: set[str] = set()
+    lines: list[str] = []
+    for line in root.get_text(separator="\n", strip=True).splitlines():
+        key = line.strip().lower()
+        if not key or key in seen:
+            continue
+        seen.add(key)
+        lines.append(line.strip())
+    return "\n".join(lines)[:PAGE_TEXT_LIMIT]
+
+
+def _page_hash(page_text: str) -> str:
+    return hashlib.sha256(page_text.encode("utf-8")).hexdigest()
+
+
+def _normalize_url(href: str, base_url: str) -> str:
+    """Absolute URL without query string, fragment or trailing slash."""
+    parts = urlsplit(urljoin(base_url, href))
+    return urlunsplit((parts.scheme, parts.netloc.lower(), parts.path.rstrip("/"), "", ""))
+
+
+def discover_card_links(hrefs: list[str], base_url: str, link_pattern: str) -> list[str]:
+    """
+    Pick the product page links out of every href on a bank's listing page.
+    Keeps links matching link_pattern, drops non-product pages (apply, EMI,
+    FAQ...) and duplicates, and preserves page order.
+    """
+    from crawler.sources import NON_PRODUCT_LINK_WORDS
+
+    pattern = re.compile(link_pattern)
+    found: list[str] = []
+    for href in hrefs:
+        if not href or href.startswith(("javascript:", "mailto:", "tel:")):
+            continue
+        url = _normalize_url(href, base_url)
+        slug = url.rsplit("/", 1)[-1]
+        # Whole hyphen-separated words only, so "emi" doesn't reject "premium"
+        if not pattern.match(url) or any(f"-{word}-" in f"-{slug}-" for word in NON_PRODUCT_LINK_WORDS):
+            continue
+        if url not in found:
+            found.append(url)
+    return found
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -147,26 +263,30 @@ def _clean_html(html: str) -> str:
 @retry(
     stop=stop_after_attempt(3),
     wait=wait_exponential(multiplier=1, min=2, max=10),
-    retry=retry_if_exception_type(Exception),
+    retry=retry_if_not_exception_type(CrawlerConfigError),
     reraise=True,
 )
 def _call_gemini_flash(page_content: str) -> dict:
     """
     Call Gemini Flash to extract card data from page text.
-    Returns a parsed dict or raises on failure.
+    Returns a parsed dict or raises on failure. Synchronous: call it through
+    asyncio.to_thread from async code.
     """
     from langchain_google_genai import ChatGoogleGenerativeAI
 
     api_key = os.getenv("GEMINI_API_KEY", "")
     if not api_key:
-        raise ValueError("GEMINI_API_KEY not set")
+        raise CrawlerConfigError("GEMINI_API_KEY not set")
 
     llm = ChatGoogleGenerativeAI(
         model="gemini-2.5-flash",
         google_api_key=api_key,
         temperature=0,
     )
-    prompt = EXTRACTION_PROMPT.format(page_content=page_content[:PAGE_TEXT_LIMIT])
+    prompt = EXTRACTION_PROMPT.format(
+        page_content=page_content[:PAGE_TEXT_LIMIT],
+        categories=", ".join(sorted(VALID_CATEGORIES)),
+    )
     response = llm.invoke(prompt)
     raw = response.content
 
@@ -180,18 +300,155 @@ def _call_gemini_flash(page_content: str) -> dict:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# Validation and normalisation of Gemini output
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+class InvalidCardData(ValueError):
+    """Gemini's output does not describe a usable card."""
+
+
+def _to_amount(value: Any) -> int | None:
+    """Parse "₹500 + GST", "Rs. 2,00,000", "Nil", 500 or None into whole rupees."""
+    if value is None or isinstance(value, bool):
+        return None
+    if isinstance(value, int | float):
+        return int(value) if value >= 0 else None
+    text = str(value).lower()
+    match = re.search(r"\d[\d,]*(\.\d+)?", text)
+    if match:
+        return int(float(match.group(0).replace(",", "")))
+    if any(word in text for word in ("nil", "free", "zero")):
+        return 0
+    return None
+
+
+def _to_rate(value: Any) -> float | None:
+    """Turn 0.05, 5, "5%" or "5" into 0.05. Returns None for nonsense."""
+    if value is None or isinstance(value, bool):
+        return None
+    try:
+        rate = float(str(value).replace("%", "").strip())
+    except ValueError:
+        return None
+    if rate >= 1:  # given as a percentage
+        rate /= 100
+    if rate <= 0 or rate > MAX_REASONABLE_RATE:
+        return None
+    return round(rate, 4)
+
+
+def _to_category(value: Any) -> str | None:
+    key = re.sub(r"[^a-z0-9]+", "_", str(value or "").lower()).strip("_")
+    key = CATEGORY_ALIASES.get(key, key)
+    return key if key in VALID_CATEGORIES else None
+
+
+def _to_str_list(value: Any, limit: int = 20) -> list[str]:
+    if not isinstance(value, list):
+        return []
+    return [str(v).strip() for v in value if str(v).strip()][:limit]
+
+
+def normalize_card(raw: dict) -> dict:
+    """
+    Validate Gemini's card JSON and coerce it into the shape the cashback and
+    compare nodes rely on. Raises InvalidCardData when the page did not yield
+    a single card with at least one usable benefit.
+    """
+    if not isinstance(raw, dict):
+        raise InvalidCardData("Gemini did not return a JSON object")
+
+    name = str(raw.get("name") or "").strip()
+    bank = str(raw.get("bank") or "").strip()
+    if not name or not bank:
+        raise InvalidCardData("Gemini returned empty name or bank")
+
+    benefits: dict[str, dict] = {}
+    dropped: list[str] = []
+    for b in raw.get("benefits") or []:
+        if not isinstance(b, dict):
+            continue
+        category = _to_category(b.get("category"))
+        rate = _to_rate(b.get("rate"))
+        if category is None or rate is None:
+            dropped.append(str(b.get("category")))
+            continue
+        reward_type = str(b.get("reward_type") or "cashback").lower()
+        benefit = {
+            "category": category,
+            "label": str(b.get("label") or category.replace("_", " ").title()).strip(),
+            "rate": rate,
+            "max_cashback_per_month": _to_amount(b.get("max_cashback_per_month")),
+            "reward_type": reward_type if reward_type in VALID_REWARD_TYPES else "cashback",
+            "point_value_inr": b.get("point_value_inr"),
+            "conditions": b.get("conditions"),
+            "merchant_keywords": [k.lower() for k in _to_str_list(b.get("merchant_keywords"))],
+        }
+        # One benefit per category: the cashback node indexes them by category
+        if category not in benefits or rate > benefits[category]["rate"]:
+            benefits[category] = benefit
+    if dropped:
+        logger.info("  Dropped benefits with unknown category or rate: %s", ", ".join(dropped))
+    if not benefits:
+        raise InvalidCardData("No benefits with a known category and a valid rate")
+
+    questions: list[dict] = []
+    seen_ids: set[str] = set()
+    for q in raw.get("utilization_questions") or []:
+        if not isinstance(q, dict):
+            continue
+        category = _to_category(q.get("maps_to_category"))
+        text = str(q.get("text") or "").strip()
+        if category not in benefits or not text:
+            continue
+        qid = re.sub(r"[^a-z0-9_]+", "_", str(q.get("id") or f"q_{category}").lower())
+        while qid in seen_ids:
+            qid += "_x"
+        seen_ids.add(qid)
+        questions.append(
+            {
+                "id": qid,
+                "text": text,
+                "hint": str(q.get("hint") or "").strip(),
+                "maps_to_category": category,
+                "auto_detect_keywords": [k.lower() for k in _to_str_list(q.get("auto_detect_keywords"))],
+            }
+        )
+
+    network = VALID_NETWORKS.get(str(raw.get("network") or "").strip().lower())
+    card_type = str(raw.get("card_type") or "").strip().lower()
+
+    return {
+        "name": name,
+        "bank": bank,
+        "network": network,
+        "card_type": card_type if card_type in VALID_CARD_TYPES else "cashback",
+        "annual_fee": _to_amount(raw.get("annual_fee")) or 0,
+        "fee_waiver_spend": _to_amount(raw.get("fee_waiver_spend")),
+        "joining_fee": _to_amount(raw.get("joining_fee")) or 0,
+        "min_annual_income": _to_amount(raw.get("min_annual_income")),
+        "min_credit_score": _to_amount(raw.get("min_credit_score")),
+        "benefits": list(benefits.values()),
+        "utilization_questions": questions,
+        "best_for_tags": _to_str_list(raw.get("best_for_tags"), limit=8),
+        "not_good_for": _to_str_list(raw.get("not_good_for"), limit=8),
+    }
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # Embedding
 # ─────────────────────────────────────────────────────────────────────────────
 
 
 def _generate_embedding(card_data: dict) -> tuple[list[float], str]:
     """
-    Generate 768-dim gemini-embedding-001 (768-dim) embedding for the card.
+    Generate a 768-dim gemini-embedding-001 embedding for the card.
     Embedding text: "Card: {name} by {bank}. Benefits: {benefit_labels}"
-    Returns (embedding_vector, embedding_text).
+    Returns (embedding_vector, embedding_text); the vector is empty on failure.
     """
     benefit_labels = ", ".join(
-        f"{b.get('label', '')} {int(b.get('rate', 0) * 100)}%"
+        f"{b.get('label', '')} {round(b.get('rate', 0) * 100, 1):g}%"
         for b in card_data.get("benefits", [])[:6]
         if b.get("rate", 0) > 0
     )
@@ -209,12 +466,12 @@ def _generate_embedding(card_data: dict) -> tuple[list[float], str]:
         vector = embedder.embed_query(embedding_text, output_dimensionality=EMBEDDING_DIMENSIONS)
         return vector, embedding_text
     except Exception as exc:
-        logger.warning("Embedding failed: %s — storing empty vector", exc)
+        logger.warning("Embedding failed: %s", exc)
         return [], embedding_text
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# MongoDB upsert
+# MongoDB access
 # ─────────────────────────────────────────────────────────────────────────────
 
 
@@ -235,51 +492,93 @@ async def _upsert_card(card_doc: dict) -> bool:
         return False
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Core per-URL extraction function
-# ─────────────────────────────────────────────────────────────────────────────
-
-
-async def crawl_url(url: str, browser=None) -> dict[str, Any]:
-    """
-    Crawl a single card page URL.
-    Returns {"success": bool, "card_name": str, "slug": str, "error": str|None}
-    """
-    page = None
-    own_browser = browser is None
-
+async def _find_unchanged_card(url: str, content_hash: str) -> dict | None:
+    """Return the stored card crawled from this URL if its page text is unchanged."""
     try:
-        # Launch browser if not provided
-        if own_browser:
-            from playwright.async_api import async_playwright
+        from db.connection import get_db
 
-            pw = await async_playwright().start()
-            browser = await pw.chromium.launch(headless=True)
+        db = get_db()
+        return await db["credit_cards"].find_one(
+            {"source_url": url, "content_hash": content_hash},
+            {"_id": 1, "name": 1},
+        )
+    except Exception as exc:
+        logger.warning("Could not check stored card for %s: %s", url, exc)
+        return None
 
+
+async def _touch_card(card_id: str) -> None:
+    """Record that an unchanged card was checked."""
+    try:
+        from db.connection import get_db
+
+        db = get_db()
+        await db["credit_cards"].update_one(
+            {"_id": card_id}, {"$set": {"last_crawled": datetime.now(UTC).isoformat()}}
+        )
+    except Exception as exc:
+        logger.warning("Could not update last_crawled for %s: %s", card_id, exc)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Page fetching
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+async def _fetch_html(browser, url: str, attempts: int = 2) -> str:
+    """Load a page and return its HTML, retrying once on navigation errors."""
+    last_exc: Exception | None = None
+    for attempt in range(attempts):
         context = await browser.new_context(
             user_agent=random.choice(USER_AGENTS),
             viewport={"width": 1280, "height": 800},
             extra_http_headers={"Accept-Language": "en-IN,en;q=0.9"},
         )
-        page = await context.new_page()
-
-        # Navigate with timeout
-        await page.goto(url, wait_until="domcontentloaded", timeout=30_000)
-
-        # Wait for JS rendering (1.5-2s as per spec)
-        await asyncio.sleep(random.uniform(PAGE_WAIT_MIN, PAGE_WAIT_MAX))
-
-        html = await page.content()
-
-    except Exception as exc:
-        logger.error("Failed: %s — %s", url, exc)
-        return {"success": False, "card_name": None, "slug": None, "error": str(exc)}
-    finally:
-        if page:
+        try:
+            page = await context.new_page()
+            await page.goto(url, wait_until="domcontentloaded", timeout=30_000)
+            # Give client-side rendering a moment
+            await asyncio.sleep(random.uniform(PAGE_WAIT_MIN, PAGE_WAIT_MAX))
+            return await page.content()
+        except Exception as exc:
+            last_exc = exc
+            if attempt + 1 < attempts:
+                await asyncio.sleep(2 * (attempt + 1))
+        finally:
             try:
-                await page.close()
+                await context.close()
             except Exception:
                 pass
+    raise last_exc or RuntimeError(f"Could not load {url}")
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Core per-URL extraction function
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+def _result(success: bool, name=None, slug=None, error=None, unchanged: bool = False) -> dict[str, Any]:
+    return {"success": success, "card_name": name, "slug": slug, "error": error, "unchanged": unchanged}
+
+
+async def crawl_url(url: str, browser=None) -> dict[str, Any]:
+    """
+    Crawl a single card page URL.
+    Returns {"success": bool, "card_name": str, "slug": str, "error": str|None, "unchanged": bool}
+    """
+    pw = None
+    own_browser = browser is None
+    try:
+        if own_browser:
+            from playwright.async_api import async_playwright
+
+            pw = await async_playwright().start()
+            browser = await pw.chromium.launch(headless=True)
+        html = await _fetch_html(browser, url)
+    except Exception as exc:
+        logger.error("Failed: %s — %s", url, exc)
+        return _result(False, error=f"Page load failed: {exc}")
+    finally:
         if own_browser:
             try:
                 await browser.close()
@@ -287,126 +586,125 @@ async def crawl_url(url: str, browser=None) -> dict[str, Any]:
             except Exception:
                 pass
 
-    # Clean HTML
     page_text = _clean_html(html)
     if len(page_text.strip()) < 100:
-        return {
-            "success": False,
-            "card_name": None,
-            "slug": None,
-            "error": f"Page text too short ({len(page_text)} chars) — likely blocked",
-        }
+        return _result(False, error=f"Page text too short ({len(page_text)} chars) — likely blocked")
 
-    # Gemini extraction
+    # Skip Gemini when the page hasn't changed since the last crawl
+    content_hash = _page_hash(page_text)
+    stored = await _find_unchanged_card(url, content_hash)
+    if stored:
+        await _touch_card(stored["_id"])
+        logger.info("Unchanged: %s (%s)", stored.get("name"), stored["_id"])
+        return _result(True, stored.get("name"), stored["_id"], unchanged=True)
+
     try:
-        card_data = _call_gemini_flash(page_text)
+        raw = await asyncio.to_thread(_call_gemini_flash, page_text)
     except Exception as exc:
         logger.error("Failed: %s — Gemini extraction error: %s", url, exc)
-        return {"success": False, "card_name": None, "slug": None, "error": str(exc)}
+        return _result(False, error=f"Gemini extraction failed: {exc}")
 
-    # Validate minimal required fields
-    name = card_data.get("name", "").strip()
-    bank = card_data.get("bank", "").strip()
-    if not name or not bank:
-        return {
-            "success": False,
-            "card_name": None,
-            "slug": None,
-            "error": "Gemini returned empty name or bank",
-        }
+    try:
+        card = normalize_card(raw)
+    except InvalidCardData as exc:
+        logger.error("Failed: %s — %s", url, exc)
+        return _result(False, error=str(exc))
 
-    # Generate slug
-    slug = _make_slug(bank, name)
+    slug = _make_slug(card["bank"], card["name"])
+    embedding, embedding_text = await asyncio.to_thread(_generate_embedding, card)
 
-    # Generate embedding
-    embedding, embedding_text = _generate_embedding(card_data)
-
-    # Build final document
     doc = {
         "_id": slug,
-        "name": name,
-        "bank": bank,
-        "network": card_data.get("network", "Visa"),
-        "card_type": card_data.get("card_type", "cashback"),
-        "annual_fee": int(card_data.get("annual_fee") or 0),
-        "fee_waiver_spend": card_data.get("fee_waiver_spend"),
-        "joining_fee": int(card_data.get("joining_fee") or 0),
-        "min_annual_income": card_data.get("min_annual_income"),
-        "min_credit_score": card_data.get("min_credit_score"),
-        "benefits": card_data.get("benefits", []),
-        "utilization_questions": card_data.get("utilization_questions", []),
-        "best_for_tags": card_data.get("best_for_tags", []),
-        "not_good_for": card_data.get("not_good_for", []),
+        **card,
         "source_url": url,
+        "content_hash": content_hash,
         "last_crawled": datetime.now(UTC).isoformat(),
-        "embedding": embedding,
         "embedding_text": embedding_text,
     }
-
-    # Upsert to DB
-    ok = await _upsert_card(doc)
-    if ok:
-        logger.info("Upserted: %s (%s)", name, slug)
-        return {"success": True, "card_name": name, "slug": slug, "error": None}
+    if embedding:
+        doc["embedding"] = embedding
     else:
-        return {"success": False, "card_name": name, "slug": slug, "error": "DB upsert failed"}
+        # Keep any existing vector; a null hash makes the next crawl retry
+        doc["content_hash"] = None
+
+    if await _upsert_card(doc):
+        logger.info("Upserted: %s (%s)", card["name"], slug)
+        return _result(True, card["name"], slug)
+    return _result(False, card["name"], slug, error="DB upsert failed")
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Source crawler — discovers card links then crawls each
+# Crawling many pages
 # ─────────────────────────────────────────────────────────────────────────────
+
+
+async def _crawl_many(urls: list[str], browser, source: str) -> list[dict]:
+    """Crawl URLs (deduplicated) with at most CRAWL_CONCURRENCY pages in flight."""
+    semaphore = asyncio.Semaphore(CRAWL_CONCURRENCY)
+
+    async def one(url: str) -> dict:
+        async with semaphore:
+            result = await crawl_url(url, browser=browser)
+            # Be polite: brief pause before the next page from this worker
+            await asyncio.sleep(random.uniform(0.8, 1.5))
+            return {**result, "url": url, "source": source}
+
+    unique = list(dict.fromkeys(urls))
+    return list(await asyncio.gather(*(one(u) for u in unique)))
+
+
+async def _listing_hrefs(browser, listing_url: str, selector: str = "a[href]") -> list[str]:
+    """Return the hrefs of all links matching selector on a listing page."""
+    html = await _fetch_html(browser, listing_url)
+    soup = BeautifulSoup(html, "lxml")
+    return [a.get("href", "") for a in soup.select(selector)]
+
+
+async def discover_bank_cards(browser, source_key: str) -> list[str]:
+    """Product page URLs for a bank: discovered links first, then known pages."""
+    from crawler.sources import BANK_SOURCES
+
+    source = BANK_SOURCES[source_key]
+    discovered: list[str] = []
+    try:
+        hrefs = await _listing_hrefs(browser, source["listing_url"])
+        discovered = discover_card_links(hrefs, source["listing_url"], source["link_pattern"])
+    except Exception as exc:
+        logger.warning("Listing page failed for %s: %s", source_key, exc)
+    logger.info("  %s: discovered %d card links on the listing page", source_key, len(discovered))
+    urls = list(dict.fromkeys(discovered + source["card_urls"]))
+    return urls[:MAX_LINKS_PER_SOURCE]
 
 
 async def crawl_source(source_key: str) -> list[dict]:
     """
-    Crawl an aggregator source: discover card links, then crawl each card page.
-    Returns list of per-URL result dicts.
+    Crawl a bank or aggregator source: discover card links, then crawl each
+    card page. Returns list of per-URL result dicts.
     """
-    from crawler.sources import SOURCES
+    from crawler.sources import BANK_SOURCES, SOURCES
 
-    source = SOURCES.get(source_key)
-    if not source:
+    if source_key not in BANK_SOURCES and source_key not in SOURCES:
         logger.error("Unknown source key: %s", source_key)
         return []
 
-    logger.info("Starting source crawl: %s → %s", source_key, source["url"])
-
     from playwright.async_api import async_playwright
 
-    results = []
+    results: list[dict] = []
     try:
         async with async_playwright() as pw:
             browser = await pw.chromium.launch(headless=True)
             try:
-                # Discover card links from index page
-                context = await browser.new_context(
-                    user_agent=random.choice(USER_AGENTS),
-                    viewport={"width": 1280, "height": 800},
-                )
-                page = await context.new_page()
-                await page.goto(source["url"], wait_until="domcontentloaded", timeout=30_000)
-                await asyncio.sleep(random.uniform(PAGE_WAIT_MIN, PAGE_WAIT_MAX))
-
-                # Extract all card links
-                links = await page.eval_on_selector_all(
-                    source["selector"],
-                    "els => els.map(e => e.href).filter(Boolean)",
-                )
-                await page.close()
-                await context.close()
-
-                logger.info("  Found %d card links on %s", len(links), source_key)
-
-                # Crawl each card (cap at 50 per source to avoid overloading)
-                for url in links[:50]:
-                    result = await crawl_url(url, browser=browser)
-                    results.append({**result, "url": url, "source": source_key})
-                    # Brief pause between pages
-                    await asyncio.sleep(random.uniform(0.8, 1.5))
-
+                if source_key in BANK_SOURCES:
+                    urls = await discover_bank_cards(browser, source_key)
+                else:
+                    source = SOURCES[source_key]
+                    logger.info("Starting source crawl: %s → %s", source_key, source["url"])
+                    hrefs = await _listing_hrefs(browser, source["url"], source["selector"])
+                    urls = [_normalize_url(h, source["url"]) for h in hrefs if h][:MAX_LINKS_PER_SOURCE]
+                    logger.info("  Found %d card links on %s", len(urls), source_key)
+                results = await _crawl_many(urls, browser, source_key)
             finally:
                 await browser.close()
-
     except Exception as exc:
         logger.error("Source crawl failed (%s): %s", source_key, exc)
 
@@ -414,18 +712,15 @@ async def crawl_source(source_key: str) -> list[dict]:
 
 
 async def crawl_urls(urls: list[str]) -> list[dict]:
-    """Crawl a list of direct URLs. Used for bank-direct and admin one-off crawls."""
-    results = []
+    """Crawl a list of direct URLs. Used for admin one-off crawls."""
     from playwright.async_api import async_playwright
 
+    results: list[dict] = []
     try:
         async with async_playwright() as pw:
             browser = await pw.chromium.launch(headless=True)
             try:
-                for url in urls:
-                    result = await crawl_url(url, browser=browser)
-                    results.append({**result, "url": url, "source": "direct"})
-                    await asyncio.sleep(random.uniform(0.8, 1.5))
+                results = await _crawl_many(urls, browser, "direct")
             finally:
                 await browser.close()
     except Exception as exc:
@@ -454,35 +749,30 @@ async def run_crawl_job(
     direct_urls: list[str] | None = None,
 ) -> None:
     """
-    Full crawl job: runs source crawls + direct URL crawls,
-    updates job status in MongoDB throughout.
-    """
+    Full crawl job, updating its status in MongoDB throughout.
 
-    from crawler.sources import ALL_SOURCE_KEYS, DIRECT_BANK_URLS
+    With no arguments it crawls every bank source (listing discovery plus known
+    product pages). Passing direct_urls crawls exactly those pages instead.
+    """
+    from crawler.sources import BANK_SOURCE_KEYS
 
     await _update_job_status(job_id, {"status": "running"})
 
-    source_keys = sources or ALL_SOURCE_KEYS
-    urls = direct_urls or DIRECT_BANK_URLS
+    if sources is None and direct_urls is None:
+        sources = BANK_SOURCE_KEYS
 
-    all_results = []
-
-    # Crawl sources
-    for key in source_keys:
+    all_results: list[dict] = []
+    for key in sources or []:
         try:
-            results = await crawl_source(key)
-            all_results.extend(results)
+            all_results.extend(await crawl_source(key))
         except Exception as exc:
             logger.error("Source %s failed: %s", key, exc)
 
-    # Crawl direct URLs
-    try:
-        results = await crawl_urls(urls)
-        all_results.extend(results)
-    except Exception as exc:
-        logger.error("Direct URL crawl failed: %s", exc)
+    if direct_urls:
+        all_results.extend(await crawl_urls(direct_urls))
 
-    upserted = sum(1 for r in all_results if r.get("success"))
+    upserted = sum(1 for r in all_results if r.get("success") and not r.get("unchanged"))
+    unchanged = sum(1 for r in all_results if r.get("unchanged"))
     failed = sum(1 for r in all_results if not r.get("success"))
     errors = [f"{r.get('url', '?')}: {r.get('error', '?')}" for r in all_results if not r.get("success")][:20]
 
@@ -491,10 +781,13 @@ async def run_crawl_job(
         {
             "status": "done",
             "cards_upserted": upserted,
+            "cards_unchanged": unchanged,
             "cards_failed": failed,
             "errors": errors,
             "finished_at": datetime.now(UTC).isoformat(),
         },
     )
 
-    logger.info("Crawl job %s complete — upserted=%d failed=%d", job_id, upserted, failed)
+    logger.info(
+        "Crawl job %s complete — upserted=%d unchanged=%d failed=%d", job_id, upserted, unchanged, failed
+    )

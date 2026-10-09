@@ -383,7 +383,21 @@ async def seed_cards() -> None:
     upserted = 0
     skipped = 0
 
+    # Cards the crawler has refreshed from the bank's site carry a content_hash;
+    # leave those alone so seeding never overwrites live data with sample data.
+    crawled_ids = {
+        doc["_id"]
+        async for doc in col.find(
+            {"_id": {"$in": [c["_id"] for c in SEED_CARDS]}, "content_hash": {"$exists": True}},
+            {"_id": 1},
+        )
+    }
+
     for card in SEED_CARDS:
+        if card["_id"] in crawled_ids:
+            logger.info("  Skipped: %s (crawled data is newer)", card["name"])
+            skipped += 1
+            continue
         result = await col.update_one(
             {"_id": card["_id"]},
             {"$set": card},

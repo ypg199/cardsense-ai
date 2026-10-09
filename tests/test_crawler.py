@@ -57,10 +57,20 @@ def test_sources_config():
         assert "selector" in src and len(src["selector"]) > 0
     ok("All sources have url and selector")
 
-    # Direct bank URLs and enabled aggregator keys are deployment config
-    # (some bank sites block headless crawling), so only check their shape.
     assert all(u.startswith("https://") for u in DIRECT_BANK_URLS)
     ok(f"{len(DIRECT_BANK_URLS)} direct bank URLs defined, all https")
+
+    import re
+
+    from crawler.sources import BANK_SOURCE_KEYS, BANK_SOURCES
+
+    assert {"axis", "hdfc", "icici", "sbi"} <= set(BANK_SOURCE_KEYS)
+    for key, src in BANK_SOURCES.items():
+        assert src["listing_url"].startswith("https://")
+        assert src["card_urls"], key
+        # Every known product page must pass its own bank's link filter
+        assert all(re.match(src["link_pattern"], u) for u in src["card_urls"]), key
+    ok("Every bank has a listing page, a link pattern and known product pages")
 
     assert set(ALL_SOURCE_KEYS).issubset(SOURCES.keys())
     ok("ALL_SOURCE_KEYS only references known sources")
@@ -88,8 +98,14 @@ def test_make_slug():
     ok(f"Slug generated: '{slug}'")
 
     slug2 = _make_slug("HDFC Bank", "Millennia Credit Card")
-    assert slug2 == "hdfc-bank-millennia-credit-card"
+    assert slug2 == "hdfc-millennia"
     ok("HDFC Millennia slug correct")
+
+    # Crawled cards land on the same ids as the seed cards they replace
+    assert _make_slug("Axis Bank", "Flipkart Axis Bank Credit Card") == "axis-flipkart"
+    assert _make_slug("Axis Bank", "Airtel Axis Bank Credit Card") == "axis-airtel"
+    assert _make_slug("SBI Card", "Cashback SBI Card") == "sbi-cashback"
+    ok("Bank words and 'Credit Card' dropped from slugs")
 
     # Long bank+name truncated to 80 chars
     long_slug = _make_slug("A" * 50, "B" * 50)
@@ -192,8 +208,13 @@ def test_extraction_prompt():
     assert "3-6 utilization_questions" in EXTRACTION_PROMPT
     ok("Question count guidance present")
 
-    assert PAGE_TEXT_LIMIT == 8000
-    ok("PAGE_TEXT_LIMIT == 8000 (spec requirement)")
+    assert "{categories}" in EXTRACTION_PROMPT
+    ok("Prompt lists the allowed categories")
+
+    # The prompt must format cleanly (literal JSON braces are escaped)
+    filled = EXTRACTION_PROMPT.format(page_content="x", categories="grocery, others")
+    assert "grocery, others" in filled
+    ok("Prompt formats without KeyError")
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -289,15 +310,22 @@ def test_call_gemini_flash_fenced():
 
 
 def test_call_gemini_no_api_key():
-    print("\n[7] _call_gemini_flash — no API key raises ValueError")
+    print("\n[7] _call_gemini_flash — no API key fails fast without retrying")
 
-    with mock.patch.dict("os.environ", {"GEMINI_API_KEY": ""}):
-        from crawler.card_crawler import _call_gemini_flash
+    mock_llm = mock.MagicMock()
+    with (
+        mock.patch.dict("os.environ", {"GEMINI_API_KEY": ""}),
+        mock.patch.dict(
+            "sys.modules", {"langchain_google_genai": mock.MagicMock(ChatGoogleGenerativeAI=mock_llm)}
+        ),
+    ):
+        from crawler.card_crawler import CrawlerConfigError, _call_gemini_flash
 
         try:
             _call_gemini_flash("page content")
             fail("Should have raised")
-        except (ValueError, Exception):
+        except CrawlerConfigError:
+            assert _call_gemini_flash.statistics["attempt_number"] == 1
             ok("Raises when GEMINI_API_KEY not set")
 
 
@@ -356,6 +384,7 @@ def test_crawl_url_success():
                 "crawler.card_crawler._generate_embedding", return_value=([0.1] * 768, "embedding text")
             ),
             mock.patch("crawler.card_crawler._upsert_card", return_value=True),
+            mock.patch("crawler.card_crawler._find_unchanged_card", return_value=None),
             mock.patch("asyncio.sleep", return_value=None),
         ):
             from crawler.card_crawler import crawl_url

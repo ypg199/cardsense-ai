@@ -34,21 +34,85 @@ SOURCES = {
     },
 }
 
-# ── Direct bank URLs ──────────────────────────────────────────────────────────
-DIRECT_BANK_URLS = [
-    # Axis Bank
-    # "https://www.axisbank.com/retail/cards/credit-card",
-    # HDFC Bank
-    # "https://www.hdfcbank.com/personal/pay/cards/credit-cards",
-    # SBI Card
-    "https://www.sbicard.com/en/personal/credit-cards.html#premium",
-    # ICICI Bank
-    # "https://www.icicibank.com/personal-banking/cards",
-]
+# ── Bank sources ─────────────────────────────────────────────────────────────
+# Indian banks moved their sites to *.bank.in in 2025; the old domains redirect.
+# Each bank has a listing page we scan for product links (link_pattern), plus
+# known product pages so a crawl still has work if link discovery finds nothing
+# (for example when the listing renders its cards with JavaScript).
+BANK_SOURCES = {
+    "axis": {
+        "bank": "Axis Bank",
+        "listing_url": "https://www.axis.bank.in/cards/credit-card",
+        "link_pattern": r"^https://www\.axis\.bank\.in/cards/credit-card/[a-z0-9-]+$",
+        "card_urls": [
+            "https://www.axis.bank.in/cards/credit-card/flipkart-axisbank-credit-card",
+            "https://www.axis.bank.in/cards/credit-card/airtel-axis-bank-credit-card",
+            "https://www.axis.bank.in/cards/credit-card/axis-bank-my-zone-credit-card",
+            "https://www.axis.bank.in/cards/credit-card/axis-bank-neo-credit-card",
+            "https://www.axis.bank.in/cards/credit-card/rewards-credit-card",
+            "https://www.axis.bank.in/cards/credit-card/indianoil-axis-bank-credit-card",
+            "https://www.axis.bank.in/cards/credit-card/axis-bank-select-credit-card",
+            "https://www.axis.bank.in/cards/credit-card/axis-bank-magnus-credit-card",
+            "https://www.axis.bank.in/cards/credit-card/axis-horizon-credit-card",
+            "https://www.axis.bank.in/cards/credit-card/indigo-axis-bank-credit-card",
+        ],
+    },
+    "hdfc": {
+        "bank": "HDFC Bank",
+        "listing_url": "https://www.hdfc.bank.in/credit-cards",
+        "link_pattern": r"^https://(www\.)?hdfc\.bank\.in/credit-cards/[a-z0-9-]+-credit-card$",
+        "card_urls": [
+            "https://www.hdfc.bank.in/credit-cards/millennia-credit-card",
+        ],
+    },
+    "icici": {
+        "bank": "ICICI Bank",
+        "listing_url": "https://www.icici.bank.in/personal-banking/cards/credit-card",
+        "link_pattern": r"^https://www\.icici\.bank\.in/personal-banking/cards/credit-card/[a-z0-9-]+$",
+        "card_urls": [
+            "https://www.icici.bank.in/personal-banking/cards/credit-card/coral-credit-card",
+            "https://www.icici.bank.in/personal-banking/cards/credit-card/rubyx-credit-card",
+            "https://www.icici.bank.in/personal-banking/cards/credit-card/sapphiro-card",
+            "https://www.icici.bank.in/personal-banking/cards/credit-card/coral-rupay-card",
+        ],
+    },
+    "sbi": {
+        "bank": "SBI Card",
+        "listing_url": "https://www.sbicard.com/en/personal/credit-cards.html",
+        "link_pattern": r"^https://www\.sbicard\.com/en/personal/credit-cards/[a-z0-9-]+/[a-z0-9-]+\.page$",
+        "card_urls": [
+            "https://www.sbicard.com/en/personal/credit-cards/rewards/cashback-sbi-card.page",
+        ],
+    },
+}
 
-# ── All source keys for the daily full crawl ─────────────────────────────────
-ALL_SOURCE_KEYS = []
-# list(SOURCES.keys())
+# Links under a bank's card section that are not individual card products
+NON_PRODUCT_LINK_WORDS = (
+    "apply",
+    "compare",
+    "fixed-deposit",
+    "loan",
+    "emi",
+    "offer",
+    "faq",
+    "eligibility",
+    "fees",
+    "charges",
+    "pre-approved",
+    "simplyfier",
+    "business",
+    "corporate",
+    "nri",
+)
+
+# ── Direct bank URLs (known product pages across all banks) ──────────────────
+DIRECT_BANK_URLS = [url for src in BANK_SOURCES.values() for url in src["card_urls"]]
+
+# ── Default crawl: every bank source; aggregators stay opt-in ────────────────
+BANK_SOURCE_KEYS = list(BANK_SOURCES.keys())
+
+# Aggregator sites block headless browsers, so they only run when asked for
+ALL_SOURCE_KEYS: list[str] = []
 
 # ── Frequent crawl — direct bank URLs only (catches rate changes) ─────────────
 FREQUENT_CRAWL_URLS = DIRECT_BANK_URLS[:]
