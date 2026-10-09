@@ -4,6 +4,7 @@ api/routes/session.py
 Session endpoints — the core interactive flow of CardSense AI.
 
 POST /session/start          — upload PDFs, kick off pipeline
+POST /session/sample         — same flow on the built-in sample statements
 POST /session/{id}/password  — supply password for encrypted PDF
 POST /session/{id}/answer    — submit one YES/NO quiz answer
 GET  /session/{id}/status    — poll current graph state
@@ -14,10 +15,12 @@ POST /session/{id}/add_card  — add a new card to an existing session
 
 from __future__ import annotations
 
+import json
 import logging
 import uuid
 from copy import deepcopy
 from datetime import UTC, datetime, timedelta
+from pathlib import Path
 from typing import Annotated
 
 from fastapi import APIRouter, File, Form, HTTPException, UploadFile, status
@@ -33,6 +36,7 @@ from api.models import (
     MonthlyBreakdownOut,
     PasswordRequest,
     QuestionOut,
+    SampleRequest,
     SessionResponse,
     SpendSummaryResponse,
 )
@@ -130,6 +134,7 @@ def _state_to_response(state: AnalysisState) -> SessionResponse:
         status=state.get("status", "uploading"),
         ui_action=state.get("ui_action", "show_upload"),
         mode=state.get("mode", "full"),
+        sample=bool(state.get("sample", False)),
         current_card_idx=state.get("current_card_idx", 0),
         cards=cards_out,
         current_question=cq_out,
@@ -440,6 +445,84 @@ async def start_session(
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# POST /session/sample
+# ─────────────────────────────────────────────────────────────────────────────
+
+SAMPLE_PATH = Path(__file__).resolve().parent.parent / "sample" / "hdfc_millennia.json"
+
+
+def _load_sample() -> dict:
+    return json.loads(SAMPLE_PATH.read_text())
+
+
+@router.post("/sample", response_model=SessionResponse, status_code=status.HTTP_201_CREATED)
+async def start_sample_session(body: SampleRequest | None = None):
+    """
+    Start a session on the built-in sample statements (four months of a
+    fictitious HDFC Millennia card), so the app can be tried without
+    uploading anything.
+
+    The transactions are already parsed (they match the downloadable sample
+    PDFs), so this skips PDF reading and the AI parse and goes straight to
+    the quiz, or to the Spend Analyser when mode is "spend".
+    """
+    mode = (body or SampleRequest()).mode
+    sample = _load_sample()
+    txns = [t for m in sample["months"] for t in m["transactions"]]
+    total_spend = round(sum(t["amount"] for t in txns if t["transaction_type"] == "debit"), 2)
+
+    card_name = "HDFC Millennia Credit Card"
+    try:
+        from db.connection import get_db
+
+        doc = await get_db()["credit_cards"].find_one({"_id": sample["card_id"]}, {"name": 1})
+        if doc:
+            card_name = doc["name"]
+    except Exception:
+        pass
+
+    card = CardState(
+        card_id=sample["card_id"],
+        card_name=card_name,
+        months=[m["month"] for m in sample["months"]],
+        pdf_bytes_list=[],
+        pdf_passwords=[],
+        pdf_encrypted=False,
+        pdf_text="",
+        transactions=txns,
+        total_spend=total_spend,
+        pending_questions=[],
+        answered_questions=[],
+        qa_answers={},
+        cashback_result=None,
+        utilization_score=0,
+        status="done" if mode == "spend" else "questioning",
+    )
+    state: AnalysisState = {
+        "session_id": str(uuid.uuid4()),
+        "status": "done" if mode == "spend" else "questioning",
+        "cards": [card],
+        "current_card_idx": 0,
+        "locked_card_idx": None,
+        "locked_pdf_idx": None,
+        "current_question": None,
+        "comparison_result": None,
+        "ui_action": "show_analyser" if mode == "spend" else "show_loading",
+        "total_questions_count": 0,
+        "answered_questions_count": 0,
+        "error": None,
+        "created_at": datetime.now(UTC).isoformat(),
+        "mode": mode,
+        "sample": True,
+    }
+
+    if mode == "spend":
+        await _save_session(state)
+        return _state_to_response(state)
+    return _state_to_response(await _run_graph(state))
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # POST /session/{id}/password
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -550,7 +633,12 @@ async def get_spend_summary(session_id: str, card_id: str | None = None):
     cards = state.get("cards", [])
     if card_id is not None and not any(c.get("card_id") == card_id for c in cards):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Card not in this session.")
-    return SpendSummaryResponse(session_id=session_id, card_id=card_id, **summarise_spend(cards, card_id))
+    return SpendSummaryResponse(
+        session_id=session_id,
+        card_id=card_id,
+        sample=bool(state.get("sample", False)),
+        **summarise_spend(cards, card_id),
+    )
 
 
 # ─────────────────────────────────────────────────────────────────────────────

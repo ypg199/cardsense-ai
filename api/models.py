@@ -82,6 +82,7 @@ class SessionResponse(BaseModel):
     status: str
     ui_action: str
     mode: str = "full"  # "spend" for a standalone Spend Analyser session
+    sample: bool = False  # built from the sample statements, not the user's own
     current_card_idx: int
 
     cards: list[CardSummaryOut]
@@ -143,6 +144,7 @@ class SpendTransactionOut(BaseModel):
 class SpendSummaryResponse(BaseModel):
     session_id: str
     card_id: str | None = None
+    sample: bool = False
     cards: list[SpendCardOut]
     months: list[str]
     total_spend: float
@@ -162,6 +164,10 @@ class SpendSummaryResponse(BaseModel):
 class PasswordRequest(BaseModel):
     password: str = Field(..., min_length=1, max_length=128)
     card_idx: int = Field(0, ge=0)
+
+
+class SampleRequest(BaseModel):
+    mode: str = Field("full", pattern="^(full|spend)$")
 
 
 class AnswerRequest(BaseModel):

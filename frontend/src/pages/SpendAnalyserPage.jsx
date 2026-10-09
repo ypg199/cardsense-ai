@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { getSpendSummary } from '../api.js'
 import FullScreenLoader from '../components/FullScreenLoader.jsx'
-import { Logo } from '../components/Brand.jsx'
+import { Logo, SampleBadge } from '../components/Brand.jsx'
 import { AlertIcon } from '../components/Icons.jsx'
 import { dayLabel } from '../format.js'
 import {
@@ -34,6 +34,7 @@ const css = `
 .sa-btn:focus-visible, .sa-pill:focus-visible, .sa-link:focus-visible, .sa-select:focus-visible { outline: 2px solid var(--amber-400); outline-offset: 2px; }
 .sa-title { font-family: var(--font-display); font-size: clamp(28px, 5vw, 40px); line-height: 1.15; margin-bottom: 6px; }
 .sa-sub { color: var(--slate-400); font-size: 14px; margin-bottom: 20px; }
+.sa-sub .sample-badge { margin: 0 6px 0 0; }
 
 .sa-filters { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 24px; }
 .sa-pill {
@@ -243,6 +244,7 @@ export function SpendAnalyser({ sessionId, showTitle = true }) {
     <Frame>
       {showTitle && <h1 className="sa-title">Spend Analyser</h1>}
       <p className="sa-sub">
+        {data.sample && <SampleBadge />}{data.sample && ' '}
         {data.transactions} purchases across {months.length} month{months.length === 1 ? '' : 's'}
         {data.refunds > 0 && ` · ${money(data.refunds)} refunded`}
       </p>

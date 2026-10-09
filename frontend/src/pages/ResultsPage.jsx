@@ -7,7 +7,7 @@ import { getSessionStatus } from '../api.js'
 import FullScreenLoader, { RESULT_STEPS } from '../components/FullScreenLoader.jsx'
 import { SpendAnalyser } from './SpendAnalyserPage.jsx'
 import Tabs, { AnalyseIcon, ResultsIcon } from '../components/Tabs.jsx'
-import { Logo, LoadFailed } from '../components/Brand.jsx'
+import { Logo, LoadFailed, SampleBadge } from '../components/Brand.jsx'
 import { ArrowLeftIcon, BulbIcon, ChartIcon, CheckCircleIcon, CoinsIcon, SwapIcon, TargetIcon } from '../components/Icons.jsx'
 import { money } from '../format.js'
 
@@ -39,6 +39,8 @@ const css = `
   gap: 6px;
   transition: all var(--transition);
 }
+.results-header { gap: 12px; }
+.new-analysis-btn { white-space: nowrap; }
 .new-analysis-btn:focus-visible { outline: 2px solid var(--amber-400); outline-offset: 2px; }
 .new-analysis-btn:hover { border-color: var(--amber-500); color: var(--amber-400); }
 .results-tabs { margin-bottom: 24px; animation: fadeUp 300ms ease; }
@@ -216,7 +218,7 @@ export default function ResultsPage() {
       <style>{css}</style>
       <div className="results-page">
         <div className="results-header">
-          <Logo />
+          <div><Logo />{session.sample && <SampleBadge />}</div>
           <button className="new-analysis-btn" onClick={() => navigate('/')}>
             <ArrowLeftIcon size={15} /> New analysis
           </button>

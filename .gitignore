@@ -25,6 +25,7 @@ frontend/dist/
 *.zip
 *.pdf
 !tests/fixtures/**/*.pdf
+!frontend/public/samples/*.pdf
 
 # OS / editor
 .DS_Store

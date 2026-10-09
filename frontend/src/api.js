@@ -42,3 +42,6 @@ export const addCard = (sessionId, formData) => request('POST', `/session/${sess
 // ── Crawl (admin) ─────────────────────────────────────────────────────────────
 export const triggerCrawl = (payload) => request('POST', '/crawl', payload)
 export const getCrawlJobs = () => request('GET', '/crawl/jobs')
+
+// ── Sample data ──────────────────────────────────────────────────────────────
+export const startSample = (mode = 'full') => request('POST', '/session/sample', { mode })

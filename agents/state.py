@@ -187,3 +187,4 @@ class AnalysisState(TypedDict):
     # "full" runs the whole pipeline; "spend" stops after parsing, for the
     # standalone Spend Analyser (no quiz, cashback score or comparison).
     mode: str
+    sample: bool  # True for the built-in sample statements (fictitious data)
