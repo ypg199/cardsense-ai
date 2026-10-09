@@ -2,13 +2,14 @@ import { useState, useEffect } from 'react'
 import { useParams, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import CashbackBreakdown from '../components/CashbackBreakdown.jsx'
 import CardComparison from '../components/CardComparison.jsx'
+import CardCompareTable from '../components/CardCompareTable.jsx'
 import UtilizationMeter from '../components/UtilizationMeter.jsx'
 import { getSessionStatus } from '../api.js'
 import FullScreenLoader, { RESULT_STEPS } from '../components/FullScreenLoader.jsx'
 import { SpendAnalyser } from './SpendAnalyserPage.jsx'
 import Tabs, { AnalyseIcon, ResultsIcon } from '../components/Tabs.jsx'
 import { Logo, LoadFailed, SampleBadge } from '../components/Brand.jsx'
-import { ArrowLeftIcon, BulbIcon, ChartIcon, CheckCircleIcon, CoinsIcon, SwapIcon, TargetIcon } from '../components/Icons.jsx'
+import { ArrowLeftIcon, BulbIcon, CardIcon, ChartIcon, CheckCircleIcon, CoinsIcon, SwapIcon, TargetIcon } from '../components/Icons.jsx'
 import { money } from '../format.js'
 
 const css = `
@@ -310,6 +311,20 @@ export default function ResultsPage() {
             </div>
             <CashbackBreakdown cashbackResult={cr} multiMonth={card?.months?.length > 1} />
           </div>
+
+          {/* Side-by-side comparison on the user's own spending */}
+          {comp?.comparison?.cards?.length > 1 && (
+            <div className="results-section" style={{ animationDelay: '110ms' }}>
+              <div className="rs-header">
+                <div className="rs-icon"><CardIcon size={18} /></div>
+                <div>
+                  <div className="rs-title">Your card vs the alternatives</div>
+                  <div className="rs-subtitle">What each card would pay you on your actual monthly spending</div>
+                </div>
+              </div>
+              <CardCompareTable comparison={comp.comparison} />
+            </div>
+          )}
 
           {/* Section C: Card Comparison */}
           {comp && (

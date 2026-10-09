@@ -63,6 +63,27 @@ class CardRecommendationOut(BaseModel):
     caveat: str | None
 
 
+class ComparedCardOut(BaseModel):
+    card_id: str
+    card_name: str
+    bank: str = ""
+    is_current: bool = False
+    monthly_cashback: float
+    by_category: dict[str, float] = {}
+    annual_fee: float = 0
+    net_annual: float
+
+
+class SpendRowOut(BaseModel):
+    category: str
+    monthly_spend: float
+
+
+class ComparisonTableOut(BaseModel):
+    categories: list[SpendRowOut] = []
+    cards: list[ComparedCardOut] = []
+
+
 class ComparisonResultOut(BaseModel):
     verdict: str
     verdict_reason: str
@@ -70,6 +91,7 @@ class ComparisonResultOut(BaseModel):
     recommendations: list[CardRecommendationOut]
     routing_advice: list[str]
     tips: list[str]
+    comparison: ComparisonTableOut | None = None
 
 
 # ─────────────────────────────────────────────────────────────────────────────

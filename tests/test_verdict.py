@@ -104,3 +104,31 @@ def test_recommendations_sorted_by_gain():
     assert [r["card_id"] for r in out["recommendations"]] == ["rich", "food-card"]
     assert out["recommendations"][1]["why_better"] == "Model explanation."
     assert "food delivery" in out["recommendations"][0]["why_better"]  # computed fallback text
+
+
+def test_comparison_puts_your_card_first_then_alternatives_by_earnings():
+    rich = {
+        **FIVE_PCT_FOOD,
+        "_id": "rich",
+        "name": "Rich",
+        "annual_fee": 3000,
+        "benefits": [{"category": "food_delivery", "rate": 0.1}],
+    }
+    card = _card(100, {"food_delivery": 100.0}, months=("2024-01", "2024-02"))
+    card["cashback_result"]["earned_breakdown"] = {"food_delivery": 200.0}  # 100 a month
+    out = reconcile_result(
+        MODEL, [card], [ONE_PCT, FIVE_PCT_FOOD, rich], {"mine": {"annual_fee": 500, "bank": "My Bank"}}
+    )
+    table = out["comparison"]
+    assert [c["card_id"] for c in table["cards"]] == ["mine", "rich", "food-card", "plain"]
+    mine, rich_col = table["cards"][0], table["cards"][1]
+    assert mine["is_current"] and mine["monthly_cashback"] == 100.0 and mine["net_annual"] == 700.0
+    assert rich_col["monthly_cashback"] == 1000.0 and rich_col["net_annual"] == 12000.0 - 3000.0
+    assert table["categories"] == [{"category": "food_delivery", "monthly_spend": 10000.0}]
+    # cards that earn less still appear in the comparison, just not as recommendations
+    assert "plain" not in [r["card_id"] for r in out["recommendations"]]
+
+
+def test_comparison_without_candidates_shows_just_your_card():
+    out = reconcile_result({**MODEL, "recommendations": []}, [_card(80, {"food_delivery": 100.0})], [])
+    assert [c["card_id"] for c in out["comparison"]["cards"]] == ["mine"]

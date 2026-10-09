@@ -63,7 +63,30 @@ class CardRecommendation(TypedDict):
     caveat: str | None
 
 
-class ComparisonResult(TypedDict):
+class ComparedCard(TypedDict):
+    """One column of the side-by-side comparison, priced on the user's spend."""
+
+    card_id: str
+    card_name: str
+    bank: str
+    is_current: bool
+    monthly_cashback: float
+    by_category: dict[str, float]  # category -> cashback per month
+    annual_fee: float
+    net_annual: float  # 12 x monthly cashback - annual fee
+
+
+class SpendRow(TypedDict):
+    category: str
+    monthly_spend: float
+
+
+class ComparisonTable(TypedDict):
+    categories: list[SpendRow]  # the user's spend per month, largest first
+    cards: list[ComparedCard]  # current card(s) first, then up to 3 alternatives
+
+
+class ComparisonResult(TypedDict, total=False):
     """Output of compare_node."""
 
     verdict: str  # "Good fit" | "Could do better" | "Switch recommended"
@@ -72,6 +95,7 @@ class ComparisonResult(TypedDict):
     recommendations: list[CardRecommendation]
     routing_advice: list[str]  # Multi-card: "Use Axis Airtel for Zomato (25% vs 1%)"
     tips: list[str]  # 3-5 actionable tips
+    comparison: ComparisonTable  # side-by-side view on the user's actual spend
 
 
 class Question(TypedDict):

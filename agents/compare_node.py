@@ -61,9 +61,16 @@ from typing import Any
 from dotenv import load_dotenv
 from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential
 
-from agents.cashback_node import calculate_cashback
+from agents.cashback_node import _fetch_card_doc, calculate_cashback
 from agents.embeddings import EMBEDDING_DIMENSIONS, EMBEDDING_MODEL
-from agents.state import AnalysisState, CardRecommendation, CardState, ComparisonResult
+from agents.state import (
+    AnalysisState,
+    CardRecommendation,
+    CardState,
+    ComparedCard,
+    ComparisonResult,
+    ComparisonTable,
+)
 
 load_dotenv()
 logger = logging.getLogger(__name__)
@@ -672,8 +679,73 @@ def _decide_verdict(score: int, current_monthly: float, best: CardRecommendation
     )
 
 
+def _monthly_spend_by_category(cards: list[CardState]) -> dict[str, float]:
+    spend: dict[str, float] = defaultdict(float)
+    for card in cards:
+        n = _months_covered(card)
+        for t in card.get("transactions") or []:
+            if t.get("transaction_type") == "debit":
+                spend[t.get("category", "others")] += t["amount"] / n
+    return {k: round(v, 2) for k, v in sorted(spend.items(), key=lambda kv: kv[1], reverse=True)}
+
+
+def build_comparison(
+    cards: list[CardState],
+    estimates: list[tuple[dict, dict]],
+    current_docs: dict[str, dict | None],
+    max_alternatives: int = 3,
+) -> ComparisonTable:
+    """
+    Side-by-side table: the user's card(s) as used today, then the best
+    alternatives as they would earn on the same spending.
+    """
+    columns: list[ComparedCard] = []
+    for card in cards:
+        cr = card.get("cashback_result") or {}
+        n = _months_covered(card)
+        by_cat = {k: round(v / n, 2) for k, v in cr.get("earned_breakdown", {}).items()}
+        monthly = round(sum(by_cat.values()), 2)
+        doc = current_docs.get(card["card_id"]) or {}
+        fee = float(doc.get("annual_fee") or 0)
+        columns.append(
+            ComparedCard(
+                card_id=card["card_id"],
+                card_name=card.get("card_name") or doc.get("name", card["card_id"]),
+                bank=doc.get("bank", ""),
+                is_current=True,
+                monthly_cashback=monthly,
+                by_category=by_cat,
+                annual_fee=fee,
+                net_annual=round(monthly * 12 - fee, 2),
+            )
+        )
+    ranked = sorted(estimates, key=lambda de: de[1]["monthly"], reverse=True)[:max_alternatives]
+    for doc, est in ranked:
+        fee = float(doc.get("annual_fee") or 0)
+        columns.append(
+            ComparedCard(
+                card_id=doc.get("_id", ""),
+                card_name=doc.get("name", ""),
+                bank=doc.get("bank", ""),
+                is_current=False,
+                monthly_cashback=est["monthly"],
+                by_category=est["by_category"],
+                annual_fee=fee,
+                net_annual=round(est["annual"] - fee, 2),
+            )
+        )
+    spend = _monthly_spend_by_category(cards)
+    return ComparisonTable(
+        categories=[{"category": k, "monthly_spend": v} for k, v in spend.items()],
+        cards=columns,
+    )
+
+
 def reconcile_result(
-    result: ComparisonResult, cards: list[CardState], candidates: list[dict]
+    result: ComparisonResult,
+    cards: list[CardState],
+    candidates: list[dict],
+    current_docs: dict[str, dict | None] | None = None,
 ) -> ComparisonResult:
     """
     Replace model-estimated numbers with computed ones and make the verdict
@@ -688,9 +760,11 @@ def reconcile_result(
 
     text_by_id = {r["card_id"]: r for r in result.get("recommendations", [])}
     recs: list[CardRecommendation] = []
+    estimates: list[tuple[dict, dict]] = []
     for doc in candidates:
         cid = doc.get("_id", "")
         est = estimate_card_on_spend(doc, cards)
+        estimates.append((doc, est))
         gain = round(est["monthly"] - current_monthly, 2)
         if gain <= 0:
             continue
@@ -722,6 +796,7 @@ def reconcile_result(
         recommendations=recs,
         routing_advice=result.get("routing_advice", []),
         tips=result.get("tips", []),
+        comparison=build_comparison(cards, estimates, current_docs or {}),
     )
 
 
@@ -777,7 +852,8 @@ async def compare_node(state: AnalysisState) -> dict[str, Any]:
     )
 
     # ── 8. Computed numbers and a verdict that matches the score ──────
-    comparison_result = reconcile_result(comparison_result, cards, filtered)
+    current_docs = {c["card_id"]: await _fetch_card_doc(c["card_id"]) for c in cards}
+    comparison_result = reconcile_result(comparison_result, cards, filtered, current_docs)
 
     logger.info(
         "compare_node complete — verdict='%s' score=%d recs=%d",
