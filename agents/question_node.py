@@ -340,24 +340,33 @@ def _enrich_questions_with_llm(
 
         llm_questions: list[Question] = []
         seen_ids: set[str] = {q["id"] for q in base_questions}
+        # One question per spending category: the model often rephrases a base
+        # question under a new id, which would ask the user the same thing twice.
+        seen_categories: set[str] = {q["category"] for q in base_questions if not q.get("is_general")}
 
         for item in raw_list:
             if not isinstance(item, dict):
                 continue
             q_id = str(item.get("id", "")).strip()
+            category = str(item.get("category", "general"))
+            is_general = bool(item.get("is_general", False))
             if not q_id or q_id in seen_ids:
                 continue
+            if not is_general and category in seen_categories:
+                continue
             seen_ids.add(q_id)
+            if not is_general:
+                seen_categories.add(category)
 
             try:
                 q = Question(
                     id=q_id,
-                    category=str(item.get("category", "general")),
+                    category=category,
                     text=str(item.get("text", "")),
                     hint=str(item.get("hint", "")),
                     detected_spend=float(item.get("detected_spend", 0)),
                     potential_cashback=float(item.get("potential_cashback", 0)),
-                    is_general=bool(item.get("is_general", False)),
+                    is_general=is_general,
                 )
                 llm_questions.append(q)
             except Exception:
@@ -382,8 +391,8 @@ async def question_gen_node(state: AnalysisState) -> dict[str, Any]:
     """
     LangGraph node — generate / advance utilization quiz questions.
 
-    Called both on first entry (builds full question list) and after each
-    user answer (re-evaluates remaining questions).
+    Called both on first entry (builds the question list once) and after each
+    user answer (moves answered questions out of the pending list).
 
     Returns a dict of state fields to update.
     """
@@ -409,13 +418,18 @@ async def question_gen_node(state: AnalysisState) -> dict[str, Any]:
     # ── 3. Aggregate spend by category ───────────────────────────────
     category_spend = _aggregate_spend_by_category(transactions)
 
-    # ── 4. Build question list (rule-based) ───────────────────────────
-    base_questions = _build_questions_from_card_doc(card_doc, category_spend, qa_answers)
-
-    # ── 5. Optionally enrich with LLM ────────────────────────────────
-    all_questions = await asyncio.to_thread(
-        _enrich_questions_with_llm, card_doc, category_spend, base_questions
-    )
+    # ── 4/5. Build the question list once per card ───────────────────
+    # After the first pass the list is fixed, so answering a question only
+    # advances the quiz. Regenerating it on every answer would call the model
+    # each time and could ask the same thing again under a new id.
+    asked_before = (card.get("pending_questions") or []) + (card.get("answered_questions") or [])
+    if asked_before:
+        all_questions = asked_before
+    else:
+        base_questions = _build_questions_from_card_doc(card_doc, category_spend, qa_answers)
+        all_questions = await asyncio.to_thread(
+            _enrich_questions_with_llm, card_doc, category_spend, base_questions
+        )
 
     # ── 6. Split into pending vs answered ────────────────────────────
     pending: list[Question] = []

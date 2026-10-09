@@ -22,6 +22,7 @@ from agents.question_node import (
     _aggregate_spend_by_merchant,
     _auto_detect_answers,
     _build_questions_from_card_doc,
+    _enrich_questions_with_llm,
     question_gen_node,
 )
 from agents.state import AnalysisState, CardState, Transaction
@@ -631,3 +632,58 @@ if __name__ == "__main__":
 
     if FAIL > 0:
         sys.exit(1)
+
+
+def test_node_builds_questions_once_per_card():
+    """Answering a question must not regenerate the quiz (one model call per card)."""
+    card = _make_card(qa_answers={})
+    state = _make_state(card)
+    enrich = mock.Mock(side_effect=lambda *a, **kw: a[2])
+
+    with (
+        mock.patch("agents.question_node._fetch_card_doc", return_value=AXIS_AIRTEL_DOC),
+        mock.patch("agents.question_node._enrich_questions_with_llm", enrich),
+    ):
+        r1 = asyncio.run(question_gen_node(state))
+        asked = [r1["current_question"]["id"]]
+        cards = r1["cards"]
+        while True:
+            cards[0]["qa_answers"][asked[-1]] = True
+            r = asyncio.run(question_gen_node({**state, "cards": cards}))
+            cards = r["cards"]
+            if r["current_question"] is None:
+                break
+            asked.append(r["current_question"]["id"])
+
+    assert enrich.call_count == 1
+    assert len(asked) == len(set(asked)), "a question was asked twice"
+    assert r["status"] == "calculating"
+
+
+def test_llm_rephrased_question_for_same_category_is_dropped():
+    base = [
+        {
+            "id": "q_zomato",
+            "category": "food_delivery",
+            "text": "Do you order on Zomato?",
+            "hint": "",
+            "detected_spend": 500.0,
+            "potential_cashback": 50.0,
+            "is_general": False,
+        }
+    ]
+    reply = mock.Mock(
+        content='[{"id": "q_food_delivery_axis", "category": "food_delivery", "text": "Food apps?", '
+        '"potential_cashback": 60}, {"id": "q_fuel", "category": "fuel", "text": "Fuel?", '
+        '"potential_cashback": 10}]'
+    )
+    with (
+        mock.patch.dict(os.environ, {"GEMINI_API_KEY": "test"}),
+        mock.patch("langchain_google_genai.ChatGoogleGenerativeAI") as llm,
+    ):
+        llm.return_value.invoke.return_value = reply
+        out = _enrich_questions_with_llm(AXIS_AIRTEL_DOC, {"food_delivery": 500.0}, base)
+
+    ids = [q["id"] for q in out]
+    assert "q_food_delivery_axis" not in ids
+    assert "q_zomato" in ids and "q_fuel" in ids
