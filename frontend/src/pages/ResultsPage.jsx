@@ -199,7 +199,6 @@ export default function ResultsPage() {
   const card = cards[activeCard] || cards[0]
   const cr = card?.cashback_result
   const comp = comparison_result
-  const utiliyy_score =cashback_result.utilization_score
   const tips = comp?.tips || []
   const earnedTotal = cr ? Object.values(cr.earned_breakdown || {}).reduce((s, v) => s + v, 0) : 0
   const missedTotal = cr ? Object.values(cr.missed_breakdown || {}).reduce((s, v) => s + v, 0) : 0

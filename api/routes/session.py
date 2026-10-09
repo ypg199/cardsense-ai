@@ -44,6 +44,18 @@ router = APIRouter(prefix="/session", tags=["session"])
 # ─────────────────────────────────────────────────────────────────────────────
 
 
+def _cashback_out(cr_raw: dict | None) -> CashbackResultOut | None:
+    if not cr_raw:
+        return None
+    return CashbackResultOut(
+        earned_breakdown=cr_raw.get("earned_breakdown", {}),
+        missed_breakdown=cr_raw.get("missed_breakdown", {}),
+        utilization_score=cr_raw.get("utilization_score", 0),
+        monthly_breakdown=[MonthlyBreakdownOut(**mb) for mb in cr_raw.get("monthly_breakdown", [])],
+        trend=cr_raw.get("trend", "single_month"),
+    )
+
+
 def _state_to_response(state: AnalysisState) -> SessionResponse:
     """Convert a LangGraph AnalysisState dict into a SessionResponse."""
 
@@ -58,6 +70,7 @@ def _state_to_response(state: AnalysisState) -> SessionResponse:
                 total_spend=card.get("total_spend", 0.0),
                 pdf_encrypted=card.get("pdf_encrypted", False),
                 status=card.get("status", "uploading"),
+                cashback_result=_cashback_out(card.get("cashback_result")),
             )
         )
 
@@ -80,15 +93,7 @@ def _state_to_response(state: AnalysisState) -> SessionResponse:
     card_idx = state.get("current_card_idx", 0)
     cards_list = state.get("cards", [])
     if cards_list and card_idx < len(cards_list):
-        cr_raw = cards_list[card_idx].get("cashback_result")
-        if cr_raw:
-            cr_out = CashbackResultOut(
-                earned_breakdown=cr_raw.get("earned_breakdown", {}),
-                missed_breakdown=cr_raw.get("missed_breakdown", {}),
-                utilization_score=cr_raw.get("utilization_score", 0),
-                monthly_breakdown=[MonthlyBreakdownOut(**mb) for mb in cr_raw.get("monthly_breakdown", [])],
-                trend=cr_raw.get("trend", "single_month"),
-            )
+        cr_out = _cashback_out(cards_list[card_idx].get("cashback_result"))
 
     # comparison_result
     comp_out: ComparisonResultOut | None = None

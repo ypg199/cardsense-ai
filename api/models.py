@@ -33,6 +33,7 @@ class CardSummaryOut(BaseModel):
     total_spend: float
     pdf_encrypted: bool
     status: str
+    cashback_result: CashbackResultOut | None = None
 
 
 class MonthlyBreakdownOut(BaseModel):
