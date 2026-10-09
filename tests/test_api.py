@@ -712,6 +712,11 @@ def test_state_to_response_conversion():
     assert resp.cashback_result.utilization_score == 38
     ok("utilization_score == 38")
 
+    # The results page reads the breakdown from each card
+    assert resp.cards[0].cashback_result is not None
+    assert resp.cards[0].cashback_result.utilization_score == 38
+    ok("cards[0].cashback_result populated")
+
     assert resp.comparison_result is not None
     ok("comparison_result populated")
 

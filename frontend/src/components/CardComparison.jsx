@@ -192,8 +192,16 @@ export default function CardComparison({ comparisonResult }) {
                   <div className="rec-bank">{rec.bank}</div>
                 </div>
                 <div className="rec-improvement">
-                  <div className="improvement-val">+₹{rec.improvement_over_current_monthly.toFixed(0)}/mo</div>
-                  <div className="improvement-label">improvement</div>
+                  <div
+                    className="improvement-val"
+                    style={rec.improvement_over_current_monthly < 0 ? { color: 'var(--slate-400)' } : {}}
+                  >
+                    {rec.improvement_over_current_monthly < 0 ? '−' : '+'}₹
+                    {Math.abs(rec.improvement_over_current_monthly).toFixed(0)}/mo
+                  </div>
+                  <div className="improvement-label">
+                    {rec.improvement_over_current_monthly < 0 ? 'vs your card' : 'improvement'}
+                  </div>
                 </div>
               </div>
 
