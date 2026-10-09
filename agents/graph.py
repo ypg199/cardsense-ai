@@ -67,14 +67,14 @@ import os
 from typing import Any, Literal
 
 from dotenv import load_dotenv
-from langgraph.graph import StateGraph, START, END
+from langgraph.graph import END, START, StateGraph
 
-from agents.state import AnalysisState
-from agents.pdf_node import pdf_check_node
-from agents.parse_node import parse_transactions_node
-from agents.question_node import question_gen_node
 from agents.cashback_node import cashback_calc_node
 from agents.compare_node import compare_node
+from agents.parse_node import parse_transactions_node
+from agents.pdf_node import pdf_check_node
+from agents.question_node import question_gen_node
+from agents.state import AnalysisState
 
 load_dotenv()
 logger = logging.getLogger(__name__)
@@ -85,6 +85,7 @@ logger = logging.getLogger(__name__)
 # These nodes do nothing themselves — they exist purely as named interrupt
 # targets so LangGraph can pause before them and the HTTP layer can inject
 # the user's response into state before resuming.
+
 
 def wait_password_node(state: AnalysisState) -> dict[str, Any]:
     """
@@ -110,6 +111,7 @@ def wait_answer_node(state: AnalysisState) -> dict[str, Any]:
 # ─────────────────────────────────────────────────────────────────────────────
 # Conditional edge routers
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 def _route_after_pdf_check(
     state: AnalysisState,
@@ -146,6 +148,7 @@ def _route_after_question_gen(
 # Graph factory
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 def build_graph(checkpointer=None) -> Any:
     """
     Build and compile the CardSense analysis StateGraph.
@@ -163,13 +166,13 @@ def build_graph(checkpointer=None) -> Any:
     graph = StateGraph(AnalysisState)
 
     # ── Register nodes ────────────────────────────────────────────────
-    graph.add_node("pdf_check",         pdf_check_node)
-    graph.add_node("wait_password",     wait_password_node)
+    graph.add_node("pdf_check", pdf_check_node)
+    graph.add_node("wait_password", wait_password_node)
     graph.add_node("parse_transactions", parse_transactions_node)
-    graph.add_node("question_gen",      question_gen_node)
-    graph.add_node("wait_answer",       wait_answer_node)
-    graph.add_node("cashback_calc",     cashback_calc_node)
-    graph.add_node("compare",           compare_node)
+    graph.add_node("question_gen", question_gen_node)
+    graph.add_node("wait_answer", wait_answer_node)
+    graph.add_node("cashback_calc", cashback_calc_node)
+    graph.add_node("compare", compare_node)
 
     # ── Entry point ───────────────────────────────────────────────────
     graph.add_edge(START, "pdf_check")
@@ -179,9 +182,9 @@ def build_graph(checkpointer=None) -> Any:
         "pdf_check",
         _route_after_pdf_check,
         {
-            "wait_password":      "wait_password",
+            "wait_password": "wait_password",
             "parse_transactions": "parse_transactions",
-            "__end__":            END,
+            "__end__": END,
         },
     )
 
@@ -196,7 +199,7 @@ def build_graph(checkpointer=None) -> Any:
         "question_gen",
         _route_after_question_gen,
         {
-            "wait_answer":  "wait_answer",
+            "wait_answer": "wait_answer",
             "cashback_calc": "cashback_calc",
         },
     )
@@ -222,6 +225,7 @@ def build_graph(checkpointer=None) -> Any:
 # Checkpointer factory
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 def create_checkpointer() -> Any:
     """
     Instantiate a MongoDBSaver for use as the LangGraph checkpointer.
@@ -240,6 +244,7 @@ def create_checkpointer() -> Any:
 
     try:
         from langgraph.checkpoint.mongodb import MongoDBSaver
+
         checkpointer = MongoDBSaver.from_conn_string(
             conn_string=uri,
             db_name=db_name,
@@ -277,6 +282,7 @@ def get_compiled_graph(force_new: bool = False) -> Any:
 # ─────────────────────────────────────────────────────────────────────────────
 # Graph invocation helpers (used by API routes)
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 def _make_thread_config(session_id: str) -> dict:
     """Return the LangGraph config dict for a given session."""

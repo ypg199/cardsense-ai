@@ -10,10 +10,11 @@ Idempotent: safe to run multiple times — existing indexes are not dropped.
 
 import asyncio
 import logging
-from pymongo import ASCENDING, TEXT
-from motor.motor_asyncio import AsyncIOMotorDatabase
 
-from db.connection import get_db, ping_db, close_db
+from motor.motor_asyncio import AsyncIOMotorDatabase
+from pymongo import ASCENDING, TEXT
+
+from db.connection import close_db, get_db, ping_db
 
 logging.basicConfig(
     level=logging.INFO,
@@ -25,6 +26,7 @@ logger = logging.getLogger(__name__)
 # ─────────────────────────────────────────────
 # Index definitions
 # ─────────────────────────────────────────────
+
 
 async def create_credit_cards_indexes(db: AsyncIOMotorDatabase) -> None:
     col = db["credit_cards"]
@@ -46,7 +48,7 @@ async def create_credit_cards_indexes(db: AsyncIOMotorDatabase) -> None:
     await col.create_index([("last_crawled", ASCENDING)], name="credit_cards_last_crawled")
     logger.info("  [credit_cards] last_crawled index ✓")
 
-    # ── Atlas Vector Search index (768-dim text-embedding-004) ──
+    # ── Atlas Vector Search index (768-dim gemini-embedding-001) ──
     # NOTE: Atlas Vector Search indexes CANNOT be created via the driver.
     #       Create this manually in the Atlas UI (or via Atlas CLI) with:
     #
@@ -94,6 +96,7 @@ async def create_crawl_jobs_indexes(db: AsyncIOMotorDatabase) -> None:
 # ─────────────────────────────────────────────
 # Entry point
 # ─────────────────────────────────────────────
+
 
 async def setup_all_indexes() -> None:
     logger.info("=== CardSense AI — MongoDB Index Setup ===")

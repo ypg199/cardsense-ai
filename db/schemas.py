@@ -58,7 +58,7 @@ Upserted by the crawler.  _id is a URL-safe slug, e.g. "axis-airtel-credit-card"
     "last_crawled":     str,        # ISO-8601 datetime string, e.g. "2024-01-15T10:30:00Z"
 
     # ── Atlas Vector Search ───────────────────────────────────────────────
-    # 768-dimensional float array from text-embedding-004.
+    # 768-dimensional float array from gemini-embedding-001.
     # Atlas Vector Search index name: "credit_cards_embedding_index"
     # numDimensions: 768, similarity: cosine
     "embedding":        [float],    # 768 floats

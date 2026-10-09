@@ -33,6 +33,4 @@ MAX_FILES_PER_REQUEST: int = _int_env("MAX_FILES_PER_REQUEST", 12)
 SESSION_TTL_HOURS: int = _int_env("SESSION_TTL_HOURS", 24)
 
 # Extra CORS origins, comma-separated (e.g. https://cardsense.vercel.app)
-ALLOWED_ORIGINS: list[str] = [
-    o.strip() for o in os.getenv("ALLOWED_ORIGINS", "").split(",") if o.strip()
-]
+ALLOWED_ORIGINS: list[str] = [o.strip() for o in os.getenv("ALLOWED_ORIGINS", "").split(",") if o.strip()]

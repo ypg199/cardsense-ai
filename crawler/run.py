@@ -21,7 +21,7 @@ import asyncio
 import logging
 import sys
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from dotenv import load_dotenv
 
@@ -43,7 +43,7 @@ async def main(
     Run the one-shot crawl job.
     Returns exit code: 0 = success, 1 = failure.
     """
-    from db.connection import ping_db, close_db, get_db
+    from db.connection import close_db, get_db, ping_db
 
     # ── 1. DB connectivity ────────────────────────────────────────────────────
     logger.info("=== CardSense Crawler — one-shot run ===")
@@ -56,6 +56,7 @@ async def main(
     logger.info("Seeding 5 canonical test cards…")
     try:
         from db.seed import seed_cards
+
         await seed_cards()
     except Exception as exc:
         logger.warning("Seed failed (non-fatal): %s", exc)
@@ -78,23 +79,26 @@ async def main(
     job_id = str(uuid.uuid4())
     db = get_db()
     try:
-        await db["crawl_jobs"].insert_one({
-            "_id": job_id,
-            "status": "running",
-            "sources": crawl_sources,
-            "direct_urls": crawl_urls,
-            "cards_upserted": 0,
-            "cards_failed": 0,
-            "errors": [],
-            "created_at": datetime.now(timezone.utc).isoformat(),
-            "finished_at": None,
-        })
+        await db["crawl_jobs"].insert_one(
+            {
+                "_id": job_id,
+                "status": "running",
+                "sources": crawl_sources,
+                "direct_urls": crawl_urls,
+                "cards_upserted": 0,
+                "cards_failed": 0,
+                "errors": [],
+                "created_at": datetime.now(UTC).isoformat(),
+                "finished_at": None,
+            }
+        )
     except Exception as exc:
         logger.warning("Could not create crawl_jobs record: %s", exc)
 
     # ── 5. Run the crawl ──────────────────────────────────────────────────────
     try:
         from crawler.card_crawler import run_crawl_job
+
         await run_crawl_job(
             job_id=job_id,
             sources=crawl_sources,
@@ -109,8 +113,13 @@ async def main(
         try:
             await db["crawl_jobs"].update_one(
                 {"_id": job_id},
-                {"$set": {"status": "failed", "errors": [str(exc)],
-                           "finished_at": datetime.now(timezone.utc).isoformat()}},
+                {
+                    "$set": {
+                        "status": "failed",
+                        "errors": [str(exc)],
+                        "finished_at": datetime.now(UTC).isoformat(),
+                    }
+                },
             )
         except Exception:
             pass
@@ -121,22 +130,28 @@ async def main(
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="CardSense one-shot card crawler")
     parser.add_argument(
-        "--sources", nargs="*",
+        "--sources",
+        nargs="*",
         help="Source keys to crawl (default: all). E.g. --sources cardinsider bankbazaar",
     )
     parser.add_argument(
-        "--urls", nargs="*", dest="direct_urls",
+        "--urls",
+        nargs="*",
+        dest="direct_urls",
         help="Direct card page URLs to crawl",
     )
     parser.add_argument(
-        "--seed-only", action="store_true",
+        "--seed-only",
+        action="store_true",
         help="Skip web crawl — only seed the 5 test cards",
     )
     args = parser.parse_args()
 
-    exit_code = asyncio.run(main(
-        sources=args.sources,
-        direct_urls=args.direct_urls,
-        seed_only=args.seed_only,
-    ))
+    exit_code = asyncio.run(
+        main(
+            sources=args.sources,
+            direct_urls=args.direct_urls,
+            seed_only=args.seed_only,
+        )
+    )
     sys.exit(exit_code)

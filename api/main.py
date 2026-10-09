@@ -19,12 +19,18 @@ Features
 from __future__ import annotations
 
 import logging
+import os
 from contextlib import asynccontextmanager
 
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+
+from api.routes.cards import router as cards_router
+from api.routes.crawl import router as crawl_router
+from api.routes.session import router as session_router
+from api.settings import ALLOWED_ORIGINS
 
 load_dotenv()
 
@@ -38,6 +44,7 @@ logger = logging.getLogger(__name__)
 # ─────────────────────────────────────────────────────────────────────────────
 # Lifespan
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -55,16 +62,21 @@ async def lifespan(app: FastAPI):
     # MongoDB connectivity check
     try:
         from db.connection import ping_db
+
         ok = await ping_db()
         if not ok:
             logger.warning("MongoDB ping failed — DB features may be unavailable")
     except Exception as exc:
         logger.warning("MongoDB ping error: %s", exc)
 
+    if not os.getenv("GEMINI_API_KEY"):
+        logger.error("GEMINI_API_KEY is not set: statement parsing will fail until it is configured")
+
     # Ensure the sessions TTL index exists so statement data expires
     try:
         from db.connection import get_db
         from db.setup_indexes import create_sessions_indexes
+
         await create_sessions_indexes(get_db())
     except Exception as exc:
         logger.warning("Could not ensure sessions TTL index: %s", exc)
@@ -72,6 +84,7 @@ async def lifespan(app: FastAPI):
     # Pre-warm LangGraph (imports + compilation)
     try:
         from agents.graph import get_compiled_graph
+
         get_compiled_graph()
         logger.info("LangGraph pipeline compiled and ready")
     except Exception as exc:
@@ -79,12 +92,13 @@ async def lifespan(app: FastAPI):
 
     logger.info("=== CardSense API ready ===")
 
-    yield   # Application runs here
+    yield  # Application runs here
 
     # ── Shutdown ─────────────────────────────────────────────────────
     logger.info("=== CardSense API shutting down ===")
     try:
         from db.connection import close_db
+
         await close_db()
         logger.info("MongoDB client closed")
     except Exception as exc:
@@ -104,13 +118,12 @@ app = FastAPI(
 
 # ── CORS ─────────────────────────────────────────────────────────────────────
 _cors_origins = [
-    "http://localhost:3000",    # React dev (Vite default)
-    "http://localhost:5173",    # Vite alternative
+    "http://localhost:3000",  # React dev (Vite default)
+    "http://localhost:5173",  # Vite alternative
     "http://127.0.0.1:3000",
     "http://127.0.0.1:5173",
 ]
 # Deployed frontend origins come from ALLOWED_ORIGINS (comma-separated)
-from api.settings import ALLOWED_ORIGINS
 _cors_origins.extend(ALLOWED_ORIGINS)
 
 app.add_middleware(
@@ -125,6 +138,7 @@ app.add_middleware(
 # ─────────────────────────────────────────────────────────────────────────────
 # Global exception handlers
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 @app.exception_handler(HTTPException)
 async def http_exception_handler(request: Request, exc: HTTPException):
@@ -150,10 +164,6 @@ async def generic_exception_handler(request: Request, exc: Exception):
 # Routers
 # ─────────────────────────────────────────────────────────────────────────────
 
-from api.routes.session import router as session_router
-from api.routes.cards import router as cards_router
-from api.routes.crawl import router as crawl_router
-
 app.include_router(session_router)
 app.include_router(cards_router)
 app.include_router(crawl_router)
@@ -162,6 +172,7 @@ app.include_router(crawl_router)
 # ─────────────────────────────────────────────────────────────────────────────
 # Health check
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 @app.get("/health", tags=["meta"])
 async def health():

@@ -9,7 +9,6 @@ All DB calls and graph runs are mocked.
 from __future__ import annotations
 
 import io
-import json
 import os
 import sys
 import unittest.mock as mock
@@ -29,26 +28,34 @@ MOCK_STATE_PARSING = {
     "status": "questioning",
     "ui_action": "show_question",
     "current_card_idx": 0,
-    "cards": [{
-        "card_id": "axis-airtel",
-        "card_name": "Axis Airtel Credit Card",
-        "months": ["2024-01"],
-        "pdf_bytes_list": [],
-        "pdf_passwords": [None],
-        "pdf_encrypted": False,
-        "pdf_text": "ZOMATO 450\nAIRTEL 299",
-        "transactions": [
-            {"date": "2024-01-01", "merchant": "Zomato", "amount": 450.0,
-             "transaction_type": "debit", "category": "food_delivery", "month": "2024-01"},
-        ],
-        "total_spend": 450.0,
-        "pending_questions": [],
-        "answered_questions": [],
-        "qa_answers": {},
-        "cashback_result": None,
-        "utilization_score": 0,
-        "status": "questioning",
-    }],
+    "cards": [
+        {
+            "card_id": "axis-airtel",
+            "card_name": "Axis Airtel Credit Card",
+            "months": ["2024-01"],
+            "pdf_bytes_list": [],
+            "pdf_passwords": [None],
+            "pdf_encrypted": False,
+            "pdf_text": "ZOMATO 450\nAIRTEL 299",
+            "transactions": [
+                {
+                    "date": "2024-01-01",
+                    "merchant": "Zomato",
+                    "amount": 450.0,
+                    "transaction_type": "debit",
+                    "category": "food_delivery",
+                    "month": "2024-01",
+                },
+            ],
+            "total_spend": 450.0,
+            "pending_questions": [],
+            "answered_questions": [],
+            "qa_answers": {},
+            "cashback_result": None,
+            "utilization_score": 0,
+            "status": "questioning",
+        }
+    ],
     "locked_card_idx": None,
     "locked_pdf_idx": None,
     "current_question": {
@@ -73,33 +80,37 @@ MOCK_STATE_DONE = {
     "ui_action": "show_results",
     "current_question": None,
     "answered_questions_count": 3,
-    "cards": [{
-        **MOCK_STATE_PARSING["cards"][0],
-        "cashback_result": {
-            "earned_breakdown": {"food_delivery": 45.0},
-            "missed_breakdown": {"airtel_recharge": 74.75},
+    "cards": [
+        {
+            **MOCK_STATE_PARSING["cards"][0],
+            "cashback_result": {
+                "earned_breakdown": {"food_delivery": 45.0},
+                "missed_breakdown": {"airtel_recharge": 74.75},
+                "utilization_score": 38,
+                "monthly_breakdown": [{"month": "2024-01", "earned": 45.0, "missed": 74.75, "score": 38}],
+                "trend": "single_month",
+            },
             "utilization_score": 38,
-            "monthly_breakdown": [{"month": "2024-01", "earned": 45.0, "missed": 74.75, "score": 38}],
-            "trend": "single_month",
-        },
-        "utilization_score": 38,
-        "status": "done",
-    }],
+            "status": "done",
+        }
+    ],
     "comparison_result": {
         "verdict": "Could do better",
         "verdict_reason": "You are only using 38% of this card's potential.",
         "card_score": 38,
-        "recommendations": [{
-            "card_id": "hdfc-millennia",
-            "card_name": "HDFC Millennia",
-            "bank": "HDFC Bank",
-            "estimated_monthly_cashback": 150.0,
-            "estimated_annual_cashback": 1800.0,
-            "improvement_over_current_monthly": 105.0,
-            "why_better": "Earns 5% on food delivery vs 10% on Airtel card.",
-            "best_categories": ["food_delivery"],
-            "caveat": "Annual fee of ₹1000.",
-        }],
+        "recommendations": [
+            {
+                "card_id": "hdfc-millennia",
+                "card_name": "HDFC Millennia",
+                "bank": "HDFC Bank",
+                "estimated_monthly_cashback": 150.0,
+                "estimated_annual_cashback": 1800.0,
+                "improvement_over_current_monthly": 105.0,
+                "why_better": "Earns 5% on food delivery vs 10% on Airtel card.",
+                "best_categories": ["food_delivery"],
+                "caveat": "Annual fee of ₹1000.",
+            }
+        ],
         "routing_advice": ["Use Axis Airtel for Airtel recharges (25%)"],
         "tips": ["Use this card for all Airtel recharges."],
     },
@@ -117,9 +128,16 @@ MOCK_CARD_DOC = {
     "min_annual_income": 300000,
     "min_credit_score": 700,
     "benefits": [
-        {"category": "airtel_recharge", "label": "Airtel Recharge", "rate": 0.25,
-         "max_cashback_per_month": None, "reward_type": "cashback",
-         "point_value_inr": None, "conditions": None, "merchant_keywords": ["airtel"]},
+        {
+            "category": "airtel_recharge",
+            "label": "Airtel Recharge",
+            "rate": 0.25,
+            "max_cashback_per_month": None,
+            "reward_type": "cashback",
+            "point_value_inr": None,
+            "conditions": None,
+            "merchant_keywords": ["airtel"],
+        },
     ],
     "best_for_tags": ["airtel users"],
     "not_good_for": ["amazon"],
@@ -130,18 +148,23 @@ MOCK_CARD_DOC = {
 PASS = 0
 FAIL = 0
 
+
 def ok(msg: str):
-    global PASS; PASS += 1
+    global PASS
+    PASS += 1
     print(f"  ✅ {msg}")
 
+
 def fail(msg: str):
-    global FAIL; FAIL += 1
+    global FAIL
+    FAIL += 1
     print(f"  ❌ {msg}")
 
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Client factory (patches DB + graph per test)
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 def _make_client(run_graph_return=None, load_session_return=None, card_docs=None):
     """Build a TestClient with mocked DB and graph."""
@@ -184,6 +207,7 @@ def _make_client(run_graph_return=None, load_session_return=None, card_docs=None
         p.start()
 
     from api.main import app
+
     client = TestClient(app, raise_server_exceptions=False)
     return client, patches
 
@@ -199,6 +223,7 @@ def _stop_patches(patches):
 # ─────────────────────────────────────────────────────────────────────────────
 # 1. Health / root
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 def test_health():
     print("\n[1] GET /health")
@@ -230,6 +255,7 @@ def test_root():
 # ─────────────────────────────────────────────────────────────────────────────
 # 2. POST /session/start
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 def _make_pdf_file(content: bytes = b"%PDF-1.4 fake") -> tuple:
     return ("pdf_files", ("statement.pdf", io.BytesIO(content), "application/pdf"))
@@ -326,6 +352,7 @@ def test_session_start_question_in_response():
 # 3. POST /session/{id}/answer
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 def test_answer_success():
     print("\n[7] POST /session/{id}/answer — success")
     client, patches = _make_client(
@@ -382,6 +409,7 @@ def test_answer_invalid_card_idx():
 # 4. POST /session/{id}/password
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 def test_password_success():
     print("\n[10] POST /session/{id}/password — success")
     locked_state = {
@@ -426,6 +454,7 @@ def test_password_session_not_found():
 # ─────────────────────────────────────────────────────────────────────────────
 # 5. GET /session/{id}/status
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 def test_get_status_success():
     print("\n[12] GET /session/{id}/status — success")
@@ -486,6 +515,7 @@ def test_get_status_not_found():
 # 6. SessionResponse structure
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 def test_session_response_structure():
     print("\n[15] SessionResponse has all required fields (Section 6)")
     client, patches = _make_client(load_session_return=MOCK_STATE_DONE)
@@ -494,9 +524,17 @@ def test_session_response_structure():
         data = r.json()
 
         required_fields = [
-            "session_id", "status", "ui_action", "current_card_idx",
-            "cards", "current_question", "questions_answered",
-            "questions_total", "cashback_result", "comparison_result", "error",
+            "session_id",
+            "status",
+            "ui_action",
+            "current_card_idx",
+            "cards",
+            "current_question",
+            "questions_answered",
+            "questions_total",
+            "cashback_result",
+            "comparison_result",
+            "error",
         ]
         for field in required_fields:
             assert field in data, f"Missing field: {field}"
@@ -504,8 +542,15 @@ def test_session_response_structure():
 
         # cards[] structure
         card = data["cards"][0]
-        for cf in ["card_id", "card_name", "months", "transactions_count",
-                   "total_spend", "pdf_encrypted", "status"]:
+        for cf in [
+            "card_id",
+            "card_name",
+            "months",
+            "transactions_count",
+            "total_spend",
+            "pdf_encrypted",
+            "status",
+        ]:
             assert cf in card, f"Missing card field: {cf}"
         ok("CardSummaryOut has all required fields")
     finally:
@@ -515,6 +560,7 @@ def test_session_response_structure():
 # ─────────────────────────────────────────────────────────────────────────────
 # 7. GET /cards
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 def test_list_cards():
     print("\n[16] GET /cards")
@@ -568,6 +614,7 @@ def test_get_card_not_found():
 # 8. POST /crawl
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 def test_trigger_crawl():
     print("\n[18] POST /crawl")
     client, patches = _make_client()
@@ -578,12 +625,17 @@ def test_trigger_crawl():
     mock_db.__getitem__ = mock.MagicMock(return_value=mock_col)
 
     # crawler.tasks may not exist yet (built in Step 12) — patch both paths
-    with mock.patch("db.connection.get_db", return_value=mock_db), \
-         mock.patch("api.settings.ADMIN_API_KEY", "test-admin-key"), \
-         mock.patch.dict("sys.modules", {
-             "crawler": mock.MagicMock(),
-             "crawler.tasks": mock.MagicMock(run_crawl=mock.MagicMock()),
-         }):
+    with (
+        mock.patch("db.connection.get_db", return_value=mock_db),
+        mock.patch("api.settings.ADMIN_API_KEY", "test-admin-key"),
+        mock.patch.dict(
+            "sys.modules",
+            {
+                "crawler": mock.MagicMock(),
+                "crawler.tasks": mock.MagicMock(run_crawl=mock.MagicMock()),
+            },
+        ),
+    ):
         try:
             r = client.post(
                 "/crawl",
@@ -605,15 +657,15 @@ def test_trigger_crawl():
 # 9. API models validation
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 def test_models_importable():
     print("\n[19] api/models.py — all models importable and valid")
     from api.models import (
-        SessionResponse, CardSummaryOut, QuestionOut,
-        CashbackResultOut, ComparisonResultOut, CardRecommendationOut,
-        MonthlyBreakdownOut, PasswordRequest, AnswerRequest,
-        CardDetailOut, CardListResponse, BenefitOut,
-        CrawlRequest, CrawlJobResponse, CrawlJobStatusOut, CrawlJobListResponse,
+        AnswerRequest,
+        CrawlRequest,
+        PasswordRequest,
     )
+
     ok("All 16 Pydantic models importable")
 
     # Validate AnswerRequest

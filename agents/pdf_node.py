@@ -38,7 +38,7 @@ import logging
 from copy import deepcopy
 from typing import Any
 
-import fitz          # PyMuPDF
+import fitz  # PyMuPDF
 import pdfplumber
 
 from agents.state import AnalysisState, CardState
@@ -49,6 +49,7 @@ logger = logging.getLogger(__name__)
 # ─────────────────────────────────────────────────────────────────────────────
 # Internal helpers
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 def _extract_with_pdfplumber(pdf_bytes: bytes) -> str:
     """
@@ -175,6 +176,7 @@ def _decrypt_pdf(pdf_bytes: bytes, password: str | None) -> tuple[bytes, bool]:
 # Node
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 def pdf_check_node(state: AnalysisState) -> dict[str, Any]:
     """
     LangGraph node.  Processes all PDFs for the current card.
@@ -223,7 +225,9 @@ def pdf_check_node(state: AnalysisState) -> dict[str, Any]:
             if reason == "pdf_locked":
                 logger.info(
                     "PDF locked — card_idx=%d pdf_idx=%d month=%s",
-                    card_idx, pdf_idx, month_label,
+                    card_idx,
+                    pdf_idx,
+                    month_label,
                 )
                 card["pdf_encrypted"] = True
                 card["status"] = "pdf_locked"
@@ -240,7 +244,9 @@ def pdf_check_node(state: AnalysisState) -> dict[str, Any]:
             if reason == "wrong_password":
                 logger.warning(
                     "Wrong password — card_idx=%d pdf_idx=%d month=%s",
-                    card_idx, pdf_idx, month_label,
+                    card_idx,
+                    pdf_idx,
+                    month_label,
                 )
                 card["pdf_encrypted"] = True
                 card["status"] = "pdf_locked"
@@ -289,7 +295,10 @@ def pdf_check_node(state: AnalysisState) -> dict[str, Any]:
 
     logger.info(
         "pdf_check_node complete — card_idx=%d cards=%d text_len=%d encrypted=%s",
-        card_idx, len(cards), len(full_text), any_encrypted,
+        card_idx,
+        len(cards),
+        len(full_text),
+        any_encrypted,
     )
 
     return {

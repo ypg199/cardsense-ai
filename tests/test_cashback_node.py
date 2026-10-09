@@ -14,13 +14,13 @@ import unittest.mock as mock
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from agents.cashback_node import (
+    SCORE_LABELS,
+    _build_benefit_index,
+    _calc_transaction_cashback,
+    _compute_trend,
     calculate_cashback,
     cashback_calc_node,
     get_score_label,
-    _build_benefit_index,
-    _compute_trend,
-    _calc_transaction_cashback,
-    SCORE_LABELS,
 )
 from agents.state import AnalysisState, CardState, Transaction
 
@@ -31,12 +31,16 @@ from agents.state import AnalysisState, CardState, Transaction
 PASS = 0
 FAIL = 0
 
+
 def ok(msg: str):
-    global PASS; PASS += 1
+    global PASS
+    PASS += 1
     print(f"  ✅ {msg}")
 
+
 def fail(msg: str):
-    global FAIL; FAIL += 1
+    global FAIL
+    FAIL += 1
     print(f"  ❌ {msg}")
 
 
@@ -46,26 +50,47 @@ AXIS_AIRTEL_DOC = {
     "name": "Axis Airtel Credit Card",
     "bank": "Axis Bank",
     "benefits": [
-        {"category": "airtel_recharge", "label": "Airtel Recharge", "rate": 0.25,
-         "max_cashback_per_month": None, "reward_type": "cashback"},
-        {"category": "utility_bills",   "label": "Utility Bills",   "rate": 0.10,
-         "max_cashback_per_month": None, "reward_type": "cashback"},
-        {"category": "food_delivery",   "label": "Zomato",          "rate": 0.10,
-         "max_cashback_per_month": None, "reward_type": "cashback"},
-        {"category": "grocery",         "label": "BigBasket",       "rate": 0.10,
-         "max_cashback_per_month": None, "reward_type": "cashback"},
-        {"category": "others",          "label": "Others",          "rate": 0.01,
-         "max_cashback_per_month": None, "reward_type": "cashback"},
+        {
+            "category": "airtel_recharge",
+            "label": "Airtel Recharge",
+            "rate": 0.25,
+            "max_cashback_per_month": None,
+            "reward_type": "cashback",
+        },
+        {
+            "category": "utility_bills",
+            "label": "Utility Bills",
+            "rate": 0.10,
+            "max_cashback_per_month": None,
+            "reward_type": "cashback",
+        },
+        {
+            "category": "food_delivery",
+            "label": "Zomato",
+            "rate": 0.10,
+            "max_cashback_per_month": None,
+            "reward_type": "cashback",
+        },
+        {
+            "category": "grocery",
+            "label": "BigBasket",
+            "rate": 0.10,
+            "max_cashback_per_month": None,
+            "reward_type": "cashback",
+        },
+        {
+            "category": "others",
+            "label": "Others",
+            "rate": 0.01,
+            "max_cashback_per_month": None,
+            "reward_type": "cashback",
+        },
     ],
     "utilization_questions": [
-        {"id": "q_airtel_sim", "maps_to_category": "airtel_recharge",
-         "auto_detect_keywords": ["airtel"]},
-        {"id": "q_utility",    "maps_to_category": "utility_bills",
-         "auto_detect_keywords": ["bescom"]},
-        {"id": "q_zomato",     "maps_to_category": "food_delivery",
-         "auto_detect_keywords": ["zomato"]},
-        {"id": "q_bigbasket",  "maps_to_category": "grocery",
-         "auto_detect_keywords": ["bigbasket"]},
+        {"id": "q_airtel_sim", "maps_to_category": "airtel_recharge", "auto_detect_keywords": ["airtel"]},
+        {"id": "q_utility", "maps_to_category": "utility_bills", "auto_detect_keywords": ["bescom"]},
+        {"id": "q_zomato", "maps_to_category": "food_delivery", "auto_detect_keywords": ["zomato"]},
+        {"id": "q_bigbasket", "maps_to_category": "grocery", "auto_detect_keywords": ["bigbasket"]},
     ],
 }
 
@@ -74,14 +99,23 @@ SBI_CAPPED_DOC = {
     "name": "SBI Cashback Credit Card",
     "bank": "SBI Card",
     "benefits": [
-        {"category": "shopping_online", "label": "Online Shopping", "rate": 0.05,
-         "max_cashback_per_month": 5000, "reward_type": "cashback"},
-        {"category": "others", "label": "Others", "rate": 0.01,
-         "max_cashback_per_month": None, "reward_type": "cashback"},
+        {
+            "category": "shopping_online",
+            "label": "Online Shopping",
+            "rate": 0.05,
+            "max_cashback_per_month": 5000,
+            "reward_type": "cashback",
+        },
+        {
+            "category": "others",
+            "label": "Others",
+            "rate": 0.01,
+            "max_cashback_per_month": None,
+            "reward_type": "cashback",
+        },
     ],
     "utilization_questions": [
-        {"id": "q_sbi_online", "maps_to_category": "shopping_online",
-         "auto_detect_keywords": ["amazon"]},
+        {"id": "q_sbi_online", "maps_to_category": "shopping_online", "auto_detect_keywords": ["amazon"]},
     ],
 }
 
@@ -109,24 +143,38 @@ def _make_card(
     card_id: str = "axis-airtel",
 ) -> CardState:
     return {
-        "card_id": card_id, "card_name": "Test Card",
-        "months": ["2024-01"], "pdf_bytes_list": [], "pdf_passwords": [],
-        "pdf_encrypted": False, "pdf_text": "", "transactions": transactions,
+        "card_id": card_id,
+        "card_name": "Test Card",
+        "months": ["2024-01"],
+        "pdf_bytes_list": [],
+        "pdf_passwords": [],
+        "pdf_encrypted": False,
+        "pdf_text": "",
+        "transactions": transactions,
         "total_spend": sum(t["amount"] for t in transactions if t["transaction_type"] == "debit"),
-        "pending_questions": [], "answered_questions": [],
-        "qa_answers": qa_answers, "cashback_result": None,
-        "utilization_score": 0, "status": "calculating",
+        "pending_questions": [],
+        "answered_questions": [],
+        "qa_answers": qa_answers,
+        "cashback_result": None,
+        "utilization_score": 0,
+        "status": "calculating",
     }
 
 
 def _make_state(card: CardState) -> AnalysisState:
     return {
-        "session_id": "test-cashback", "status": "calculating",
-        "cards": [card], "current_card_idx": 0,
-        "locked_card_idx": None, "locked_pdf_idx": None,
-        "current_question": None, "comparison_result": None,
-        "ui_action": "show_loading", "total_questions_count": 0,
-        "answered_questions_count": 0, "error": None,
+        "session_id": "test-cashback",
+        "status": "calculating",
+        "cards": [card],
+        "current_card_idx": 0,
+        "locked_card_idx": None,
+        "locked_pdf_idx": None,
+        "current_question": None,
+        "comparison_result": None,
+        "ui_action": "show_loading",
+        "total_questions_count": 0,
+        "answered_questions_count": 0,
+        "error": None,
         "created_at": "2024-01-01T00:00:00Z",
     }
 
@@ -135,25 +183,27 @@ def _make_state(card: CardState) -> AnalysisState:
 # 1. Score labels
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 def test_score_labels():
     print("\n[1] Score labels (Section 10)")
 
     cases = [
         (100, "Excellent"),
-        (90,  "Excellent"),
-        (89,  "Good"),
-        (70,  "Good"),
-        (69,  "Average"),
-        (50,  "Average"),
-        (49,  "Below average"),
-        (30,  "Below average"),
-        (29,  "Poor"),
-        (0,   "Poor"),
+        (90, "Excellent"),
+        (89, "Good"),
+        (70, "Good"),
+        (69, "Average"),
+        (50, "Average"),
+        (49, "Below average"),
+        (30, "Below average"),
+        (29, "Poor"),
+        (0, "Poor"),
     ]
     for score, expected_fragment in cases:
         label = get_score_label(score)
-        assert expected_fragment.lower() in label.lower(), \
+        assert expected_fragment.lower() in label.lower(), (
             f"Score {score}: expected '{expected_fragment}' in '{label}'"
+        )
     ok("All 5 score bands return correct labels")
 
     assert len(SCORE_LABELS) == 5
@@ -163,6 +213,7 @@ def test_score_labels():
 # ─────────────────────────────────────────────────────────────────────────────
 # 2. Benefit index
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 def test_build_benefit_index():
     print("\n[2] _build_benefit_index")
@@ -192,6 +243,7 @@ def test_build_benefit_index():
 # ─────────────────────────────────────────────────────────────────────────────
 # 3. Monthly cap enforcement
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 def test_monthly_cap():
     print("\n[3] _calc_transaction_cashback — monthly cap")
@@ -230,6 +282,7 @@ def test_monthly_cap():
 # 4. Trend calculation
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 def test_compute_trend():
     print("\n[4] _compute_trend")
 
@@ -256,6 +309,7 @@ def test_compute_trend():
 # 5. Core calculate_cashback — Section 10 formula
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 def test_utilization_score_formula():
     print("\n[5] Utilization score formula (Section 10)")
 
@@ -270,19 +324,18 @@ def test_utilization_score_formula():
 
     txns = [
         _txn("Airtel", 1000.0, "airtel_recharge"),
-        _txn("Zomato", 900.0,  "food_delivery"),
-        _txn("BESCOM", 500.0,  "utility_bills"),
+        _txn("Zomato", 900.0, "food_delivery"),
+        _txn("BESCOM", 500.0, "utility_bills"),
     ]
     qa = {
         "q_airtel_sim": True,
-        "q_zomato":     False,
-        "q_utility":    True,
+        "q_zomato": False,
+        "q_utility": True,
     }
 
     result = calculate_cashback(txns, qa, AXIS_AIRTEL_DOC)
 
-    assert result["utilization_score"] == 77, \
-        f"Expected 77, got {result['utilization_score']}"
+    assert result["utilization_score"] == 77, f"Expected 77, got {result['utilization_score']}"
     ok("Utilization score == 77 (formula-correct)")
 
     assert result["earned_breakdown"].get("airtel_recharge") == 250.0
@@ -359,9 +412,9 @@ def test_credit_transactions_ignored():
     print("\n[9] Credit/refund transactions ignored in calculations")
 
     txns = [
-        _txn("Zomato",   450.0, "food_delivery", txn_type="debit"),
-        _txn("Cashback", 50.0,  "others",        txn_type="credit"),
-        _txn("Refund",   100.0, "grocery",        txn_type="refund"),
+        _txn("Zomato", 450.0, "food_delivery", txn_type="debit"),
+        _txn("Cashback", 50.0, "others", txn_type="credit"),
+        _txn("Refund", 100.0, "grocery", txn_type="refund"),
     ]
     qa = {"q_zomato": True}
 
@@ -378,14 +431,15 @@ def test_credit_transactions_ignored():
 # 6. Monthly cap in calculate_cashback
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 def test_monthly_cap_in_calculate():
     print("\n[10] Monthly cap enforcement inside calculate_cashback")
 
     # SBI cap: ₹5000 cashback per month on shopping_online (5%)
     # → Cap reached at ₹100,000 spend
     txns = [
-        _txn("Amazon", 80_000.0, "shopping_online"),   # 5% = 4000
-        _txn("Flipkart", 40_000.0, "shopping_online"), # 5% = 2000 → but only 1000 left
+        _txn("Amazon", 80_000.0, "shopping_online"),  # 5% = 4000
+        _txn("Flipkart", 40_000.0, "shopping_online"),  # 5% = 2000 → but only 1000 left
     ]
     qa = {"q_sbi_online": True}
 
@@ -399,18 +453,19 @@ def test_monthly_cap_in_calculate():
 # 7. Multi-month calculations
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 def test_multi_month_breakdown():
     print("\n[11] Multi-month — per-month breakdown and totals")
 
     txns = [
         _txn("Airtel", 400.0, "airtel_recharge", month="2024-01"),
-        _txn("Zomato", 300.0, "food_delivery",   month="2024-01"),
+        _txn("Zomato", 300.0, "food_delivery", month="2024-01"),
         _txn("Airtel", 500.0, "airtel_recharge", month="2024-02"),
-        _txn("Zomato", 200.0, "food_delivery",   month="2024-02"),
+        _txn("Zomato", 200.0, "food_delivery", month="2024-02"),
     ]
     qa = {
         "q_airtel_sim": True,
-        "q_zomato":     True,
+        "q_zomato": True,
     }
 
     result = calculate_cashback(txns, qa, AXIS_AIRTEL_DOC)
@@ -463,6 +518,7 @@ def test_multi_month_trend():
 # 8. Edge cases
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 def test_empty_transactions():
     print("\n[13] Empty transactions")
 
@@ -498,8 +554,7 @@ def test_no_benefit_for_category():
             {"category": "others", "rate": 0.01, "max_cashback_per_month": None},
         ],
         "utilization_questions": [
-            {"id": "q_airtel", "maps_to_category": "airtel_recharge",
-             "auto_detect_keywords": ["airtel"]},
+            {"id": "q_airtel", "maps_to_category": "airtel_recharge", "auto_detect_keywords": ["airtel"]},
         ],
     }
     # travel_flights transaction — no matching benefit, falls back to 'others'
@@ -518,8 +573,8 @@ def test_others_rate_not_in_theoretical_max():
     print("\n[16] 'others' (1% rate) excluded from theoretical_max")
 
     txns = [
-        _txn("Airtel", 1000.0, "airtel_recharge"),   # 25% → in theoretical max
-        _txn("Random", 5000.0, "others"),              # 1% → NOT in theoretical max
+        _txn("Airtel", 1000.0, "airtel_recharge"),  # 25% → in theoretical max
+        _txn("Random", 5000.0, "others"),  # 1% → NOT in theoretical max
     ]
     qa = {"q_airtel_sim": True}
 
@@ -536,13 +591,14 @@ def test_others_rate_not_in_theoretical_max():
 # 9. Full node test
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 def test_node_happy_path():
     print("\n[17] cashback_calc_node — full node, mocked DB")
 
     txns = [
         _txn("Airtel", 1000.0, "airtel_recharge"),
-        _txn("Zomato", 500.0,  "food_delivery"),
-        _txn("BESCOM", 800.0,  "utility_bills"),
+        _txn("Zomato", 500.0, "food_delivery"),
+        _txn("BESCOM", 800.0, "utility_bills"),
     ]
     qa = {
         "q_airtel_sim": True,
@@ -586,7 +642,7 @@ def test_node_happy_path():
 
     # Score: theoretical = 250+50+80 = 380, actual = 300 → 79
     assert cr["utilization_score"] == 79
-    ok(f"utilization_score == 79")
+    ok("utilization_score == 79")
 
 
 def test_node_db_missing_graceful():
@@ -609,18 +665,26 @@ def test_node_db_missing_graceful():
 def test_node_multi_card_isolation():
     print("\n[19] cashback_calc_node — only active card modified")
 
-    card0 = _make_card([_txn("Airtel", 400.0, "airtel_recharge")], {"q_airtel_sim": True},
-                       card_id="axis-airtel")
-    card1 = _make_card([_txn("Amazon", 1000.0, "shopping_online")], {"q_sbi_online": True},
-                       card_id="sbi-cashback")
+    card0 = _make_card(
+        [_txn("Airtel", 400.0, "airtel_recharge")], {"q_airtel_sim": True}, card_id="axis-airtel"
+    )
+    card1 = _make_card(
+        [_txn("Amazon", 1000.0, "shopping_online")], {"q_sbi_online": True}, card_id="sbi-cashback"
+    )
 
     state: AnalysisState = {
-        "session_id": "test-multi", "status": "calculating",
-        "cards": [card0, card1], "current_card_idx": 0,
-        "locked_card_idx": None, "locked_pdf_idx": None,
-        "current_question": None, "comparison_result": None,
-        "ui_action": "show_loading", "total_questions_count": 0,
-        "answered_questions_count": 0, "error": None,
+        "session_id": "test-multi",
+        "status": "calculating",
+        "cards": [card0, card1],
+        "current_card_idx": 0,
+        "locked_card_idx": None,
+        "locked_pdf_idx": None,
+        "current_question": None,
+        "comparison_result": None,
+        "ui_action": "show_loading",
+        "total_questions_count": 0,
+        "answered_questions_count": 0,
+        "error": None,
         "created_at": "2024-01-01T00:00:00Z",
     }
 

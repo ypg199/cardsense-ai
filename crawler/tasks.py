@@ -16,8 +16,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
-import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 logger = logging.getLogger(__name__)
 
@@ -31,9 +30,9 @@ async def _do_crawl(
     Core async crawl coroutine. Creates a job record, runs the crawl,
     updates the record on completion. Never raises — errors are logged.
     """
-    from db.connection import get_db
     from crawler.card_crawler import run_crawl_job
     from crawler.sources import ALL_SOURCE_KEYS, DIRECT_BANK_URLS
+    from db.connection import get_db
 
     crawl_sources = sources or ALL_SOURCE_KEYS
     crawl_urls = direct_urls or DIRECT_BANK_URLS
@@ -41,17 +40,19 @@ async def _do_crawl(
     db = get_db()
 
     try:
-        await db["crawl_jobs"].insert_one({
-            "_id": job_id,
-            "status": "running",
-            "sources": crawl_sources,
-            "direct_urls": crawl_urls,
-            "cards_upserted": 0,
-            "cards_failed": 0,
-            "errors": [],
-            "created_at": datetime.now(timezone.utc).isoformat(),
-            "finished_at": None,
-        })
+        await db["crawl_jobs"].insert_one(
+            {
+                "_id": job_id,
+                "status": "running",
+                "sources": crawl_sources,
+                "direct_urls": crawl_urls,
+                "cards_upserted": 0,
+                "cards_failed": 0,
+                "errors": [],
+                "created_at": datetime.now(UTC).isoformat(),
+                "finished_at": None,
+            }
+        )
     except Exception as exc:
         logger.warning("Could not create crawl_jobs record: %s", exc)
 
@@ -63,11 +64,13 @@ async def _do_crawl(
         try:
             await db["crawl_jobs"].update_one(
                 {"_id": job_id},
-                {"$set": {
-                    "status": "failed",
-                    "errors": [str(exc)],
-                    "finished_at": datetime.now(timezone.utc).isoformat(),
-                }},
+                {
+                    "$set": {
+                        "status": "failed",
+                        "errors": [str(exc)],
+                        "finished_at": datetime.now(UTC).isoformat(),
+                    }
+                },
             )
         except Exception:
             pass

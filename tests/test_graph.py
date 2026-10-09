@@ -24,12 +24,12 @@ from copy import deepcopy
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from agents.graph import (
-    build_graph,
+    _make_thread_config,
     _route_after_pdf_check,
     _route_after_question_gen,
-    wait_password_node,
+    build_graph,
     wait_answer_node,
-    _make_thread_config,
+    wait_password_node,
 )
 from agents.state import AnalysisState, CardState, Transaction
 
@@ -40,32 +40,47 @@ from agents.state import AnalysisState, CardState, Transaction
 PASS = 0
 FAIL = 0
 
+
 def ok(msg: str):
-    global PASS; PASS += 1
+    global PASS
+    PASS += 1
     print(f"  ✅ {msg}")
 
+
 def fail(msg: str):
-    global FAIL; FAIL += 1
+    global FAIL
+    FAIL += 1
     print(f"  ❌ {msg}")
 
 
 def _txn(cat: str, amount: float) -> Transaction:
     return Transaction(
-        date="2024-01-10", merchant=cat, amount=amount,
-        transaction_type="debit", category=cat, month="2024-01",
+        date="2024-01-10",
+        merchant=cat,
+        amount=amount,
+        transaction_type="debit",
+        category=cat,
+        month="2024-01",
     )
 
 
 def _make_card(card_id: str = "axis-airtel") -> CardState:
     return {
-        "card_id": card_id, "card_name": "Test Card",
+        "card_id": card_id,
+        "card_name": "Test Card",
         "months": ["2024-01"],
-        "pdf_bytes_list": [b"fake-pdf-bytes"], "pdf_passwords": [None],
-        "pdf_encrypted": False, "pdf_text": "",
-        "transactions": [], "total_spend": 0.0,
-        "pending_questions": [], "answered_questions": [],
-        "qa_answers": {}, "cashback_result": None,
-        "utilization_score": 0, "status": "uploading",
+        "pdf_bytes_list": [b"fake-pdf-bytes"],
+        "pdf_passwords": [None],
+        "pdf_encrypted": False,
+        "pdf_text": "",
+        "transactions": [],
+        "total_spend": 0.0,
+        "pending_questions": [],
+        "answered_questions": [],
+        "qa_answers": {},
+        "cashback_result": None,
+        "utilization_score": 0,
+        "status": "uploading",
     }
 
 
@@ -75,17 +90,22 @@ def _make_initial_state(card_id: str = "axis-airtel") -> AnalysisState:
         "status": "uploading",
         "cards": [_make_card(card_id)],
         "current_card_idx": 0,
-        "locked_card_idx": None, "locked_pdf_idx": None,
-        "current_question": None, "comparison_result": None,
+        "locked_card_idx": None,
+        "locked_pdf_idx": None,
+        "current_question": None,
+        "comparison_result": None,
         "ui_action": "show_upload",
-        "total_questions_count": 0, "answered_questions_count": 0,
-        "error": None, "created_at": "2024-01-01T00:00:00Z",
+        "total_questions_count": 0,
+        "answered_questions_count": 0,
+        "error": None,
+        "created_at": "2024-01-01T00:00:00Z",
     }
 
 
 # ─────────────────────────────────────────────────────────────────────────────
 # 1. Graph structure
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 def test_graph_builds():
     print("\n[1] Graph builds without error")
@@ -104,8 +124,13 @@ def test_graph_has_required_nodes():
     node_ids = set(graph_repr.nodes.keys())
 
     required_nodes = {
-        "pdf_check", "wait_password", "parse_transactions",
-        "question_gen", "wait_answer", "cashback_calc", "compare",
+        "pdf_check",
+        "wait_password",
+        "parse_transactions",
+        "question_gen",
+        "wait_answer",
+        "cashback_calc",
+        "compare",
     }
     for node in required_nodes:
         assert node in node_ids, f"Missing node: {node}"
@@ -135,7 +160,7 @@ def test_graph_interrupt_before():
     else:
         assert "wait_password" in interrupt_nodes, f"wait_password not in interrupt_before: {interrupt_nodes}"
         assert "wait_answer" in interrupt_nodes, f"wait_answer not in interrupt_before: {interrupt_nodes}"
-        ok(f"interrupt_before contains wait_password and wait_answer")
+        ok("interrupt_before contains wait_password and wait_answer")
 
 
 def test_pass_through_nodes():
@@ -155,14 +180,15 @@ def test_pass_through_nodes():
 # 2. Conditional routing
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 def test_route_after_pdf_check():
     print("\n[5] _route_after_pdf_check routing")
 
     cases = [
-        ("pdf_locked",  "wait_password"),
-        ("parsing",     "parse_transactions"),
-        ("questioning", "parse_transactions"),   # any non-locked, non-error → parse
-        ("error",       "__end__"),
+        ("pdf_locked", "wait_password"),
+        ("parsing", "parse_transactions"),
+        ("questioning", "parse_transactions"),  # any non-locked, non-error → parse
+        ("error", "__end__"),
     ]
     for status, expected in cases:
         state = _make_initial_state()
@@ -181,8 +207,8 @@ def test_route_after_question_gen():
     cases = [
         ("questioning", "wait_answer"),
         ("calculating", "cashback_calc"),
-        ("comparing",   "cashback_calc"),    # any non-questioning → cashback
-        ("done",        "cashback_calc"),
+        ("comparing", "cashback_calc"),  # any non-questioning → cashback
+        ("done", "cashback_calc"),
     ]
     for status, expected in cases:
         state = _make_initial_state()
@@ -197,6 +223,7 @@ def test_route_after_question_gen():
 # ─────────────────────────────────────────────────────────────────────────────
 # 3. Thread config helper
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 def test_thread_config():
     print("\n[7] _make_thread_config")
@@ -214,21 +241,26 @@ def test_thread_config():
 # 4. End-to-end pipeline — all nodes mocked (happy path, no questions)
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 def _mock_pdf_check_ok(state):
     """Mock: PDF extracted, no encryption."""
-    from copy import deepcopy
     cards = deepcopy(state["cards"])
     cards[0]["pdf_text"] = "ZOMATO 450\nAIRTEL 299"
     cards[0]["pdf_encrypted"] = False
     cards[0]["pdf_bytes_list"] = []
     cards[0]["status"] = "parsing"
-    return {"cards": cards, "status": "parsing", "ui_action": "show_loading",
-            "locked_card_idx": None, "locked_pdf_idx": None, "error": None}
+    return {
+        "cards": cards,
+        "status": "parsing",
+        "ui_action": "show_loading",
+        "locked_card_idx": None,
+        "locked_pdf_idx": None,
+        "error": None,
+    }
 
 
 def _mock_parse_ok(state):
     """Mock: transactions parsed."""
-    from copy import deepcopy
     cards = deepcopy(state["cards"])
     cards[0]["transactions"] = [
         _txn("food_delivery", 450.0),
@@ -241,20 +273,25 @@ def _mock_parse_ok(state):
 
 def _mock_question_gen_all_done(state):
     """Mock: all questions answered immediately (skip quiz)."""
-    from copy import deepcopy
     cards = deepcopy(state["cards"])
     cards[0]["qa_answers"] = {"q_zomato": True, "q_airtel": True}
     cards[0]["pending_questions"] = []
     cards[0]["status"] = "calculating"
-    return {"cards": cards, "status": "calculating", "ui_action": "show_loading",
-            "current_question": None, "total_questions_count": 2,
-            "answered_questions_count": 2, "error": None}
+    return {
+        "cards": cards,
+        "status": "calculating",
+        "ui_action": "show_loading",
+        "current_question": None,
+        "total_questions_count": 2,
+        "answered_questions_count": 2,
+        "error": None,
+    }
 
 
 def _mock_cashback_calc(state):
     """Mock: cashback calculated."""
-    from copy import deepcopy
     from agents.state import CashbackResult, MonthlyBreakdown
+
     cards = deepcopy(state["cards"])
     cards[0]["cashback_result"] = CashbackResult(
         earned_breakdown={"food_delivery": 45.0, "airtel_recharge": 74.75},
@@ -271,6 +308,7 @@ def _mock_cashback_calc(state):
 def _mock_compare(state):
     """Mock: comparison done."""
     from agents.state import ComparisonResult
+
     return {
         "comparison_result": ComparisonResult(
             verdict="Good fit",
@@ -292,12 +330,13 @@ def test_end_to_end_happy_path():
     graph = build_graph(checkpointer=None)
     initial_state = _make_initial_state()
 
-    with mock.patch("agents.graph.pdf_check_node",       side_effect=_mock_pdf_check_ok), \
-         mock.patch("agents.graph.parse_transactions_node", side_effect=_mock_parse_ok), \
-         mock.patch("agents.graph.question_gen_node",    side_effect=_mock_question_gen_all_done), \
-         mock.patch("agents.graph.cashback_calc_node",   side_effect=_mock_cashback_calc), \
-         mock.patch("agents.graph.compare_node",         side_effect=_mock_compare):
-
+    with (
+        mock.patch("agents.graph.pdf_check_node", side_effect=_mock_pdf_check_ok),
+        mock.patch("agents.graph.parse_transactions_node", side_effect=_mock_parse_ok),
+        mock.patch("agents.graph.question_gen_node", side_effect=_mock_question_gen_all_done),
+        mock.patch("agents.graph.cashback_calc_node", side_effect=_mock_cashback_calc),
+        mock.patch("agents.graph.compare_node", side_effect=_mock_compare),
+    ):
         # Re-build with patched nodes
         patched_graph = build_graph(checkpointer=None)
         result = asyncio.run(patched_graph.ainvoke(initial_state))
@@ -322,14 +361,20 @@ def test_end_to_end_happy_path():
 # 5. Interrupt on password
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 def _mock_pdf_check_locked(state):
     """Mock: PDF is locked."""
-    from copy import deepcopy
     cards = deepcopy(state["cards"])
     cards[0]["pdf_encrypted"] = True
     cards[0]["status"] = "pdf_locked"
-    return {"cards": cards, "status": "pdf_locked", "ui_action": "show_password_input",
-            "locked_card_idx": 0, "locked_pdf_idx": 0, "error": None}
+    return {
+        "cards": cards,
+        "status": "pdf_locked",
+        "ui_action": "show_password_input",
+        "locked_card_idx": 0,
+        "locked_pdf_idx": 0,
+        "error": None,
+    }
 
 
 def test_interrupt_on_password():
@@ -349,8 +394,9 @@ def test_interrupt_on_password():
             ok("Graph handles pdf_locked status (interrupt or run-through)")
         except Exception as exc:
             # Some LangGraph versions raise GraphInterrupt — that's correct
-            assert "interrupt" in str(exc).lower() or "pdf_locked" in str(exc).lower() \
-                or True  # accept any exception as "it stopped"
+            assert (
+                "interrupt" in str(exc).lower() or "pdf_locked" in str(exc).lower() or True
+            )  # accept any exception as "it stopped"
             ok(f"Graph raised interrupt exception as expected: {type(exc).__name__}")
 
 
@@ -358,24 +404,31 @@ def test_interrupt_on_password():
 # 6. Interrupt on quiz question
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 def _mock_question_gen_pending(state):
     """Mock: one question pending."""
-    from copy import deepcopy
     from agents.state import Question
+
     cards = deepcopy(state["cards"])
     q = Question(
-        id="q_zomato", category="food_delivery",
+        id="q_zomato",
+        category="food_delivery",
         text="Do you order food on Zomato?",
         hint="Earns 10% cashback",
-        detected_spend=450.0, potential_cashback=45.0,
+        detected_spend=450.0,
+        potential_cashback=45.0,
         is_general=False,
     )
     cards[0]["pending_questions"] = [q]
     cards[0]["status"] = "questioning"
     return {
-        "cards": cards, "status": "questioning", "ui_action": "show_question",
-        "current_question": q, "total_questions_count": 1,
-        "answered_questions_count": 0, "error": None,
+        "cards": cards,
+        "status": "questioning",
+        "ui_action": "show_question",
+        "current_question": q,
+        "total_questions_count": 1,
+        "answered_questions_count": 0,
+        "error": None,
     }
 
 
@@ -392,11 +445,13 @@ def test_interrupt_on_question():
             return _mock_question_gen_pending(state)
         return _mock_question_gen_all_done(state)
 
-    with mock.patch("agents.graph.pdf_check_node",          side_effect=_mock_pdf_check_ok), \
-         mock.patch("agents.graph.parse_transactions_node",  side_effect=_mock_parse_ok), \
-         mock.patch("agents.graph.question_gen_node",        side_effect=_question_gen_toggle), \
-         mock.patch("agents.graph.cashback_calc_node",       side_effect=_mock_cashback_calc), \
-         mock.patch("agents.graph.compare_node",             side_effect=_mock_compare):
+    with (
+        mock.patch("agents.graph.pdf_check_node", side_effect=_mock_pdf_check_ok),
+        mock.patch("agents.graph.parse_transactions_node", side_effect=_mock_parse_ok),
+        mock.patch("agents.graph.question_gen_node", side_effect=_question_gen_toggle),
+        mock.patch("agents.graph.cashback_calc_node", side_effect=_mock_cashback_calc),
+        mock.patch("agents.graph.compare_node", side_effect=_mock_compare),
+    ):
         patched = build_graph(checkpointer=None)
         try:
             result = asyncio.run(patched.ainvoke(initial_state))
@@ -411,13 +466,19 @@ def test_interrupt_on_question():
 # 7. Error path
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 def _mock_pdf_check_error(state):
     """Mock: unrecoverable PDF error."""
-    from copy import deepcopy
     cards = deepcopy(state["cards"])
     cards[0]["status"] = "error"
-    return {"cards": cards, "status": "error", "ui_action": "show_error",
-            "error": "Corrupt PDF — cannot open", "locked_card_idx": None, "locked_pdf_idx": None}
+    return {
+        "cards": cards,
+        "status": "error",
+        "ui_action": "show_error",
+        "error": "Corrupt PDF — cannot open",
+        "locked_card_idx": None,
+        "locked_pdf_idx": None,
+    }
 
 
 def test_error_path_terminates():
@@ -448,6 +509,7 @@ def test_error_path_terminates():
 # 8. Graph topology — edge verification
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 def test_graph_edges():
     print("\n[12] Graph edges match spec topology")
     graph = build_graph(checkpointer=None)
@@ -457,12 +519,12 @@ def test_graph_edges():
 
     # Required edges from spec
     required = [
-        ("__start__",         "pdf_check"),
-        ("wait_password",     "pdf_check"),
-        ("parse_transactions","question_gen"),
-        ("wait_answer",       "question_gen"),
-        ("cashback_calc",     "compare"),
-        ("compare",           "__end__"),
+        ("__start__", "pdf_check"),
+        ("wait_password", "pdf_check"),
+        ("parse_transactions", "question_gen"),
+        ("wait_answer", "question_gen"),
+        ("cashback_calc", "compare"),
+        ("compare", "__end__"),
     ]
     for src, tgt in required:
         assert (src, tgt) in edges, f"Missing edge: {src} → {tgt}  (edges={edges})"
@@ -478,13 +540,10 @@ def test_graph_edges():
 # 9. State helpers (import-only test — no live DB)
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 def test_helper_imports():
     print("\n[13] Graph helper functions importable")
 
-    from agents.graph import (
-        get_compiled_graph, create_checkpointer,
-        ainvoke_graph, aget_graph_state, aupdate_graph_state,
-    )
     ok("get_compiled_graph importable")
     ok("create_checkpointer importable")
     ok("ainvoke_graph importable")
@@ -495,6 +554,7 @@ def test_helper_imports():
 def test_create_checkpointer_no_uri():
     print("\n[14] create_checkpointer returns None when MONGODB_URI unset")
     import os
+
     from agents.graph import create_checkpointer
 
     with mock.patch.dict(os.environ, {"MONGODB_URI": ""}):
@@ -507,6 +567,7 @@ def test_create_checkpointer_no_uri():
 # 10. Full integration node sequence check
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 def test_node_call_order():
     print("\n[15] Nodes called in correct order")
 
@@ -515,46 +576,60 @@ def test_node_call_order():
     def _make_mock(name, return_patch):
         def _fn(state):
             call_log.append(name)
-            from copy import deepcopy
             base = deepcopy(state)
             base.update(return_patch)
             return return_patch
+
         return _fn
 
     initial_state = _make_initial_state()
 
-    with mock.patch("agents.graph.pdf_check_node",
-                    side_effect=_make_mock("pdf_check", _mock_pdf_check_ok(_make_initial_state()))), \
-         mock.patch("agents.graph.parse_transactions_node",
-                    side_effect=_make_mock("parse", _mock_parse_ok(_make_initial_state()))), \
-         mock.patch("agents.graph.question_gen_node",
-                    side_effect=_make_mock("question_gen", _mock_question_gen_all_done(_make_initial_state()))), \
-         mock.patch("agents.graph.cashback_calc_node",
-                    side_effect=_make_mock("cashback", _mock_cashback_calc(_make_initial_state()))), \
-         mock.patch("agents.graph.compare_node",
-                    side_effect=_make_mock("compare", _mock_compare(_make_initial_state()))):
-
+    with (
+        mock.patch(
+            "agents.graph.pdf_check_node",
+            side_effect=_make_mock("pdf_check", _mock_pdf_check_ok(_make_initial_state())),
+        ),
+        mock.patch(
+            "agents.graph.parse_transactions_node",
+            side_effect=_make_mock("parse", _mock_parse_ok(_make_initial_state())),
+        ),
+        mock.patch(
+            "agents.graph.question_gen_node",
+            side_effect=_make_mock("question_gen", _mock_question_gen_all_done(_make_initial_state())),
+        ),
+        mock.patch(
+            "agents.graph.cashback_calc_node",
+            side_effect=_make_mock("cashback", _mock_cashback_calc(_make_initial_state())),
+        ),
+        mock.patch(
+            "agents.graph.compare_node",
+            side_effect=_make_mock("compare", _mock_compare(_make_initial_state())),
+        ),
+    ):
         patched = build_graph(checkpointer=None)
         asyncio.run(patched.ainvoke(initial_state))
 
-    assert call_log[0] == "pdf_check",     f"Expected pdf_check first, got {call_log[0]}"
+    assert call_log[0] == "pdf_check", f"Expected pdf_check first, got {call_log[0]}"
     ok("pdf_check called first")
 
-    assert "parse" in call_log,            f"parse not called: {call_log}"
+    assert "parse" in call_log, f"parse not called: {call_log}"
     ok("parse_transactions called")
 
-    assert "question_gen" in call_log,     f"question_gen not called: {call_log}"
+    assert "question_gen" in call_log, f"question_gen not called: {call_log}"
     ok("question_gen called")
 
-    assert "cashback" in call_log,         f"cashback not called: {call_log}"
+    assert "cashback" in call_log, f"cashback not called: {call_log}"
     ok("cashback_calc called")
 
-    assert "compare" in call_log,          f"compare not called: {call_log}"
+    assert "compare" in call_log, f"compare not called: {call_log}"
     ok("compare called")
 
     # Order check
-    idx = {n: call_log.index(n) for n in call_log if n in
-           ["pdf_check", "parse", "question_gen", "cashback", "compare"]}
+    idx = {
+        n: call_log.index(n)
+        for n in call_log
+        if n in ["pdf_check", "parse", "question_gen", "cashback", "compare"]
+    }
     assert idx["pdf_check"] < idx["parse"]
     ok("pdf_check before parse_transactions")
 

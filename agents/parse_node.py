@@ -32,6 +32,7 @@ State fields written
 
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
 import os
@@ -40,7 +41,7 @@ from copy import deepcopy
 from typing import Any
 
 from dotenv import load_dotenv
-from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
+from tenacity import retry, retry_if_not_exception_type, stop_after_attempt, wait_exponential
 
 from agents.state import AnalysisState, CardState, Transaction
 
@@ -53,12 +54,26 @@ logger = logging.getLogger(__name__)
 
 PDF_TEXT_CHAR_LIMIT = 10_000  # Truncate before sending to Gemini (spec: 10 000 chars)
 
-VALID_CATEGORIES = frozenset({
-    "airtel_recharge", "utility_bills", "food_delivery", "grocery",
-    "shopping_online", "shopping_offline", "travel_flights", "travel_hotels",
-    "fuel", "entertainment", "emi", "insurance", "healthcare",
-    "education", "rent", "others",
-})
+VALID_CATEGORIES = frozenset(
+    {
+        "airtel_recharge",
+        "utility_bills",
+        "food_delivery",
+        "grocery",
+        "shopping_online",
+        "shopping_offline",
+        "travel_flights",
+        "travel_hotels",
+        "fuel",
+        "entertainment",
+        "emi",
+        "insurance",
+        "healthcare",
+        "education",
+        "rent",
+        "others",
+    }
+)
 
 VALID_TRANSACTION_TYPES = frozenset({"debit", "credit", "refund"})
 
@@ -97,10 +112,18 @@ Statement text (truncated to 10000 chars):
 # Gemini client (lazy-initialised so tests can mock before import)
 # ─────────────────────────────────────────────────────────────────────────────
 
+
+class GeminiNotConfiguredError(RuntimeError):
+    """Raised when GEMINI_API_KEY is missing, so parsing can't run at all."""
+
+
 def _get_llm():
     """Return a ChatGoogleGenerativeAI instance for gemini-2.5-flash."""
     from langchain_google_genai import ChatGoogleGenerativeAI
+
     api_key = os.getenv("GEMINI_API_KEY", "")
+    if not api_key:
+        raise GeminiNotConfiguredError("GEMINI_API_KEY is not set")
     return ChatGoogleGenerativeAI(
         model="gemini-2.5-flash",
         google_api_key=api_key,
@@ -111,6 +134,7 @@ def _get_llm():
 # ─────────────────────────────────────────────────────────────────────────────
 # JSON cleaning helpers (Section 14 pitfall)
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 def _clean_gemini_json(raw: str) -> str:
     """
@@ -129,6 +153,7 @@ def _clean_gemini_json(raw: str) -> str:
 # ─────────────────────────────────────────────────────────────────────────────
 # Transaction validation / normalisation
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 def _normalise_transaction(raw: dict, month_fallback: str) -> Transaction | None:
     """
@@ -176,10 +201,11 @@ def _normalise_transaction(raw: dict, month_fallback: str) -> Transaction | None
 # Core LLM call (with retry)
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 @retry(
     stop=stop_after_attempt(3),
     wait=wait_exponential(multiplier=1, min=2, max=10),
-    retry=retry_if_exception_type(Exception),
+    retry=retry_if_not_exception_type(GeminiNotConfiguredError),
     reraise=True,
 )
 def _call_gemini(pdf_text: str) -> str:
@@ -194,7 +220,9 @@ def _call_gemini(pdf_text: str) -> str:
 def _parse_transactions_from_text(pdf_text: str, month_fallback: str) -> list[Transaction]:
     """
     Send pdf_text to Gemini and parse the JSON response into Transaction dicts.
-    Returns an empty list on complete failure (never raises).
+    Returns an empty list on failure. Raises GeminiNotConfiguredError only
+    when no API key is configured, since every statement would then parse
+    to nothing and the user would get a meaningless score.
     """
     if not pdf_text.strip():
         logger.warning("pdf_text is empty — skipping Gemini call")
@@ -202,6 +230,8 @@ def _parse_transactions_from_text(pdf_text: str, month_fallback: str) -> list[Tr
 
     try:
         raw_response = _call_gemini(pdf_text)
+    except GeminiNotConfiguredError:
+        raise
     except Exception as exc:
         logger.error("Gemini call failed after retries: %s", exc)
         return []
@@ -234,6 +264,7 @@ def _parse_transactions_from_text(pdf_text: str, month_fallback: str) -> list[Tr
 # Multi-month text splitter
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 def _split_by_month(pdf_text: str, months: list[str]) -> list[tuple[str, str]]:
     """
     Split concatenated multi-month text (produced by pdf_node) back into
@@ -264,6 +295,7 @@ def _split_by_month(pdf_text: str, months: list[str]) -> list[tuple[str, str]]:
 # ─────────────────────────────────────────────────────────────────────────────
 # Node
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 async def parse_transactions_node(state: AnalysisState) -> dict[str, Any]:
     """
@@ -297,9 +329,24 @@ async def parse_transactions_node(state: AnalysisState) -> dict[str, Any]:
     for month_label, chunk_text in month_chunks:
         logger.info(
             "Parsing month=%s for card_idx=%d (chunk_len=%d)",
-            month_label, card_idx, len(chunk_text),
+            month_label,
+            card_idx,
+            len(chunk_text),
         )
-        txns = _parse_transactions_from_text(chunk_text, month_label)
+        try:
+            # Gemini's client is synchronous; run it off the event loop so one
+            # slow statement doesn't stall every other request.
+            txns = await asyncio.to_thread(_parse_transactions_from_text, chunk_text, month_label)
+        except GeminiNotConfiguredError:
+            logger.error("GEMINI_API_KEY is not set: cannot parse statements")
+            card["status"] = "error"
+            cards[card_idx] = card
+            return {
+                "cards": cards,
+                "status": "error",
+                "ui_action": "show_error",
+                "error": "Statement analysis is not available right now: the AI service is not configured.",
+            }
         # Ensure every transaction carries the correct month label
         for txn in txns:
             if not txn.get("month") or txn["month"] == "1970-01":
@@ -307,10 +354,7 @@ async def parse_transactions_node(state: AnalysisState) -> dict[str, Any]:
         all_transactions.extend(txns)
 
     # ── Compute total spend (debits only) ─────────────────────────────
-    total_spend = sum(
-        t["amount"] for t in all_transactions
-        if t.get("transaction_type") == "debit"
-    )
+    total_spend = sum(t["amount"] for t in all_transactions if t.get("transaction_type") == "debit")
 
     card["transactions"] = all_transactions
     card["total_spend"] = round(total_spend, 2)
@@ -319,7 +363,9 @@ async def parse_transactions_node(state: AnalysisState) -> dict[str, Any]:
 
     logger.info(
         "parse_transactions_node complete — card_idx=%d txns=%d total_spend=%.2f",
-        card_idx, len(all_transactions), total_spend,
+        card_idx,
+        len(all_transactions),
+        total_spend,
     )
 
     return {

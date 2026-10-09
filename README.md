@@ -2,7 +2,7 @@
 
 > Upload your Indian credit card statements. Score your benefit utilization. Find a better card.
 
-**Stack:** Python 3.11 · FastAPI · LangGraph · Gemini Flash/Pro · MongoDB Atlas · React 18 (Vite) · Playwright · Docker Compose
+**Stack:** Python 3.12 · FastAPI · LangGraph · Gemini Flash/Pro · MongoDB Atlas · React 18 (Vite) · Playwright · Docker Compose
 
 ---
 
@@ -109,7 +109,7 @@ cardsense/
 │   └── src/
 │       ├── pages/   # UploadPage, UtilizationPage, ResultsPage
 │       └── components/  # CardSelector, PdfDropZone, UtilizationMeter, etc.
-├── tests/           # 154 offline pytest tests (Gemini and MongoDB mocked)
+├── tests/           # 161 offline pytest tests (Gemini and MongoDB mocked)
 └── docker/          # Dockerfiles
 ```
 
@@ -139,8 +139,9 @@ All tests run offline: Gemini, MongoDB and Playwright are mocked, so no API keys
 
 ```bash
 pip install -r requirements-dev.txt
-pytest                                  # all 154 tests
+pytest                                  # all 161 tests
 pytest tests/test_cashback_node.py      # one suite
+ruff check . && ruff format --check .   # lint + formatting
 ```
 
 ---

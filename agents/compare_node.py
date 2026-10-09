@@ -6,7 +6,7 @@ Node 5: compare_node
 Responsibilities
 ────────────────
 1. Build a spend-profile text from the user's top 3 spend categories.
-2. Embed with text-embedding-004 (768-dim) and run MongoDB Atlas $vectorSearch
+2. Embed with the shared embedding model (768-dim) and run MongoDB Atlas $vectorSearch
    on credit_cards collection to retrieve top 10 candidates.
 3. Rule-filter candidates: remove current card(s), cards with incompatible
    card_type for the user's spend pattern.
@@ -28,7 +28,7 @@ Section 14 — Known pitfalls handled
 ─────────────────────────────────────
   - Atlas Vector Search not set up → fall back to category filter query.
   - Gemini JSON wrapped in ``` fences → strip before json.loads().
-  - text-embedding-004 returns 768 dimensions.
+  - Embeddings are truncated to 768 dimensions to match the Atlas index.
 
 State fields read
 ─────────────────
@@ -45,6 +45,7 @@ State fields written
 
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
 import os
@@ -54,11 +55,10 @@ from copy import deepcopy
 from typing import Any
 
 from dotenv import load_dotenv
-from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
+from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential
 
-from agents.state import (
-    AnalysisState, CardState, ComparisonResult, CardRecommendation, Transaction
-)
+from agents.embeddings import EMBEDDING_DIMENSIONS, EMBEDDING_MODEL
+from agents.state import AnalysisState, CardRecommendation, CardState, ComparisonResult
 
 load_dotenv()
 logger = logging.getLogger(__name__)
@@ -69,7 +69,6 @@ logger = logging.getLogger(__name__)
 
 VECTOR_SEARCH_INDEX = "credit_cards_embedding_index"
 VECTOR_SEARCH_CANDIDATES = 10
-EMBEDDING_DIMENSIONS = 768
 
 # Categories that indicate a "travel" user (used for card_type filter)
 TRAVEL_CATEGORIES = {"travel_flights", "travel_hotels"}
@@ -119,6 +118,7 @@ Return ONLY valid JSON:
 # DB helpers
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 async def _run_async(coro):
     """Await a coroutine directly (we are always in async context)."""
     return await coro
@@ -130,11 +130,16 @@ async def _fetch_cards_by_categories_async(top_categories: list[str]) -> list[di
     top_categories. Used when Atlas Vector Search is not yet configured.
     """
     from db.connection import get_db
+
     db = get_db()
-    cursor = db["credit_cards"].find(
-        {"benefits.category": {"$in": top_categories}},
-        {"embedding": 0},  # Exclude large embedding vectors from results
-    ).limit(VECTOR_SEARCH_CANDIDATES)
+    cursor = (
+        db["credit_cards"]
+        .find(
+            {"benefits.category": {"$in": top_categories}},
+            {"embedding": 0},  # Exclude large embedding vectors from results
+        )
+        .limit(VECTOR_SEARCH_CANDIDATES)
+    )
     return await cursor.to_list(length=VECTOR_SEARCH_CANDIDATES)
 
 
@@ -144,6 +149,7 @@ async def _vector_search_async(embedding: list[float], top_categories: list[str]
     doesn't exist or the search fails (Section 14 pitfall).
     """
     from db.connection import get_db
+
     db = get_db()
 
     try:
@@ -159,41 +165,40 @@ async def _vector_search_async(embedding: list[float], top_categories: list[str]
             },
             {
                 "$project": {
-                    "embedding": 0,        # Don't return the 768-float array
+                    "embedding": 0,  # Don't return the 768-float array
                     "score": {"$meta": "vectorSearchScore"},
                 }
             },
         ]
-        results = await db["credit_cards"].aggregate(pipeline).to_list(
-            length=VECTOR_SEARCH_CANDIDATES
-        )
+        results = await db["credit_cards"].aggregate(pipeline).to_list(length=VECTOR_SEARCH_CANDIDATES)
         if results:
             logger.info("Vector search returned %d candidates", len(results))
             return results
         # Empty results — fall back
         logger.warning("Vector search returned 0 results — falling back to category filter")
     except Exception as exc:
-        logger.warning(
-            "Atlas Vector Search failed (%s) — falling back to category filter", exc
-        )
+        logger.warning("Atlas Vector Search failed (%s) — falling back to category filter", exc)
 
     return await _fetch_cards_by_categories_async(top_categories)
 
 
 def _get_embedding(text: str) -> list[float]:
     """
-    Embed text with text-embedding-004 (768-dim).
+    Embed text with the shared embedding model (768-dim).
     Returns zero vector on failure (so vector search gracefully degrades).
     """
     try:
         from langchain_google_genai import GoogleGenerativeAIEmbeddings
+
         embedder = GoogleGenerativeAIEmbeddings(
-            model="models/text-embedding-004",
+            model=EMBEDDING_MODEL,
             google_api_key=os.getenv("GEMINI_API_KEY", ""),
         )
-        vec = embedder.embed_query(text)
+        vec = embedder.embed_query(text, output_dimensionality=EMBEDDING_DIMENSIONS)
         if len(vec) != EMBEDDING_DIMENSIONS:
-            logger.warning("Embedding dimension mismatch: got %d, expected %d", len(vec), EMBEDDING_DIMENSIONS)
+            logger.warning(
+                "Embedding dimension mismatch: got %d, expected %d", len(vec), EMBEDDING_DIMENSIONS
+            )
         return vec
     except Exception as exc:
         logger.warning("Embedding failed: %s — using zero vector (category fallback)", exc)
@@ -204,11 +209,12 @@ def _get_embedding(text: str) -> list[float]:
 # Spend analysis helpers
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 def _aggregate_cross_card_spend(cards: list[CardState]) -> dict[str, float]:
     """Aggregate total spend by category across ALL cards."""
     spend: dict[str, float] = defaultdict(float)
     for card in cards:
-        for txn in (card.get("transactions") or []):
+        for txn in card.get("transactions") or []:
             if txn.get("transaction_type") == "debit":
                 spend[txn["category"]] += txn["amount"]
     return dict(spend)
@@ -234,6 +240,7 @@ def _total_monthly_spend(cards: list[CardState]) -> float:
 # ─────────────────────────────────────────────────────────────────────────────
 # Multi-card routing analysis (Section 9)
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 def _compute_routing_advice(cards: list[CardState]) -> list[str]:
     """
@@ -307,14 +314,16 @@ def _build_cashback_summary(cards: list[CardState]) -> dict:
             continue
         earned = sum(cr.get("earned_breakdown", {}).values())
         missed = sum(cr.get("missed_breakdown", {}).values())
-        summary["cards"].append({
-            "card_id": card["card_id"],
-            "card_name": card.get("card_name", ""),
-            "utilization_score": cr.get("utilization_score", 0),
-            "earned_inr": round(earned, 2),
-            "missed_inr": round(missed, 2),
-            "earned_by_category": cr.get("earned_breakdown", {}),
-        })
+        summary["cards"].append(
+            {
+                "card_id": card["card_id"],
+                "card_name": card.get("card_name", ""),
+                "utilization_score": cr.get("utilization_score", 0),
+                "earned_inr": round(earned, 2),
+                "missed_inr": round(missed, 2),
+                "earned_by_category": cr.get("earned_breakdown", {}),
+            }
+        )
         summary["total_earned"] += earned
         summary["total_missed"] += missed
 
@@ -326,6 +335,7 @@ def _build_cashback_summary(cards: list[CardState]) -> dict:
 # ─────────────────────────────────────────────────────────────────────────────
 # Rule filter (Section 5 — Step 2)
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 def _rule_filter_candidates(
     candidates: list[dict],
@@ -369,6 +379,7 @@ def _rule_filter_candidates(
 # Gemini Pro ranking (Section 5 — Step 3)
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 def _clean_json(raw: str) -> str:
     cleaned = raw.replace("```json", "").replace("```", "").strip()
     match = re.search(r"\{.*\}", cleaned, re.DOTALL)
@@ -383,6 +394,7 @@ def _clean_json(raw: str) -> str:
 )
 def _call_gemini_pro(prompt: str) -> str:
     from langchain_google_genai import ChatGoogleGenerativeAI
+
     llm = ChatGoogleGenerativeAI(
         model="gemini-2.5-flash",
         google_api_key=os.getenv("GEMINI_API_KEY", ""),
@@ -416,8 +428,7 @@ def _rank_with_gemini(
             "card_type": c.get("card_type", ""),
             "annual_fee": c.get("annual_fee", 0),
             "benefits": [
-                {"category": b.get("category"), "rate": b.get("rate"),
-                 "label": b.get("label")}
+                {"category": b.get("category"), "rate": b.get("rate"), "label": b.get("label")}
                 for b in c.get("benefits", [])[:6]
             ],
             "best_for_tags": c.get("best_for_tags", []),
@@ -425,11 +436,14 @@ def _rank_with_gemini(
         for c in alt_cards[:6]  # Limit to 6 to stay within token budget
     ]
 
-    current_cards_summary = "; ".join(
-        f"{c['card_name']} (score {c['utilization_score']}/100, "
-        f"earned ₹{c['earned_inr']}, missed ₹{c['missed_inr']})"
-        for c in cards_summary.get("cards", [])
-    ) or "No card data"
+    current_cards_summary = (
+        "; ".join(
+            f"{c['card_name']} (score {c['utilization_score']}/100, "
+            f"earned ₹{c['earned_inr']}, missed ₹{c['missed_inr']})"
+            for c in cards_summary.get("cards", [])
+        )
+        or "No card data"
+    )
 
     prompt = COMPARISON_PROMPT.format(
         current_cards_summary=current_cards_summary,
@@ -451,19 +465,19 @@ def _rank_with_gemini(
     recommendations: list[CardRecommendation] = []
     for item in data.get("recommendations", [])[:3]:
         try:
-            recommendations.append(CardRecommendation(
-                card_id=str(item.get("card_id", "")),
-                card_name=str(item.get("card_name", "")),
-                bank=str(item.get("bank", "")),
-                estimated_monthly_cashback=float(item.get("estimated_monthly_cashback", 0)),
-                estimated_annual_cashback=float(item.get("estimated_annual_cashback", 0)),
-                improvement_over_current_monthly=float(
-                    item.get("improvement_over_current_monthly", 0)
-                ),
-                why_better=str(item.get("why_better", "")),
-                best_categories=list(item.get("best_categories", [])),
-                caveat=item.get("caveat") or None,
-            ))
+            recommendations.append(
+                CardRecommendation(
+                    card_id=str(item.get("card_id", "")),
+                    card_name=str(item.get("card_name", "")),
+                    bank=str(item.get("bank", "")),
+                    estimated_monthly_cashback=float(item.get("estimated_monthly_cashback", 0)),
+                    estimated_annual_cashback=float(item.get("estimated_annual_cashback", 0)),
+                    improvement_over_current_monthly=float(item.get("improvement_over_current_monthly", 0)),
+                    why_better=str(item.get("why_better", "")),
+                    best_categories=list(item.get("best_categories", [])),
+                    caveat=item.get("caveat") or None,
+                )
+            )
         except Exception as e:
             logger.warning("Skipping malformed recommendation: %s", e)
 
@@ -485,6 +499,7 @@ def _rank_with_gemini(
 # Rule-based fallback result (no Gemini / no candidates)
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 def _rule_based_result(
     cards_summary: dict,
     alt_cards: list[dict],
@@ -499,8 +514,7 @@ def _rule_based_result(
     avg_score = 0
     if cards_summary.get("cards"):
         avg_score = round(
-            sum(c["utilization_score"] for c in cards_summary["cards"])
-            / len(cards_summary["cards"])
+            sum(c["utilization_score"] for c in cards_summary["cards"]) / len(cards_summary["cards"])
         )
 
     if avg_score >= 70:
@@ -527,31 +541,37 @@ def _rule_based_result(
     for c in alt_cards[:3]:
         benefit_rates = {b["category"]: b["rate"] for b in c.get("benefits", [])}
         est_monthly = sum(
-            total_spend * 0.2 * benefit_rates.get(cat, 0)   # rough 20% of spend in each top cat
+            total_spend * 0.2 * benefit_rates.get(cat, 0)  # rough 20% of spend in each top cat
             for cat in top_cats
         )
-        recommendations.append(CardRecommendation(
-            card_id=c.get("_id", ""),
-            card_name=c.get("name", ""),
-            bank=c.get("bank", ""),
-            estimated_monthly_cashback=round(est_monthly, 2),
-            estimated_annual_cashback=round(est_monthly * 12, 2),
-            improvement_over_current_monthly=max(
-                0.0, round(est_monthly - cards_summary.get("total_earned", 0), 2)
-            ),
-            why_better=f"Offers better rates for {', '.join(top_cats[:2])} spending.",
-            best_categories=top_cats[:2],
-            caveat=f"Annual fee: ₹{c.get('annual_fee', 0)}" if c.get("annual_fee") else None,
-        ))
+        recommendations.append(
+            CardRecommendation(
+                card_id=c.get("_id", ""),
+                card_name=c.get("name", ""),
+                bank=c.get("bank", ""),
+                estimated_monthly_cashback=round(est_monthly, 2),
+                estimated_annual_cashback=round(est_monthly * 12, 2),
+                improvement_over_current_monthly=max(
+                    0.0, round(est_monthly - cards_summary.get("total_earned", 0), 2)
+                ),
+                why_better=f"Offers better rates for {', '.join(top_cats[:2])} spending.",
+                best_categories=top_cats[:2],
+                caveat=f"Annual fee: ₹{c.get('annual_fee', 0)}" if c.get("annual_fee") else None,
+            )
+        )
 
-    tips = [
-        f"Focus your {top_cats[0].replace('_', ' ')} spending on the card with the highest rate.",
-        "Set up auto-pay for utility bills on your highest utility cashback card.",
-        "Check your card's offer portal before large purchases for extra cashback.",
-    ] if top_cats else [
-        "Review your card's benefit categories and align your spending.",
-        "Use your card for recurring bills to earn passive cashback.",
-    ]
+    tips = (
+        [
+            f"Focus your {top_cats[0].replace('_', ' ')} spending on the card with the highest rate.",
+            "Set up auto-pay for utility bills on your highest utility cashback card.",
+            "Check your card's offer portal before large purchases for extra cashback.",
+        ]
+        if top_cats
+        else [
+            "Review your card's benefit categories and align your spending.",
+            "Use your card for recurring bills to earn passive cashback.",
+        ]
+    )
 
     return ComparisonResult(
         verdict=verdict,
@@ -566,6 +586,7 @@ def _rule_based_result(
 # ─────────────────────────────────────────────────────────────────────────────
 # Node
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 async def compare_node(state: AnalysisState) -> dict[str, Any]:
     """
@@ -584,14 +605,16 @@ async def compare_node(state: AnalysisState) -> dict[str, Any]:
 
     logger.info(
         "compare_node: %d card(s), total_spend=₹%.0f, top_cats=%s",
-        len(cards), total_spend, top_cats,
+        len(cards),
+        total_spend,
+        top_cats,
     )
 
     # ── 2. Build spend-profile embedding text ─────────────────────────
     profile_text = _build_spend_profile_text(cards, top_cats)
 
     # ── 3. Embed + vector search (with category fallback) ────────────
-    embedding = _get_embedding(profile_text)
+    embedding = await asyncio.to_thread(_get_embedding, profile_text)
     candidates = await _run_async(_vector_search_async(embedding, top_cats))
 
     logger.info("Vector search / category fallback returned %d candidates", len(candidates))
@@ -607,8 +630,8 @@ async def compare_node(state: AnalysisState) -> dict[str, Any]:
     cashback_summary = _build_cashback_summary(cards)
 
     # ── 7. Gemini Pro ranking ─────────────────────────────────────────
-    comparison_result = _rank_with_gemini(
-        cashback_summary, filtered, top_cats, total_spend, routing_advice
+    comparison_result = await asyncio.to_thread(
+        _rank_with_gemini, cashback_summary, filtered, top_cats, total_spend, routing_advice
     )
 
     logger.info(

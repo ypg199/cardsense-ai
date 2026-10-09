@@ -17,28 +17,33 @@ import unittest.mock as mock
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from crawler.card_crawler import (
-    _make_slug,
-    _clean_html,
     EXTRACTION_PROMPT,
     PAGE_TEXT_LIMIT,
+    _clean_html,
+    _make_slug,
 )
-from crawler.sources import SOURCES, DIRECT_BANK_URLS, ALL_SOURCE_KEYS
+from crawler.sources import ALL_SOURCE_KEYS, DIRECT_BANK_URLS, SOURCES
 
 PASS = 0
 FAIL = 0
 
+
 def ok(msg):
-    global PASS; PASS += 1
+    global PASS
+    PASS += 1
     print(f"  ✅ {msg}")
 
+
 def fail(msg):
-    global FAIL; FAIL += 1
+    global FAIL
+    FAIL += 1
     print(f"  ❌ {msg}")
 
 
 # ─────────────────────────────────────────────────────────────────────────────
 # 1. Sources config
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 def test_sources_config():
     print("\n[1] sources.py — configuration")
@@ -70,6 +75,7 @@ def test_sources_config():
 # ─────────────────────────────────────────────────────────────────────────────
 # 2. Slug generator
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 def test_make_slug():
     print("\n[2] _make_slug")
@@ -103,6 +109,7 @@ def test_make_slug():
 # ─────────────────────────────────────────────────────────────────────────────
 # 3. HTML cleaner
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 def test_clean_html():
     print("\n[3] _clean_html")
@@ -160,6 +167,7 @@ def test_clean_html():
 # 4. Extraction prompt
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 def test_extraction_prompt():
     print("\n[4] EXTRACTION_PROMPT")
 
@@ -211,7 +219,7 @@ MOCK_CARD_RESPONSE = {
             "reward_type": "cashback",
             "point_value_inr": None,
             "conditions": "Must pay via Airtel Thanks app",
-            "merchant_keywords": ["airtel"]
+            "merchant_keywords": ["airtel"],
         }
     ],
     "utilization_questions": [
@@ -220,12 +228,13 @@ MOCK_CARD_RESPONSE = {
             "text": "Do you recharge your Airtel SIM using this card?",
             "hint": "Earns 25% cashback",
             "maps_to_category": "airtel_recharge",
-            "auto_detect_keywords": ["airtel"]
+            "auto_detect_keywords": ["airtel"],
         }
     ],
     "best_for_tags": ["airtel users"],
-    "not_good_for": ["amazon"]
+    "not_good_for": ["amazon"],
 }
+
 
 def test_call_gemini_flash_success():
     print("\n[5] _call_gemini_flash — mocked Gemini success")
@@ -236,10 +245,14 @@ def test_call_gemini_flash_success():
     mock_llm_instance.invoke.return_value.content = mock_response
     MockLLM = mock.MagicMock(return_value=mock_llm_instance)
 
-    with mock.patch.dict("sys.modules", {"langchain_google_genai": mock.MagicMock(
-            ChatGoogleGenerativeAI=MockLLM)}), \
-         mock.patch.dict("os.environ", {"GEMINI_API_KEY": "fake-key"}):
+    with (
+        mock.patch.dict(
+            "sys.modules", {"langchain_google_genai": mock.MagicMock(ChatGoogleGenerativeAI=MockLLM)}
+        ),
+        mock.patch.dict("os.environ", {"GEMINI_API_KEY": "fake-key"}),
+    ):
         from crawler.card_crawler import _call_gemini_flash
+
         result = _call_gemini_flash("Sample page content about Axis Airtel card")
 
     assert result["name"] == "Axis Airtel Credit Card"
@@ -261,10 +274,14 @@ def test_call_gemini_flash_fenced():
     mock_llm_instance.invoke.return_value.content = fenced
     MockLLM = mock.MagicMock(return_value=mock_llm_instance)
 
-    with mock.patch.dict("sys.modules", {"langchain_google_genai": mock.MagicMock(
-            ChatGoogleGenerativeAI=MockLLM)}), \
-         mock.patch.dict("os.environ", {"GEMINI_API_KEY": "fake-key"}):
+    with (
+        mock.patch.dict(
+            "sys.modules", {"langchain_google_genai": mock.MagicMock(ChatGoogleGenerativeAI=MockLLM)}
+        ),
+        mock.patch.dict("os.environ", {"GEMINI_API_KEY": "fake-key"}),
+    ):
         from crawler.card_crawler import _call_gemini_flash
+
         result = _call_gemini_flash("page content")
 
     assert result["name"] == "Axis Airtel Credit Card"
@@ -276,6 +293,7 @@ def test_call_gemini_no_api_key():
 
     with mock.patch.dict("os.environ", {"GEMINI_API_KEY": ""}):
         from crawler.card_crawler import _call_gemini_flash
+
         try:
             _call_gemini_flash("page content")
             fail("Should have raised")
@@ -286,6 +304,7 @@ def test_call_gemini_no_api_key():
 # ─────────────────────────────────────────────────────────────────────────────
 # 6. crawl_url (full integration mock)
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 def test_crawl_url_success():
     print("\n[8] crawl_url — mocked Playwright + Gemini, success")
@@ -331,14 +350,16 @@ def test_crawl_url_success():
         # Mock page navigation
         mock_page.goto = mock.AsyncMock()
 
-        with mock.patch("crawler.card_crawler._call_gemini_flash",
-                        return_value=MOCK_CARD_RESPONSE), \
-             mock.patch("crawler.card_crawler._generate_embedding",
-                        return_value=([0.1] * 768, "embedding text")), \
-             mock.patch("crawler.card_crawler._upsert_card",
-                        return_value=True), \
-             mock.patch("asyncio.sleep", return_value=None):
+        with (
+            mock.patch("crawler.card_crawler._call_gemini_flash", return_value=MOCK_CARD_RESPONSE),
+            mock.patch(
+                "crawler.card_crawler._generate_embedding", return_value=([0.1] * 768, "embedding text")
+            ),
+            mock.patch("crawler.card_crawler._upsert_card", return_value=True),
+            mock.patch("asyncio.sleep", return_value=None),
+        ):
             from crawler.card_crawler import crawl_url
+
             result = await crawl_url(
                 "https://example.com/axis-airtel",
                 browser=mock_browser,
@@ -375,6 +396,7 @@ def test_crawl_url_empty_page():
 
         with mock.patch("asyncio.sleep", return_value=None):
             from crawler.card_crawler import crawl_url
+
             result = await crawl_url("https://example.com/empty", browser=mock_browser)
 
         return result
@@ -390,14 +412,17 @@ def test_crawl_url_empty_page():
 # 7. Celery tasks structure
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 def test_tasks_structure():
     print("\n[10] crawler/tasks.py — simplified structure (no Celery)")
 
-    from crawler.tasks import run_crawl, _do_crawl
+    from crawler.tasks import _do_crawl, run_crawl
+
     ok("run_crawl importable")
     ok("_do_crawl importable")
 
     import inspect
+
     assert inspect.iscoroutinefunction(_do_crawl)
     ok("_do_crawl is an async coroutine")
 
@@ -419,10 +444,12 @@ def test_run_module_exists():
     print("\n[11] crawler/run.py — one-shot entrypoint")
 
     import os
+
     assert os.path.exists("crawler/run.py")
     ok("crawler/run.py exists")
 
     import ast
+
     with open("crawler/run.py") as f:
         src = f.read()
     ast.parse(src)
@@ -445,13 +472,14 @@ def test_run_module_exists():
 # 8. _generate_embedding (mocked)
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 def test_generate_embedding():
     print("\n[12] _generate_embedding — mocked embedder")
 
     card_data = {
         "name": "Axis Airtel Credit Card",
         "bank": "Axis Bank",
-        "benefits": [{"label": "Airtel Recharge", "rate": 0.25}]
+        "benefits": [{"label": "Airtel Recharge", "rate": 0.25}],
     }
 
     mock_vector = [0.01] * 768
@@ -459,10 +487,14 @@ def test_generate_embedding():
     mock_embedder.embed_query.return_value = mock_vector
     MockEmbed = mock.MagicMock(return_value=mock_embedder)
 
-    with mock.patch.dict("sys.modules", {"langchain_google_genai": mock.MagicMock(
-            GoogleGenerativeAIEmbeddings=MockEmbed)}), \
-         mock.patch.dict("os.environ", {"GEMINI_API_KEY": "fake-key"}):
+    with (
+        mock.patch.dict(
+            "sys.modules", {"langchain_google_genai": mock.MagicMock(GoogleGenerativeAIEmbeddings=MockEmbed)}
+        ),
+        mock.patch.dict("os.environ", {"GEMINI_API_KEY": "fake-key"}),
+    ):
         from crawler.card_crawler import _generate_embedding
+
         vector, text = _generate_embedding(card_data)
 
     assert len(vector) == 768
@@ -485,8 +517,10 @@ def test_generate_embedding_failure_fallback():
     mock_embed_mod.GoogleGenerativeAIEmbeddings.side_effect = Exception("API Error")
 
     with mock.patch.dict("sys.modules", {"langchain_google_genai": mock_embed_mod}):
-        from crawler import card_crawler as cc
         import importlib
+
+        from crawler import card_crawler as cc
+
         importlib.reload(cc)
         vector, text = cc._generate_embedding(card_data)
 
@@ -499,6 +533,7 @@ def test_generate_embedding_failure_fallback():
 # ─────────────────────────────────────────────────────────────────────────────
 # 9. _upsert_card (mocked)
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 def test_upsert_card():
     print("\n[14] _upsert_card — mocked MongoDB")
@@ -516,6 +551,7 @@ def test_upsert_card():
 
     with mock.patch("db.connection.get_db", return_value=mock_db):
         from crawler.card_crawler import _upsert_card
+
         result = asyncio.run(_upsert_card(card_doc))
 
     assert result is True
