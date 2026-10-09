@@ -128,7 +128,7 @@ const css = `
 .tip-card {
   display: flex;
   gap: 14px;
-  background: rgba(255,255,255,0.03);
+  background: rgba(var(--tint), 0.03);
   border: 1px solid var(--navy-700);
   border-radius: var(--radius-md);
   padding: 16px;

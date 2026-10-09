@@ -12,7 +12,7 @@ import { AlertIcon, ArrowRightIcon } from '../components/Icons.jsx'
 const css = `
 .spend-points { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin-bottom: 20px; }
 .spend-point {
-  font-size: 13px; color: var(--slate-300); background: rgba(255,255,255,0.02);
+  font-size: 13px; color: var(--slate-300); background: rgba(var(--tint), 0.02);
   border: 1px solid var(--navy-700); border-radius: var(--radius-md); padding: 12px 14px;
 }
 .spend-point strong { display: block; color: var(--white); font-weight: 600; margin-bottom: 2px; }

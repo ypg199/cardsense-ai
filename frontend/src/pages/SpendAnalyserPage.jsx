@@ -21,7 +21,7 @@ const css = `
   --sa-s1: #3987e5; --sa-s2: #d95926; --sa-s3: #199e70; --sa-s4: #c98500; --sa-s5: #d55181;
   --sa-other: #64748b;
   --sa-grid: rgba(148,163,184,0.12);
-  --sa-axis: #94a3b8;
+  --sa-axis: var(--slate-400);
 }
 .sa-page { max-width: 1040px; margin: 0 auto; padding: 32px 24px 80px; }
 .sa-header { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 28px; flex-wrap: wrap; }

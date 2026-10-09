@@ -5,7 +5,7 @@ const styles = `
 .modal-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(6,9,26,0.85);
+  background: var(--overlay);
   backdrop-filter: blur(6px);
   z-index: 1000;
   display: flex;
@@ -102,7 +102,7 @@ const styles = `
   background: var(--amber-500);
   border: none;
   border-radius: var(--radius-md);
-  color: var(--navy-950);
+  color: var(--on-accent);
   font-family: var(--font-sans);
   font-size: 15px;
   font-weight: 600;

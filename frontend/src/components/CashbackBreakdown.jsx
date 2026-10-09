@@ -18,7 +18,7 @@ const styles = `
 .breakdown-table td {
   padding: 10px 12px;
   font-size: 13px;
-  border-bottom: 1px solid rgba(255,255,255,0.04);
+  border-bottom: 1px solid rgba(var(--tint), 0.04);
 }
 .bd-row { animation: fadeUp 200ms ease both; }
 .bd-row.earned { background: rgba(34,197,94,0.03); }
@@ -26,7 +26,7 @@ const styles = `
 .bd-row.missed  { background: rgba(239,68,68,0.04); }
 .bd-row.total {
   border-top: 1px solid var(--navy-600);
-  background: rgba(255,255,255,0.03);
+  background: rgba(var(--tint), 0.03);
 }
 .bd-row.total td { font-weight: 600; font-family: var(--font-mono); padding-top: 14px; }
 .bd-cat {
@@ -58,7 +58,7 @@ const styles = `
 .util-bar-bg {
   width: 60px;
   height: 4px;
-  background: rgba(255,255,255,0.08);
+  background: rgba(var(--tint), 0.08);
   border-radius: 2px;
   overflow: hidden;
 }
@@ -90,7 +90,7 @@ const styles = `
   .summary-divider { display: none; }
   .summary-val { font-size: 18px; }
   .breakdown-table thead { display: none; }
-  .breakdown-table tr { display: grid; grid-template-columns: auto auto 1fr; align-items: center; column-gap: 14px; padding: 10px 10px; border-bottom: 1px solid rgba(255,255,255,0.04); }
+  .breakdown-table tr { display: grid; grid-template-columns: auto auto 1fr; align-items: center; column-gap: 14px; padding: 10px 10px; border-bottom: 1px solid rgba(var(--tint), 0.04); }
   .breakdown-table td { padding: 0; border: none; }
   .breakdown-table td:first-child { grid-column: 1 / -1; margin-bottom: 6px; }
   .breakdown-table td[data-label]::before {
@@ -202,7 +202,7 @@ export default function CashbackBreakdown({ cashbackResult, multiMonth }) {
                       {monthLabel(m.month)}
                     </text>
                     {barHeight > 16 && (
-                      <text x={x + barW / 2} y={y + 12} textAnchor="middle" fontSize="8" fill="rgba(255,255,255,0.8)">
+                      <text x={x + barW / 2} y={y + 12} textAnchor="middle" fontSize="8" fill="rgba(var(--tint), 0.8)">
                         {money(m.earned)}
                       </text>
                     )}

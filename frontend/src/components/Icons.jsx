@@ -91,3 +91,8 @@ export const SparkIcon = make(<>
 export const DownloadIcon = make(<>
   <path d="M12 4v12" /><path d="m7 11 5 5 5-5" /><path d="M4 20h16" />
 </>)
+export const SunIcon = make(<>
+  <circle cx="12" cy="12" r="4" /><path d="M12 2v2" /><path d="M12 20v2" /><path d="m4.9 4.9 1.4 1.4" /><path d="m17.7 17.7 1.4 1.4" />
+  <path d="M2 12h2" /><path d="M20 12h2" /><path d="m4.9 19.1 1.4-1.4" /><path d="m17.7 6.3 1.4-1.4" />
+</>)
+export const MoonIcon = make(<path d="M20.5 14.5A8.5 8.5 0 0 1 9.5 3.5a8.5 8.5 0 1 0 11 11Z" />)

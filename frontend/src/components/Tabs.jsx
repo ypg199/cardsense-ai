@@ -14,7 +14,7 @@ const css = `
   display: flex; flex-direction: column; align-items: center; justify-content: center;
   transition: color var(--transition), background var(--transition);
 }
-.tab:hover { color: var(--white); background: rgba(255,255,255,0.02); }
+.tab:hover { color: var(--white); background: rgba(var(--tint), 0.02); }
 .tab:focus-visible { outline: 2px solid var(--amber-500); outline-offset: -2px; border-radius: 6px; }
 .tab.active { color: var(--amber-400); }
 .tab::after {

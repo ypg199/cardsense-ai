@@ -22,7 +22,7 @@ const css = `
 }
 .cmp-tag.current { background: rgba(148,163,184,0.12); color: var(--slate-300); }
 .cmp-tag.best { background: rgba(34,197,94,0.12); color: var(--green-400); }
-.cmp-col-current { background: rgba(255,255,255,0.025); }
+.cmp-col-current { background: rgba(var(--tint), 0.025); }
 .cmp-cat { color: var(--slate-200); }
 .cmp-spend { display: block; font-size: 11px; color: var(--slate-400); font-family: var(--font-mono); margin-top: 1px; }
 .cmp-num { font-family: var(--font-mono); color: var(--slate-300); white-space: nowrap; }

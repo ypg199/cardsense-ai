@@ -148,7 +148,7 @@ const css = `
   align-items: flex-start;
   gap: 8px;
   padding: 8px 0;
-  border-bottom: 1px solid rgba(255,255,255,0.04);
+  border-bottom: 1px solid rgba(var(--tint), 0.04);
   font-size: 12px;
   color: var(--slate-400);
 }

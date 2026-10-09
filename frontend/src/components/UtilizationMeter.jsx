@@ -126,7 +126,7 @@ export default function UtilizationMeter({ score = 0, earnedMonthly = 0 }) {
           <path
             className="meter-track"
             d={trackPath}
-            stroke="rgba(255,255,255,0.07)"
+            stroke="rgba(var(--tint), 0.07)"
             strokeWidth={STROKE}
             strokeLinecap="round"
           />

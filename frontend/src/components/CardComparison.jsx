@@ -53,7 +53,7 @@ const styles = `
   line-height: 1.55;
   margin-bottom: 12px;
   padding: 12px 14px;
-  background: rgba(255,255,255,0.03);
+  background: rgba(var(--tint), 0.03);
   border-left: 3px solid var(--amber-500);
   border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
 }
@@ -104,7 +104,7 @@ const styles = `
 }
 .compare-toggle {
   width: 100%;
-  background: rgba(255,255,255,0.04);
+  background: rgba(var(--tint), 0.04);
   border: 1px solid var(--navy-600);
   border-radius: var(--radius-md);
   color: var(--slate-300);
@@ -114,7 +114,7 @@ const styles = `
   cursor: pointer;
   transition: all var(--transition);
 }
-.compare-toggle:hover { background: rgba(255,255,255,0.07); border-color: var(--navy-500); }
+.compare-toggle:hover { background: rgba(var(--tint), 0.07); border-color: var(--navy-500); }
 .empty-state {
   text-align: center;
   padding: 40px 20px;

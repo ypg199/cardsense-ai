@@ -4,6 +4,7 @@
  */
 import { Link } from 'react-router-dom'
 import { AlertIcon, ArrowLeftIcon, CardIcon, InfoIcon } from './Icons.jsx'
+import ThemeToggle from './ThemeToggle.jsx'
 
 const css = `
 .brand {
@@ -11,6 +12,7 @@ const css = `
   font-size: 13px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase;
   color: var(--amber-400); text-decoration: none; border-radius: var(--radius-sm);
 }
+.brand-row { display: inline-flex; align-items: center; gap: 10px; vertical-align: middle; }
 .brand:focus-visible { outline: 2px solid var(--amber-500); outline-offset: 4px; }
 .brand-pill {
   background: rgba(245,158,11,0.08); border: 1px solid rgba(245,158,11,0.25);
@@ -41,7 +43,7 @@ const css = `
   font-size: 14px; font-weight: 600; padding: 11px 20px; border-radius: var(--radius-md);
   cursor: pointer; text-decoration: none; transition: all var(--transition);
 }
-.btn-primary { background: var(--amber-500); color: var(--navy-950); border: 1px solid var(--amber-500); }
+.btn-primary { background: var(--amber-500); color: var(--on-accent); border: 1px solid var(--amber-500); }
 .btn-primary:hover { background: var(--amber-400); }
 .btn-ghost { background: var(--navy-800); color: var(--slate-200); border: 1px solid var(--navy-600); }
 .btn-ghost:hover { border-color: var(--amber-500); color: var(--amber-400); }
@@ -52,9 +54,12 @@ export function Logo({ pill = false }) {
   return (
     <>
       <style>{css}</style>
-      <Link to="/" className={`brand${pill ? ' brand-pill' : ''}`} aria-label="CardSense AI home">
-        <CardIcon size={16} /> CardSense AI
-      </Link>
+      <span className="brand-row">
+        <Link to="/" className={`brand${pill ? ' brand-pill' : ''}`} aria-label="CardSense AI home">
+          <CardIcon size={16} /> CardSense AI
+        </Link>
+        <ThemeToggle />
+      </span>
     </>
   )
 }

@@ -80,7 +80,7 @@ const styles = `
 }
 .qbtn-yes:hover:not(:disabled) {
   background: var(--green-500);
-  color: var(--navy-950);
+  color: var(--on-accent);
   transform: translateY(-2px);
   box-shadow: 0 8px 24px rgba(34,197,94,0.25);
 }
