@@ -9,6 +9,7 @@ POST /session/{id}/password  — supply password for encrypted PDF
 POST /session/{id}/answer    — submit one YES/NO quiz answer
 GET  /session/{id}/status    — poll current graph state
 GET  /session/{id}/spend     — spend aggregates for the Spend Analyser
+GET  /session/{id}/report.pdf — downloadable PDF report
 POST /session/{id}/add_card  — add a new card to an existing session
 ─────────────────────────────────────────────────────────────────────────────
 """
@@ -23,7 +24,7 @@ from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Annotated
 
-from fastapi import APIRouter, File, Form, HTTPException, UploadFile, status
+from fastapi import APIRouter, File, Form, HTTPException, Response, UploadFile, status
 
 from agents.insights import spend_insights
 from agents.spend_summary import summarise_spend
@@ -642,6 +643,32 @@ async def get_spend_summary(session_id: str, card_id: str | None = None):
         sample=bool(state.get("sample", False)),
         insights=spend_insights(cards, summary, card_id),
         **summary,
+    )
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# GET /session/{id}/report.pdf
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+@router.get("/{session_id}/report.pdf", response_class=Response)
+async def get_report(session_id: str):
+    """The session's results and spending as a downloadable PDF."""
+    from agents.report import build_report
+
+    state = await _load_session(session_id)
+    if state is None:
+        _raise_not_found(session_id)
+    if not any(c.get("transactions") for c in state.get("cards", [])):
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT, detail="This session has no statements read yet."
+        )
+    months = sorted({t.get("month", "") for c in state["cards"] for t in c.get("transactions") or []} - {""})
+    name = f"cardsense-report-{months[-1]}.pdf" if months else "cardsense-report.pdf"
+    return Response(
+        content=build_report(state),
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="{name}"'},
     )
 
 
