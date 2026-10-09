@@ -1,0 +1,146 @@
+[
+  {
+    "date": "2026-06-01",
+    "merchant": "EATSURE",
+    "amount": 2370.44,
+    "transaction_type": "debit",
+    "category": "food_delivery",
+    "month": "2026-06"
+  },
+  {
+    "date": "2026-06-02",
+    "merchant": "AIR INDIA",
+    "amount": 7881.38,
+    "transaction_type": "debit",
+    "category": "travel_flights",
+    "month": "2026-06"
+  },
+  {
+    "date": "2026-06-04",
+    "merchant": "UDEMY",
+    "amount": 3095.0,
+    "transaction_type": "debit",
+    "category": "education",
+    "month": "2026-06"
+  },
+  {
+    "date": "2026-06-05",
+    "merchant": "CRED RENTPAY",
+    "amount": 15538.22,
+    "transaction_type": "debit",
+    "category": "rent",
+    "month": "2026-06"
+  },
+  {
+    "date": "2026-06-07",
+    "merchant": "INDIAN OIL",
+    "amount": 2157.0,
+    "transaction_type": "debit",
+    "category": "fuel",
+    "month": "2026-06"
+  },
+  {
+    "date": "2026-06-08",
+    "merchant": "HDFC LIFE INSURANCE",
+    "amount": 5739.0,
+    "transaction_type": "debit",
+    "category": "insurance",
+    "month": "2026-06"
+  },
+  {
+    "date": "2026-06-11",
+    "merchant": "FLIPKART",
+    "amount": 1363.17,
+    "transaction_type": "debit",
+    "category": "shopping_online",
+    "month": "2026-06"
+  },
+  {
+    "date": "2026-06-12",
+    "merchant": "AIRTEL",
+    "amount": 2729.97,
+    "transaction_type": "debit",
+    "category": "airtel_recharge",
+    "month": "2026-06"
+  },
+  {
+    "date": "2026-06-15",
+    "merchant": "SHOPPERS STOP",
+    "amount": 2681.16,
+    "transaction_type": "debit",
+    "category": "shopping_offline",
+    "month": "2026-06"
+  },
+  {
+    "date": "2026-06-17",
+    "merchant": "IRCTC",
+    "amount": 3259.36,
+    "transaction_type": "debit",
+    "category": "travel_flights",
+    "month": "2026-06"
+  },
+  {
+    "date": "2026-06-20",
+    "merchant": "MAKEMYTRIP",
+    "amount": 7921.0,
+    "transaction_type": "debit",
+    "category": "travel_flights",
+    "month": "2026-06"
+  },
+  {
+    "date": "2026-06-22",
+    "merchant": "MAHANAGAR GAS",
+    "amount": 1499.12,
+    "transaction_type": "debit",
+    "category": "utility_bills",
+    "month": "2026-06"
+  },
+  {
+    "date": "2026-06-22",
+    "merchant": "COURSERA",
+    "amount": 4406.76,
+    "transaction_type": "debit",
+    "category": "education",
+    "month": "2026-06"
+  },
+  {
+    "date": "2026-06-24",
+    "merchant": "MAKEMYTRIP",
+    "amount": 4969.0,
+    "transaction_type": "debit",
+    "category": "travel_flights",
+    "month": "2026-06"
+  },
+  {
+    "date": "2026-06-25",
+    "merchant": "BBNOW",
+    "amount": 207.15,
+    "transaction_type": "debit",
+    "category": "grocery",
+    "month": "2026-06"
+  },
+  {
+    "date": "2026-06-26",
+    "merchant": "FLIPKART",
+    "amount": 1774.87,
+    "transaction_type": "debit",
+    "category": "shopping_online",
+    "month": "2026-06"
+  },
+  {
+    "date": "2026-06-26",
+    "merchant": "INDIGO",
+    "amount": 7243.86,
+    "transaction_type": "debit",
+    "category": "travel_flights",
+    "month": "2026-06"
+  },
+  {
+    "date": "2026-06-27",
+    "merchant": "IRCTC",
+    "amount": 5845.0,
+    "transaction_type": "debit",
+    "category": "travel_flights",
+    "month": "2026-06"
+  }
+]

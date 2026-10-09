@@ -1,0 +1,1442 @@
+[
+  {
+    "date": "2026-07-01",
+    "merchant": "Eatsure",
+    "amount": 1553.47,
+    "transaction_type": "debit",
+    "category": "food_delivery",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-01",
+    "merchant": "Shoppers Stop",
+    "amount": 3079.01,
+    "transaction_type": "debit",
+    "category": "shopping_offline",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-01",
+    "merchant": "Udemy",
+    "amount": 7811.0,
+    "transaction_type": "debit",
+    "category": "education",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-01",
+    "merchant": "IRCTC",
+    "amount": 3883.0,
+    "transaction_type": "debit",
+    "category": "travel_flights",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-01",
+    "merchant": "GOIBIBO",
+    "amount": 4993.23,
+    "transaction_type": "debit",
+    "category": "travel_hotels",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-01",
+    "merchant": "BPCL Service Stn",
+    "amount": 1328.74,
+    "transaction_type": "debit",
+    "category": "fuel",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-01",
+    "merchant": "Policybazaar Insurance",
+    "amount": 7551.0,
+    "transaction_type": "debit",
+    "category": "insurance",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-01",
+    "merchant": "Flipkart",
+    "amount": 595.86,
+    "transaction_type": "debit",
+    "category": "shopping_online",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-01",
+    "merchant": "Bescom",
+    "amount": 2514.0,
+    "transaction_type": "debit",
+    "category": "utility_bills",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-01",
+    "merchant": "Eatsure",
+    "amount": 162.03,
+    "transaction_type": "debit",
+    "category": "food_delivery",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-02",
+    "merchant": "Practo Health",
+    "amount": 410.03,
+    "transaction_type": "debit",
+    "category": "healthcare",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-02",
+    "merchant": "Lifestyle",
+    "amount": 2378.51,
+    "transaction_type": "debit",
+    "category": "shopping_offline",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-02",
+    "merchant": "INDIGO",
+    "amount": 3916.0,
+    "transaction_type": "debit",
+    "category": "travel_flights",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-02",
+    "merchant": "AIRTEL Postpaid",
+    "amount": 576.49,
+    "transaction_type": "debit",
+    "category": "airtel_recharge",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-02",
+    "merchant": "Flipkart",
+    "amount": 800.29,
+    "transaction_type": "debit",
+    "category": "shopping_online",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-03",
+    "merchant": "Blinkit",
+    "amount": 492.23,
+    "transaction_type": "debit",
+    "category": "grocery",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-03",
+    "merchant": "HDFC LIFE INSURANCE Premium",
+    "amount": 4430.0,
+    "transaction_type": "debit",
+    "category": "insurance",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-03",
+    "merchant": "Blinkit",
+    "amount": 2393.0,
+    "transaction_type": "debit",
+    "category": "grocery",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-03",
+    "merchant": "Shoppers Stop",
+    "amount": 3450.0,
+    "transaction_type": "debit",
+    "category": "shopping_offline",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-03",
+    "merchant": "IRCTC",
+    "amount": 4267.0,
+    "transaction_type": "debit",
+    "category": "travel_flights",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-03",
+    "merchant": "IRCTC",
+    "amount": 8599.0,
+    "transaction_type": "debit",
+    "category": "travel_flights",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-03",
+    "merchant": "PVR Inox",
+    "amount": 3018.0,
+    "transaction_type": "debit",
+    "category": "entertainment",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-03",
+    "merchant": "Bescom",
+    "amount": 642.01,
+    "transaction_type": "debit",
+    "category": "utility_bills",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-03",
+    "merchant": "Myntra",
+    "amount": 3277.11,
+    "transaction_type": "debit",
+    "category": "shopping_online",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-03",
+    "merchant": "ZOMATO",
+    "amount": 1296.0,
+    "transaction_type": "debit",
+    "category": "food_delivery",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-03",
+    "merchant": "AIR INDIA",
+    "amount": 8329.14,
+    "transaction_type": "debit",
+    "category": "travel_flights",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-04",
+    "merchant": "Bbnow",
+    "amount": 2263.0,
+    "transaction_type": "debit",
+    "category": "grocery",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-04",
+    "merchant": "OYO",
+    "amount": 5203.0,
+    "transaction_type": "debit",
+    "category": "travel_hotels",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-04",
+    "merchant": "Reliance Trends",
+    "amount": 2993.94,
+    "transaction_type": "debit",
+    "category": "shopping_offline",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-04",
+    "merchant": "INDIAN OIL Fuel Station",
+    "amount": 2456.0,
+    "transaction_type": "debit",
+    "category": "fuel",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-04",
+    "merchant": "Swiggy Food",
+    "amount": 1027.0,
+    "transaction_type": "debit",
+    "category": "food_delivery",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-04",
+    "merchant": "Nykaa E",
+    "amount": 2946.16,
+    "transaction_type": "debit",
+    "category": "shopping_online",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-04",
+    "merchant": "Reliance Trends",
+    "amount": 1156.0,
+    "transaction_type": "debit",
+    "category": "shopping_offline",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-05",
+    "merchant": "Spotify",
+    "amount": 3181.0,
+    "transaction_type": "debit",
+    "category": "entertainment",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-05",
+    "merchant": "AIRTEL Postpaid",
+    "amount": 659.0,
+    "transaction_type": "debit",
+    "category": "airtel_recharge",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-05",
+    "merchant": "Bescom",
+    "amount": 2086.0,
+    "transaction_type": "debit",
+    "category": "utility_bills",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-05",
+    "merchant": "Msedcl",
+    "amount": 1127.0,
+    "transaction_type": "debit",
+    "category": "utility_bills",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-05",
+    "merchant": "BHARTI AIRTEL",
+    "amount": 3229.22,
+    "transaction_type": "debit",
+    "category": "airtel_recharge",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-05",
+    "merchant": "Bookmyshow PVR",
+    "amount": 2897.73,
+    "transaction_type": "debit",
+    "category": "entertainment",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-05",
+    "merchant": "Bbnow",
+    "amount": 3402.98,
+    "transaction_type": "debit",
+    "category": "grocery",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-05",
+    "merchant": "Ajio Reliance",
+    "amount": 1574.42,
+    "transaction_type": "debit",
+    "category": "shopping_online",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-06",
+    "merchant": "Vit University",
+    "amount": 3723.36,
+    "transaction_type": "debit",
+    "category": "education",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-06",
+    "merchant": "Netflix",
+    "amount": 542.0,
+    "transaction_type": "debit",
+    "category": "entertainment",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-06",
+    "merchant": "Swiggy Food",
+    "amount": 927.0,
+    "transaction_type": "debit",
+    "category": "food_delivery",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-06",
+    "merchant": "HPCL-COCO",
+    "amount": 2472.84,
+    "transaction_type": "debit",
+    "category": "fuel",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-06",
+    "merchant": "1MG Technologies",
+    "amount": 692.0,
+    "transaction_type": "debit",
+    "category": "healthcare",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-07",
+    "merchant": "Flipkart",
+    "amount": 437.92,
+    "transaction_type": "debit",
+    "category": "shopping_online",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-07",
+    "merchant": "Mahanagar Gas",
+    "amount": 2232.96,
+    "transaction_type": "debit",
+    "category": "utility_bills",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-07",
+    "merchant": "Shoppers Stop",
+    "amount": 3448.64,
+    "transaction_type": "debit",
+    "category": "shopping_offline",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-07",
+    "merchant": "BHARTI AIRTEL",
+    "amount": 1362.0,
+    "transaction_type": "debit",
+    "category": "airtel_recharge",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-07",
+    "merchant": "Nobroker Rent",
+    "amount": 19475.28,
+    "transaction_type": "debit",
+    "category": "rent",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-07",
+    "merchant": "ICICI LOMBARD Motor Insurance",
+    "amount": 3105.49,
+    "transaction_type": "debit",
+    "category": "insurance",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-08",
+    "merchant": "Lifestyle",
+    "amount": 1996.0,
+    "transaction_type": "debit",
+    "category": "shopping_offline",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-08",
+    "merchant": "Coursera Course",
+    "amount": 2668.0,
+    "transaction_type": "debit",
+    "category": "education",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-08",
+    "merchant": "Policybazaar Insurance",
+    "amount": 9808.0,
+    "transaction_type": "debit",
+    "category": "insurance",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-08",
+    "merchant": "OYO",
+    "amount": 3663.0,
+    "transaction_type": "debit",
+    "category": "travel_hotels",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-08",
+    "merchant": "Coursera Course",
+    "amount": 2209.0,
+    "transaction_type": "debit",
+    "category": "education",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-09",
+    "merchant": "AIRTEL Payments Bank",
+    "amount": 1554.0,
+    "transaction_type": "debit",
+    "category": "airtel_recharge",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-09",
+    "merchant": "Tata Power",
+    "amount": 1819.57,
+    "transaction_type": "debit",
+    "category": "utility_bills",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-09",
+    "merchant": "OYO",
+    "amount": 6828.04,
+    "transaction_type": "debit",
+    "category": "travel_hotels",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-09",
+    "merchant": "Nobroker Rent",
+    "amount": 15897.53,
+    "transaction_type": "debit",
+    "category": "rent",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-09",
+    "merchant": "1MG Technologies",
+    "amount": 2639.78,
+    "transaction_type": "debit",
+    "category": "healthcare",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-09",
+    "merchant": "1MG Technologies",
+    "amount": 483.0,
+    "transaction_type": "debit",
+    "category": "healthcare",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-09",
+    "merchant": "Netflix",
+    "amount": 3392.0,
+    "transaction_type": "debit",
+    "category": "entertainment",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-09",
+    "merchant": "Bigbasket",
+    "amount": 2798.0,
+    "transaction_type": "debit",
+    "category": "grocery",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-09",
+    "merchant": "Blinkit",
+    "amount": 2385.64,
+    "transaction_type": "debit",
+    "category": "grocery",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-10",
+    "merchant": "Spotify",
+    "amount": 3434.0,
+    "transaction_type": "debit",
+    "category": "entertainment",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-10",
+    "merchant": "1MG Technologies",
+    "amount": 3042.14,
+    "transaction_type": "debit",
+    "category": "healthcare",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-10",
+    "merchant": "Practo Health",
+    "amount": 1172.0,
+    "transaction_type": "debit",
+    "category": "healthcare",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-11",
+    "merchant": "Swiggy Food",
+    "amount": 1473.0,
+    "transaction_type": "debit",
+    "category": "food_delivery",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-11",
+    "merchant": "Swiggy Instamart",
+    "amount": 1767.0,
+    "transaction_type": "debit",
+    "category": "grocery",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-11",
+    "merchant": "Apollo Pharmacies",
+    "amount": 1886.47,
+    "transaction_type": "debit",
+    "category": "healthcare",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-11",
+    "merchant": "Reliance Trends",
+    "amount": 1085.0,
+    "transaction_type": "debit",
+    "category": "shopping_offline",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-11",
+    "merchant": "BPCL Service Stn",
+    "amount": 709.73,
+    "transaction_type": "debit",
+    "category": "fuel",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-11",
+    "merchant": "Coursera Course",
+    "amount": 3698.77,
+    "transaction_type": "debit",
+    "category": "education",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-11",
+    "merchant": "Bigbasket",
+    "amount": 2740.17,
+    "transaction_type": "debit",
+    "category": "grocery",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-11",
+    "merchant": "AIR INDIA",
+    "amount": 4435.52,
+    "transaction_type": "debit",
+    "category": "travel_flights",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-12",
+    "merchant": "Eatsure",
+    "amount": 1342.0,
+    "transaction_type": "debit",
+    "category": "food_delivery",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-12",
+    "merchant": "Flipkart",
+    "amount": 2954.0,
+    "transaction_type": "debit",
+    "category": "shopping_online",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-12",
+    "merchant": "HPCL-COCO",
+    "amount": 1290.2,
+    "transaction_type": "debit",
+    "category": "fuel",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-12",
+    "merchant": "Reliance Trends",
+    "amount": 1466.0,
+    "transaction_type": "debit",
+    "category": "shopping_offline",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-13",
+    "merchant": "Practo Health",
+    "amount": 1312.47,
+    "transaction_type": "debit",
+    "category": "healthcare",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-13",
+    "merchant": "CRED Rentpay House Rent",
+    "amount": 19965.0,
+    "transaction_type": "debit",
+    "category": "rent",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-13",
+    "merchant": "AIRTEL Postpaid",
+    "amount": 1081.0,
+    "transaction_type": "debit",
+    "category": "airtel_recharge",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-13",
+    "merchant": "HPCL-COCO",
+    "amount": 758.84,
+    "transaction_type": "debit",
+    "category": "fuel",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-13",
+    "merchant": "Msedcl",
+    "amount": 1358.0,
+    "transaction_type": "debit",
+    "category": "utility_bills",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-13",
+    "merchant": "Flipkart",
+    "amount": 1154.0,
+    "transaction_type": "debit",
+    "category": "shopping_online",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-13",
+    "merchant": "Nobroker Rent",
+    "amount": 19514.0,
+    "transaction_type": "debit",
+    "category": "rent",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-13",
+    "merchant": "Bigbasket",
+    "amount": 3220.0,
+    "transaction_type": "debit",
+    "category": "grocery",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-13",
+    "merchant": "AIR INDIA",
+    "amount": 4698.0,
+    "transaction_type": "debit",
+    "category": "travel_flights",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-14",
+    "merchant": "Zepto",
+    "amount": 1345.0,
+    "transaction_type": "debit",
+    "category": "grocery",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-14",
+    "merchant": "MAKEMYTRIP Flights",
+    "amount": 6541.0,
+    "transaction_type": "debit",
+    "category": "travel_flights",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-14",
+    "merchant": "Vit University",
+    "amount": 3289.0,
+    "transaction_type": "debit",
+    "category": "education",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-15",
+    "merchant": "PVR Inox",
+    "amount": 3243.53,
+    "transaction_type": "debit",
+    "category": "entertainment",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-15",
+    "merchant": "Vit University",
+    "amount": 7590.64,
+    "transaction_type": "debit",
+    "category": "education",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-15",
+    "merchant": "GOIBIBO",
+    "amount": 5256.0,
+    "transaction_type": "debit",
+    "category": "travel_hotels",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-15",
+    "merchant": "AIRTEL Postpaid",
+    "amount": 2401.73,
+    "transaction_type": "debit",
+    "category": "airtel_recharge",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-15",
+    "merchant": "Swiggy Food",
+    "amount": 677.74,
+    "transaction_type": "debit",
+    "category": "food_delivery",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-15",
+    "merchant": "Mahanagar Gas",
+    "amount": 2441.0,
+    "transaction_type": "debit",
+    "category": "utility_bills",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-15",
+    "merchant": "INDIAN OIL Fuel Station",
+    "amount": 1255.0,
+    "transaction_type": "debit",
+    "category": "fuel",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-16",
+    "merchant": "CRED Rentpay House Rent",
+    "amount": 20891.24,
+    "transaction_type": "debit",
+    "category": "rent",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-16",
+    "merchant": "IRCTC",
+    "amount": 3058.0,
+    "transaction_type": "debit",
+    "category": "travel_flights",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-16",
+    "merchant": "Swiggy Food",
+    "amount": 3466.0,
+    "transaction_type": "debit",
+    "category": "food_delivery",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-16",
+    "merchant": "Swiggy Instamart",
+    "amount": 3281.0,
+    "transaction_type": "debit",
+    "category": "grocery",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-16",
+    "merchant": "1MG Technologies",
+    "amount": 1113.0,
+    "transaction_type": "debit",
+    "category": "healthcare",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-16",
+    "merchant": "AIR INDIA",
+    "amount": 7107.66,
+    "transaction_type": "debit",
+    "category": "travel_flights",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-16",
+    "merchant": "Myntra",
+    "amount": 395.01,
+    "transaction_type": "debit",
+    "category": "shopping_online",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-16",
+    "merchant": "Flipkart",
+    "amount": 2481.01,
+    "transaction_type": "debit",
+    "category": "shopping_online",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-17",
+    "merchant": "Bescom",
+    "amount": 1453.0,
+    "transaction_type": "debit",
+    "category": "utility_bills",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-17",
+    "merchant": "Udemy",
+    "amount": 4778.0,
+    "transaction_type": "debit",
+    "category": "education",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-17",
+    "merchant": "Apollo Pharmacies",
+    "amount": 514.78,
+    "transaction_type": "debit",
+    "category": "healthcare",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-18",
+    "merchant": "Nobroker Rent",
+    "amount": 16331.75,
+    "transaction_type": "debit",
+    "category": "rent",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-18",
+    "merchant": "Shoppers Stop",
+    "amount": 2063.0,
+    "transaction_type": "debit",
+    "category": "shopping_offline",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-18",
+    "merchant": "Policybazaar Insurance",
+    "amount": 3565.0,
+    "transaction_type": "debit",
+    "category": "insurance",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-18",
+    "merchant": "Udemy",
+    "amount": 4768.0,
+    "transaction_type": "debit",
+    "category": "education",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-18",
+    "merchant": "Flipkart",
+    "amount": 982.46,
+    "transaction_type": "debit",
+    "category": "shopping_online",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-18",
+    "merchant": "Coursera Course",
+    "amount": 1757.0,
+    "transaction_type": "debit",
+    "category": "education",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-18",
+    "merchant": "IRCTC",
+    "amount": 8976.43,
+    "transaction_type": "debit",
+    "category": "travel_flights",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-18",
+    "merchant": "Zepto",
+    "amount": 248.09,
+    "transaction_type": "debit",
+    "category": "grocery",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-19",
+    "merchant": "HPCL-COCO",
+    "amount": 624.0,
+    "transaction_type": "debit",
+    "category": "fuel",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-19",
+    "merchant": "Bookmyshow PVR",
+    "amount": 2290.36,
+    "transaction_type": "debit",
+    "category": "entertainment",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-19",
+    "merchant": "AIR INDIA",
+    "amount": 5913.78,
+    "transaction_type": "debit",
+    "category": "travel_flights",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-19",
+    "merchant": "1MG Technologies",
+    "amount": 2903.45,
+    "transaction_type": "debit",
+    "category": "healthcare",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-19",
+    "merchant": "MARRIOTT Hotel",
+    "amount": 6789.0,
+    "transaction_type": "debit",
+    "category": "travel_hotels",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-19",
+    "merchant": "Eatsure",
+    "amount": 1947.67,
+    "transaction_type": "debit",
+    "category": "food_delivery",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-19",
+    "merchant": "BHARTI AIRTEL",
+    "amount": 3008.0,
+    "transaction_type": "debit",
+    "category": "airtel_recharge",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-19",
+    "merchant": "Coursera Course",
+    "amount": 7303.0,
+    "transaction_type": "debit",
+    "category": "education",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-19",
+    "merchant": "ZOMATO",
+    "amount": 192.0,
+    "transaction_type": "debit",
+    "category": "food_delivery",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-19",
+    "merchant": "Reliance Trends",
+    "amount": 624.83,
+    "transaction_type": "debit",
+    "category": "shopping_offline",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-19",
+    "merchant": "AMAZON",
+    "amount": 2312.44,
+    "transaction_type": "debit",
+    "category": "shopping_online",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-20",
+    "merchant": "Vit University",
+    "amount": 2400.72,
+    "transaction_type": "debit",
+    "category": "education",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-21",
+    "merchant": "AIR INDIA",
+    "amount": 8710.54,
+    "transaction_type": "debit",
+    "category": "travel_flights",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-21",
+    "merchant": "GOIBIBO",
+    "amount": 6098.0,
+    "transaction_type": "debit",
+    "category": "travel_hotels",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-21",
+    "merchant": "HDFC LIFE INSURANCE Premium",
+    "amount": 10918.69,
+    "transaction_type": "debit",
+    "category": "insurance",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-21",
+    "merchant": "Bigbasket",
+    "amount": 981.0,
+    "transaction_type": "debit",
+    "category": "grocery",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-21",
+    "merchant": "AIRTEL Postpaid",
+    "amount": 2430.22,
+    "transaction_type": "debit",
+    "category": "airtel_recharge",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-21",
+    "merchant": "Bescom",
+    "amount": 1785.48,
+    "transaction_type": "debit",
+    "category": "utility_bills",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-21",
+    "merchant": "Practo Health",
+    "amount": 814.0,
+    "transaction_type": "debit",
+    "category": "healthcare",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-21",
+    "merchant": "Bigbasket",
+    "amount": 1157.8,
+    "transaction_type": "debit",
+    "category": "grocery",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-21",
+    "merchant": "Bescom",
+    "amount": 1636.41,
+    "transaction_type": "debit",
+    "category": "utility_bills",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-21",
+    "merchant": "INDIGO",
+    "amount": 5933.65,
+    "transaction_type": "debit",
+    "category": "travel_flights",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-21",
+    "merchant": "Nobroker Rent",
+    "amount": 23837.74,
+    "transaction_type": "debit",
+    "category": "rent",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-22",
+    "merchant": "Lifestyle",
+    "amount": 353.24,
+    "transaction_type": "debit",
+    "category": "shopping_offline",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-22",
+    "merchant": "HPCL-COCO",
+    "amount": 2894.0,
+    "transaction_type": "debit",
+    "category": "fuel",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-22",
+    "merchant": "OYO",
+    "amount": 3202.0,
+    "transaction_type": "debit",
+    "category": "travel_hotels",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-22",
+    "merchant": "Mahanagar Gas",
+    "amount": 1910.18,
+    "transaction_type": "debit",
+    "category": "utility_bills",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-22",
+    "merchant": "INDIGO",
+    "amount": 6392.06,
+    "transaction_type": "debit",
+    "category": "travel_flights",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-23",
+    "merchant": "OYO",
+    "amount": 5174.66,
+    "transaction_type": "debit",
+    "category": "travel_hotels",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-23",
+    "merchant": "BHARTI AIRTEL",
+    "amount": 3086.39,
+    "transaction_type": "debit",
+    "category": "airtel_recharge",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-23",
+    "merchant": "Practo Health",
+    "amount": 2362.0,
+    "transaction_type": "debit",
+    "category": "healthcare",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-23",
+    "merchant": "INDIAN OIL Fuel Station",
+    "amount": 2985.18,
+    "transaction_type": "debit",
+    "category": "fuel",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-23",
+    "merchant": "Blinkit",
+    "amount": 3441.18,
+    "transaction_type": "debit",
+    "category": "grocery",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-23",
+    "merchant": "Vit University",
+    "amount": 7214.09,
+    "transaction_type": "debit",
+    "category": "education",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-23",
+    "merchant": "MARRIOTT Hotel",
+    "amount": 3541.23,
+    "transaction_type": "debit",
+    "category": "travel_hotels",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-24",
+    "merchant": "INDIGO",
+    "amount": 5611.0,
+    "transaction_type": "debit",
+    "category": "travel_flights",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-24",
+    "merchant": "Swiggy Food",
+    "amount": 1603.0,
+    "transaction_type": "debit",
+    "category": "food_delivery",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-24",
+    "merchant": "GOIBIBO",
+    "amount": 6539.67,
+    "transaction_type": "debit",
+    "category": "travel_hotels",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-24",
+    "merchant": "Bescom",
+    "amount": 959.0,
+    "transaction_type": "debit",
+    "category": "utility_bills",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-24",
+    "merchant": "ICICI LOMBARD Motor Insurance",
+    "amount": 7265.0,
+    "transaction_type": "debit",
+    "category": "insurance",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-24",
+    "merchant": "Nobroker Rent",
+    "amount": 19127.82,
+    "transaction_type": "debit",
+    "category": "rent",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-25",
+    "merchant": "AIR INDIA",
+    "amount": 3341.0,
+    "transaction_type": "debit",
+    "category": "travel_flights",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-25",
+    "merchant": "Swiggy Food",
+    "amount": 2189.0,
+    "transaction_type": "debit",
+    "category": "food_delivery",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-25",
+    "merchant": "Shoppers Stop",
+    "amount": 1851.0,
+    "transaction_type": "debit",
+    "category": "shopping_offline",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-25",
+    "merchant": "ZOMATO",
+    "amount": 2896.25,
+    "transaction_type": "debit",
+    "category": "food_delivery",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-25",
+    "merchant": "Tata Power",
+    "amount": 1626.0,
+    "transaction_type": "debit",
+    "category": "utility_bills",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-26",
+    "merchant": "Coursera Course",
+    "amount": 7902.0,
+    "transaction_type": "debit",
+    "category": "education",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-26",
+    "merchant": "IRCTC",
+    "amount": 5570.0,
+    "transaction_type": "debit",
+    "category": "travel_flights",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-26",
+    "merchant": "Policybazaar Insurance",
+    "amount": 6562.55,
+    "transaction_type": "debit",
+    "category": "insurance",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-26",
+    "merchant": "FLIPKART",
+    "amount": 3482.0,
+    "transaction_type": "debit",
+    "category": "shopping_online",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-26",
+    "merchant": "UDEMY ONLINE COURSES",
+    "amount": 5601.0,
+    "transaction_type": "debit",
+    "category": "education",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-26",
+    "merchant": "MAHANAGAR GAS LTD",
+    "amount": 1920.93,
+    "transaction_type": "debit",
+    "category": "utility_bills",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-27",
+    "merchant": "BHARTI AIRTEL",
+    "amount": 465.0,
+    "transaction_type": "debit",
+    "category": "airtel_recharge",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-27",
+    "merchant": "LIFESTYLE INTL",
+    "amount": 3314.68,
+    "transaction_type": "debit",
+    "category": "shopping_offline",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-27",
+    "merchant": "HPCL-COCO KORAMANGALA",
+    "amount": 2350.0,
+    "transaction_type": "debit",
+    "category": "fuel",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-27",
+    "merchant": "ICICI LOMBARD MOTOR INSURANCE",
+    "amount": 9560.0,
+    "transaction_type": "debit",
+    "category": "insurance",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-27",
+    "merchant": "NOBROKER RENT PAYMENT",
+    "amount": 22150.11,
+    "transaction_type": "debit",
+    "category": "rent",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-27",
+    "merchant": "AIRTEL POSTPAID BILL PAYMENT",
+    "amount": 3393.16,
+    "transaction_type": "debit",
+    "category": "airtel_recharge",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-28",
+    "merchant": "AIRTEL POSTPAID BILL PAYMENT",
+    "amount": 1082.71,
+    "transaction_type": "debit",
+    "category": "airtel_recharge",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-28",
+    "merchant": "VIT UNIVERSITY FEE PAYMENT",
+    "amount": 7687.26,
+    "transaction_type": "debit",
+    "category": "education",
+    "month": "2026-07"
+  },
+  {
+    "date": "2026-07-28",
+    "merchant": "LIFESTYLE INTL",
+    "amount": 1670.14,
+    "transaction_type": "debit",
+    "category": "shopping_offline",
+    "month": "2026-07"
+  }
+]
