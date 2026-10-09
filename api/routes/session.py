@@ -348,16 +348,21 @@ async def start_session(
             detail=f"pdf_files ({len(pdf_files)}) and month_labels ({len(month_labels)}) must have equal length.",
         )
 
-    # Read all PDF bytes eagerly (UploadFile objects close after request)
-    pdf_bytes_map: dict[str, list[tuple[bytes, str]]] = {cid: [] for cid in card_ids}
+    # The frontend sends one card_id per PDF, so several months of the same card
+    # repeat its id. Collapse repeats into one card, keeping first-seen order.
+    unique_card_ids = list(dict.fromkeys(card_ids))
+    pdf_bytes_map: dict[str, list[tuple[bytes, str]]] = {cid: [] for cid in unique_card_ids}
 
-    # Distribute PDFs to cards. Simple strategy: one PDF per card (in order).
-    # If more PDFs than cards, assign excess to the last card.
+    # Read all PDF bytes eagerly (UploadFile objects close after request)
     pdf_contents = await _read_pdf_uploads(pdf_files)
     for i, (pdf_data, month) in enumerate(zip(pdf_contents, month_labels, strict=True)):
-        card_idx = min(i, len(card_ids) - 1)
-        card_id = card_ids[card_idx]
+        if len(card_ids) == len(pdf_contents):
+            card_id = card_ids[i]  # parallel to pdf_files
+        else:
+            # Fewer ids than PDFs: one PDF per card in order, extras to the last card
+            card_id = card_ids[min(i, len(card_ids) - 1)]
         pdf_bytes_map[card_id].append((pdf_data, month))
+    card_ids = unique_card_ids
 
     # Look up card names from DB (best-effort)
     card_names: dict[str, str] = {}

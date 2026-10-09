@@ -761,3 +761,34 @@ if __name__ == "__main__":
 
     if FAIL > 0:
         sys.exit(1)
+
+
+def test_session_start_groups_months_of_the_same_card():
+    """The UI sends one card_id per PDF; four months of one card must be one card."""
+    captured = {}
+
+    async def _capture(state):
+        captured["cards"] = state["cards"]
+        state.update(MOCK_STATE_PARSING)
+        return state
+
+    client, patches = _make_client()
+    extra = mock.patch("api.routes.session._run_graph", side_effect=_capture)
+    extra.start()
+    try:
+        months = ["2024-01", "2024-02", "2024-03", "2024-04", "2024-01"]
+        ids = ["hdfc-millennia"] * 4 + ["axis-airtel"]
+        r = client.post(
+            "/session/start",
+            data={"card_ids": ids, "month_labels": months},
+            files=[_make_pdf_file() for _ in months],
+        )
+        assert r.status_code == 201, r.text
+        cards = captured["cards"]
+        assert [c["card_id"] for c in cards] == ["hdfc-millennia", "axis-airtel"]
+        assert cards[0]["months"] == months[:4]
+        assert len(cards[0]["pdf_bytes_list"]) == 4
+        assert cards[1]["months"] == ["2024-01"]
+    finally:
+        extra.stop()
+        _stop_patches(patches)
