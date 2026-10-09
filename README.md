@@ -1,5 +1,7 @@
 # CardSense AI
 
+[![CI](https://github.com/ypg199/cardsense-ai/actions/workflows/ci.yml/badge.svg)](https://github.com/ypg199/cardsense-ai/actions/workflows/ci.yml)
+
 > Upload your Indian credit card statements. Score your benefit utilization. Find a better card.
 
 **Stack:** Python 3.12 · FastAPI · LangGraph · Gemini Flash/Pro · MongoDB Atlas · React 18 (Vite) · Playwright · Docker Compose
@@ -29,17 +31,22 @@ docker compose up --build
 
 | Service | URL |
 |---------|-----|
+| Frontend (nginx + React build) | http://localhost:3000 |
 | API (FastAPI) | http://localhost:8000 |
-| Frontend (React) | http://localhost:3000 |
 | API Docs (Swagger) | http://localhost:8000/docs |
+
+For hot reload while developing (uvicorn `--reload` + Vite dev server):
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
+```
 
 ### 4. Seed test data
 
-The `crawler` service seeds 5 test cards automatically on startup.
-To re-run manually:
+Load the 5 sample cards into MongoDB:
 
 ```bash
-docker compose run --rm api python -m crawler.run --seed-only
+docker compose exec api python -m crawler.run --seed-only
 ```
 
 ### 5. Create MongoDB Atlas Vector Search index

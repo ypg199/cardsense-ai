@@ -1,16 +1,26 @@
-FROM node:20-alpine
-
+# ── deps ─────────────────────────────────────────────────────────────────────
+FROM node:20-alpine AS deps
 WORKDIR /app
+COPY frontend/package.json frontend/package-lock.json ./
+RUN npm ci
 
-# ── Install dependencies ──────────────────────────────────────────────────────
-COPY frontend/package*.json ./
-RUN npm install
-
-# ── Copy source ───────────────────────────────────────────────────────────────
+# ── dev: Vite dev server with hot reload (docker-compose.dev.yml) ────────────
+FROM deps AS dev
 COPY frontend/ .
-
-# ── Expose Vite dev port ──────────────────────────────────────────────────────
 EXPOSE 3000
-
-# ── Start Vite dev server (--host makes it accessible outside the container) ──
 CMD ["npm", "run", "dev", "--", "--host"]
+
+# ── build: static production bundle ──────────────────────────────────────────
+FROM deps AS build
+ARG VITE_API_URL=""
+ENV VITE_API_URL=${VITE_API_URL}
+COPY frontend/ .
+RUN npm run build
+
+# ── prod: nginx serving the bundle ───────────────────────────────────────────
+FROM nginx:1.27-alpine AS prod
+# Where nginx forwards /session, /cards, /crawl and /health (envsubst'd at start)
+ENV API_UPSTREAM=http://api:8000
+COPY docker/nginx.conf.template /etc/nginx/templates/default.conf.template
+COPY --from=build /app/dist /usr/share/nginx/html
+EXPOSE 80
