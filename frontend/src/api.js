@@ -30,6 +30,8 @@ export const startSession = (formData) => request('POST', '/session/start', form
 export const submitPassword = (sessionId, payload) => request('POST', `/session/${sessionId}/password`, payload)
 export const submitAnswer = (sessionId, payload) => request('POST', `/session/${sessionId}/answer`, payload)
 export const getSessionStatus = (sessionId) => request('GET', `/session/${sessionId}/status`)
+export const getSpendSummary = (sessionId, cardId) =>
+  request('GET', `/session/${sessionId}/spend${cardId ? `?card_id=${encodeURIComponent(cardId)}` : ''}`)
 export const addCard = (sessionId, formData) => request('POST', `/session/${sessionId}/add_card`, formData, true)
 
 // ── Crawl (admin) ─────────────────────────────────────────────────────────────

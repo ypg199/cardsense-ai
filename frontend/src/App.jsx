@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import UploadPage from './pages/UploadPage.jsx'
 import UtilizationPage from './pages/UtilizationPage.jsx'
 import ResultsPage from './pages/ResultsPage.jsx'
+import SpendAnalyserPage from './pages/SpendAnalyserPage.jsx'
 
 const globalStyles = `
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -117,6 +118,7 @@ export default function App() {
           <Route path="/" element={<UploadPage />} />
           <Route path="/quiz/:sessionId" element={<UtilizationPage />} />
           <Route path="/results/:sessionId" element={<ResultsPage />} />
+          <Route path="/analyser/:sessionId" element={<SpendAnalyserPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </BrowserRouter>
