@@ -1,0 +1,125 @@
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import UploadPage from './pages/UploadPage.jsx'
+import UtilizationPage from './pages/UtilizationPage.jsx'
+import ResultsPage from './pages/ResultsPage.jsx'
+
+const globalStyles = `
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --navy-950: #06091a;
+    --navy-900: #0b1021;
+    --navy-800: #111827;
+    --navy-700: #1a2235;
+    --navy-600: #253048;
+    --navy-500: #334466;
+    --slate-400: #94a3b8;
+    --slate-300: #cbd5e1;
+    --slate-200: #e2e8f0;
+    --white: #f8fafc;
+
+    --amber-500: #f59e0b;
+    --amber-400: #fbbf24;
+    --amber-300: #fcd34d;
+    --green-500: #22c55e;
+    --green-400: #4ade80;
+    --red-500: #ef4444;
+    --red-400: #f87171;
+    --orange-500: #f97316;
+    --orange-400: #fb923c;
+    --blue-400: #60a5fa;
+
+    --font-display: 'DM Serif Display', Georgia, serif;
+    --font-sans: 'DM Sans', system-ui, sans-serif;
+    --font-mono: 'DM Mono', 'Courier New', monospace;
+
+    --radius-sm: 6px;
+    --radius-md: 10px;
+    --radius-lg: 16px;
+    --radius-xl: 24px;
+
+    --shadow-glow-amber: 0 0 20px rgba(245,158,11,0.15);
+    --shadow-glow-green: 0 0 20px rgba(34,197,94,0.15);
+    --transition: 220ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  html, body { height: 100%; }
+
+  body {
+    background: var(--navy-950);
+    color: var(--white);
+    font-family: var(--font-sans);
+    font-size: 15px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+
+  /* Subtle grid texture overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  #root { position: relative; z-index: 1; min-height: 100vh; }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: var(--navy-900); }
+  ::-webkit-scrollbar-thumb { background: var(--navy-600); border-radius: 3px; }
+
+  /* Shared utilities */
+  .mono { font-family: var(--font-mono); }
+  .amount {
+    font-family: var(--font-mono);
+    font-weight: 500;
+    letter-spacing: -0.02em;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+  @keyframes shimmer {
+    0%   { background-position: -200% center; }
+    100% { background-position: 200% center; }
+  }
+  @keyframes pulse-ring {
+    0%   { transform: scale(1);   opacity: 0.6; }
+    100% { transform: scale(1.5); opacity: 0; }
+  }
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateX(24px); }
+    to   { opacity: 1; transform: translateX(0); }
+  }
+`
+
+export default function App() {
+  return (
+    <>
+      <style>{globalStyles}</style>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<UploadPage />} />
+          <Route path="/quiz/:sessionId" element={<UtilizationPage />} />
+          <Route path="/results/:sessionId" element={<ResultsPage />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </BrowserRouter>
+    </>
+  )
+}

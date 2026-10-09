@@ -1,0 +1,16 @@
+FROM node:20-alpine
+
+WORKDIR /app
+
+# ── Install dependencies ──────────────────────────────────────────────────────
+COPY frontend/package*.json ./
+RUN npm install
+
+# ── Copy source ───────────────────────────────────────────────────────────────
+COPY frontend/ .
+
+# ── Expose Vite dev port ──────────────────────────────────────────────────────
+EXPOSE 3000
+
+# ── Start Vite dev server (--host makes it accessible outside the container) ──
+CMD ["npm", "run", "dev", "--", "--host"]

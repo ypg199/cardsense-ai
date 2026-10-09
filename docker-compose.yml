@@ -1,0 +1,72 @@
+version: "3.10"
+
+# ─────────────────────────────────────────────────────────────────────────────
+# CardSense AI — Docker Compose
+#
+# Services:
+#   api      — FastAPI on port 8000
+#   crawler  — One-shot card crawler (runs once on startup, then exits)
+#   frontend — React 18 + Vite dev server on port 3000
+#
+# Usage:
+#   cp .env.example .env && fill in MONGODB_URI and GEMINI_API_KEY
+#   docker compose up --build
+#
+# The crawler service runs python -m crawler.run once to populate the
+# credit_cards collection, then exits. The API and frontend stay running.
+# ─────────────────────────────────────────────────────────────────────────────
+
+x-api-base: &api-base
+  build:
+    context: .
+    dockerfile: docker/Dockerfile.api
+  env_file: .env
+  volumes:
+    - .:/app
+  restart: unless-stopped
+
+services:
+
+  # ── FastAPI application ─────────────────────────────────────────────────────
+  api:
+    <<: *api-base
+    container_name: cardsense_api
+    command: uvicorn api.main:app --host 0.0.0.0 --port 8000 --reload
+    ports:
+      - "8000:8000"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+
+  # ── One-shot crawler ─────────────────────────────────────────────────────────
+  # Runs once on startup to populate credit_cards collection, then exits.
+  # Re-run manually any time with: docker compose run --rm crawler
+  # crawler:
+  #   <<: *api-base
+  #   container_name: cardsense_crawler
+  #   command: python -m crawler.run
+  #   restart: "no"           # exits after crawl completes — do not restart
+  #   depends_on:
+  #     api:
+  #       condition: service_healthy
+
+  # ── React 18 + Vite frontend ─────────────────────────────────────────────────
+  frontend:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.frontend
+    container_name: cardsense_frontend
+    ports:
+      - "3000:3000"
+    env_file: .env
+    environment:
+      - VITE_API_URL=http://localhost:8000
+    depends_on:
+      - api
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    restart: unless-stopped
