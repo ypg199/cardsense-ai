@@ -25,7 +25,7 @@ CardSense reads Indian credit card statement PDFs (including password-protected 
 - **Adaptive quiz.** Questions are generated from the card's reward rules and your detected spend. Anything already visible in the statement is confirmed automatically, so you only answer what the data can't tell.
 - **Utilization score.** A 0–100 score with a per-category breakdown of cashback earned versus missed.
 - **Card recommendations.** MongoDB Atlas Vector Search finds similar cards, a rule filter removes poor fits, and Gemini ranks the rest with a plain-language explanation and routing advice.
-- **Card data crawler.** A Playwright crawler collects card reward terms from bank sites, structures them with Gemini, and stores them with embeddings.
+- **Card data crawler.** A Playwright crawler discovers card pages on Axis, HDFC, ICICI and SBI sites, extracts reward terms with Gemini, validates them against the categories the statement parser uses, and stores them with embeddings. Unchanged pages are skipped.
 
 ## Screenshots
 
@@ -154,8 +154,11 @@ docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
 
 ```bash
 docker compose exec api python -m crawler.run --seed-only   # 5 sample cards
-docker compose exec api python -m crawler.run               # full crawl (needs GEMINI_API_KEY)
+docker compose exec api python -m crawler.run               # crawl Axis, HDFC, ICICI and SBI (needs GEMINI_API_KEY)
+docker compose exec api python -m crawler.run --sources axis hdfc   # selected banks only
 ```
+
+The crawler finds each bank's card pages from its listing page, skips pages that haven't changed since the last run, and only stores benefits whose category and rate pass validation. Re-running it is cheap.
 
 Then create a vector search index named `credit_cards_embedding_index` on `cardsense.credit_cards` in the Atlas UI:
 

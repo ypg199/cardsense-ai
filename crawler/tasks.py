@@ -20,6 +20,8 @@ from datetime import UTC, datetime
 
 logger = logging.getLogger(__name__)
 
+_running_tasks: set[asyncio.Task] = set()
+
 
 async def _do_crawl(
     job_id: str,
@@ -31,11 +33,12 @@ async def _do_crawl(
     updates the record on completion. Never raises — errors are logged.
     """
     from crawler.card_crawler import run_crawl_job
-    from crawler.sources import ALL_SOURCE_KEYS, DIRECT_BANK_URLS
+    from crawler.sources import BANK_SOURCE_KEYS
     from db.connection import get_db
 
-    crawl_sources = sources or ALL_SOURCE_KEYS
-    crawl_urls = direct_urls or DIRECT_BANK_URLS
+    # Nothing specified → crawl every bank (listing discovery + known pages)
+    crawl_sources = sources or ([] if direct_urls else BANK_SOURCE_KEYS)
+    crawl_urls = direct_urls or []
 
     db = get_db()
 
@@ -91,7 +94,10 @@ def run_crawl(
     """
     try:
         loop = asyncio.get_running_loop()
-        loop.create_task(_do_crawl(job_id, sources, direct_urls))
+        task = loop.create_task(_do_crawl(job_id, sources, direct_urls))
+        # Keep a reference so the task isn't garbage-collected mid-crawl
+        _running_tasks.add(task)
+        task.add_done_callback(_running_tasks.discard)
         logger.info("Crawl job %s scheduled as background task", job_id)
     except RuntimeError:
         asyncio.run(_do_crawl(job_id, sources, direct_urls))

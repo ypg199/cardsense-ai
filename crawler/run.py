@@ -67,10 +67,11 @@ async def main(
         return 0
 
     # ── 3. Determine what to crawl ────────────────────────────────────────────
-    from crawler.sources import ALL_SOURCE_KEYS, DIRECT_BANK_URLS
+    from crawler.sources import BANK_SOURCE_KEYS
 
-    crawl_sources = sources if sources is not None else ALL_SOURCE_KEYS
-    crawl_urls = direct_urls if direct_urls is not None else DIRECT_BANK_URLS
+    # Nothing specified → crawl every bank (listing discovery + known pages)
+    crawl_sources = sources or ([] if direct_urls else BANK_SOURCE_KEYS)
+    crawl_urls = direct_urls or []
 
     logger.info("Sources to crawl : %s", crawl_sources or "(none)")
     logger.info("Direct URLs      : %d URLs", len(crawl_urls))
@@ -132,7 +133,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--sources",
         nargs="*",
-        help="Source keys to crawl (default: all). E.g. --sources cardinsider bankbazaar",
+        help="Source keys to crawl (default: every bank). E.g. --sources axis hdfc, or an aggregator",
     )
     parser.add_argument(
         "--urls",
