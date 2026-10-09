@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { AlertIcon, EyeIcon, EyeOffIcon, LockIcon } from './Icons.jsx'
 
 const styles = `
 .modal-backdrop {
@@ -23,9 +24,9 @@ const styles = `
   box-shadow: 0 24px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(245,158,11,0.1);
 }
 .modal-icon {
-  font-size: 36px;
-  margin-bottom: 16px;
-  display: block;
+  width: 52px; height: 52px; border-radius: 14px; margin: 0 auto 16px;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(245,158,11,0.08); border: 1px solid rgba(245,158,11,0.2); color: var(--amber-400);
   text-align: center;
   animation: pulse-ring 1.5s ease-out infinite;
 }
@@ -86,6 +87,8 @@ const styles = `
   transition: color var(--transition);
 }
 .pw-toggle:hover { color: var(--white); }
+.pw-toggle:focus-visible { outline: 2px solid var(--amber-400); border-radius: 4px; }
+.error-msg { display: flex; align-items: center; gap: 6px; }
 .error-msg {
   font-size: 12px;
   color: var(--red-400);
@@ -129,9 +132,9 @@ export default function PasswordModal({ cardName, monthLabel, error, onSubmit, l
     <>
       <style>{styles}</style>
       <div className="modal-backdrop">
-        <div className="modal">
-          <span className="modal-icon">🔒</span>
-          <h2 className="modal-title">Password Protected PDF</h2>
+        <div className="modal" role="dialog" aria-modal="true" aria-labelledby="pw-title">
+          <span className="modal-icon"><LockIcon size={24} /></span>
+          <h2 className="modal-title" id="pw-title">This statement is locked</h2>
           <p className="modal-subtitle">Enter the password to unlock your statement</p>
           <span className="modal-card-label">{cardName}{monthLabel ? ` · ${monthLabel}` : ''}</span>
 
@@ -142,20 +145,22 @@ export default function PasswordModal({ cardName, monthLabel, error, onSubmit, l
                 type={show ? 'text' : 'password'}
                 className={`pw-input${error ? ' error' : ''}`}
                 placeholder="Enter PDF password"
+                aria-label="PDF password"
+                aria-invalid={!!error}
                 value={password}
                 onChange={e => setPassword(e.target.value)}
               />
-              <button type="button" className="pw-toggle" onClick={() => setShow(s => !s)}>
-                {show ? '🙈' : '👁'}
+              <button type="button" className="pw-toggle" aria-label={show ? 'Hide password' : 'Show password'} onClick={() => setShow(s => !s)}>
+                {show ? <EyeOffIcon size={18} /> : <EyeIcon size={18} />}
               </button>
             </div>
 
             {error && (
-              <div className="error-msg">⚠ {error}</div>
+              <div className="error-msg" role="alert"><AlertIcon size={14} /> {error}</div>
             )}
 
             <button className="modal-submit" type="submit" disabled={!password.trim() || loading}>
-              {loading ? 'Verifying…' : 'Unlock Statement'}
+              {loading ? 'Verifying…' : 'Unlock statement'}
             </button>
           </form>
         </div>

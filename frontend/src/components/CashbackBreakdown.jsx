@@ -1,3 +1,5 @@
+import { money, catLabel } from '../format.js'
+
 const styles = `
 .breakdown-wrap { display: flex; flex-direction: column; gap: 24px; }
 .breakdown-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
@@ -82,6 +84,23 @@ const styles = `
 .val-red   { color: var(--red-400); }
 .summary-divider { width: 1px; height: 40px; background: var(--navy-600); }
 
+/* Phones: each category becomes a two-line row instead of a cut-off table */
+@media (max-width: 560px) {
+  .summary-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 8px; padding: 14px; }
+  .summary-divider { display: none; }
+  .summary-val { font-size: 18px; }
+  .breakdown-table thead { display: none; }
+  .breakdown-table tr { display: grid; grid-template-columns: auto auto 1fr; align-items: center; column-gap: 14px; padding: 10px 10px; border-bottom: 1px solid rgba(255,255,255,0.04); }
+  .breakdown-table td { padding: 0; border: none; }
+  .breakdown-table td:first-child { grid-column: 1 / -1; margin-bottom: 6px; }
+  .breakdown-table td[data-label]::before {
+    content: attr(data-label) ' '; font-family: var(--font-sans); font-size: 10px; letter-spacing: 0.06em;
+    text-transform: uppercase; color: var(--slate-400); margin-right: 4px;
+  }
+  .bd-row.total .bd-util { visibility: hidden; }
+  .util-bar-bg { width: 48px; }
+}
+
 /* SVG bar chart */
 .trend-chart { width: 100%; overflow: hidden; }
 .trend-title {
@@ -92,21 +111,6 @@ const styles = `
   margin-bottom: 10px;
 }
 `
-
-function catLabel(cat) {
-  return cat.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
-}
-
-function catEmoji(cat) {
-  const map = {
-    food_delivery: '🍔', grocery: '🛒', shopping_online: '📦',
-    shopping_offline: '🏪', airtel_recharge: '📱', utility_bills: '💡',
-    travel_flights: '✈️', travel_hotels: '🏨', fuel: '⛽',
-    entertainment: '🎬', emi: '💳', insurance: '🛡',
-    healthcare: '🏥', education: '📚', rent: '🏠', others: '📝',
-  }
-  return map[cat] || '💳'
-}
 
 export default function CashbackBreakdown({ cashbackResult, multiMonth }) {
   if (!cashbackResult) return null
@@ -154,12 +158,12 @@ export default function CashbackBreakdown({ cashbackResult, multiMonth }) {
         <div className="summary-row">
           <div className="summary-item">
             <div className="summary-label">Earned</div>
-            <div className="summary-val val-green">₹{totalEarned.toFixed(0)}</div>
+            <div className="summary-val val-green">{money(totalEarned)}</div>
           </div>
           <div className="summary-divider" />
           <div className="summary-item">
             <div className="summary-label">Missed</div>
-            <div className="summary-val val-red">₹{totalMissed.toFixed(0)}</div>
+            <div className="summary-val val-red">{money(totalMissed)}</div>
           </div>
           <div className="summary-divider" />
           <div className="summary-item">
@@ -180,7 +184,7 @@ export default function CashbackBreakdown({ cashbackResult, multiMonth }) {
         {/* Multi-month bar chart */}
         {chartData.length > 1 && (
           <div>
-            <div className="trend-title">Monthly Cashback Trend</div>
+            <div className="trend-title">Monthly cashback trend</div>
             <svg className="trend-chart" viewBox={`0 0 ${chartW} ${chartH + 24}`} xmlns="http://www.w3.org/2000/svg">
               {chartData.map((m, i) => {
                 const x = 10 + i * ((chartW - 20) / chartData.length) + (((chartW - 20) / chartData.length) - barW) / 2
@@ -199,7 +203,7 @@ export default function CashbackBreakdown({ cashbackResult, multiMonth }) {
                     </text>
                     {barHeight > 16 && (
                       <text x={x + barW / 2} y={y + 12} textAnchor="middle" fontSize="8" fill="rgba(255,255,255,0.8)">
-                        ₹{m.earned.toFixed(0)}
+                        {money(m.earned)}
                       </text>
                     )}
                   </g>
@@ -226,12 +230,12 @@ export default function CashbackBreakdown({ cashbackResult, multiMonth }) {
                 <td>
                   <div className="bd-cat">
                     <span className="bd-dot" style={{ background: row.pct >= 80 ? 'var(--green-500)' : row.pct >= 30 ? 'var(--orange-500)' : 'var(--red-500)' }} />
-                    <span>{catEmoji(row.cat)} {catLabel(row.cat)}</span>
+                    <span>{catLabel(row.cat)}</span>
                   </div>
                 </td>
-                <td className="bd-num bd-earned">₹{row.earned.toFixed(0)}</td>
-                <td className="bd-num bd-missed">{row.missed > 0 ? `₹${row.missed.toFixed(0)}` : '—'}</td>
-                <td>
+                <td className="bd-num bd-earned" data-label="Earned">{money(row.earned)}</td>
+                <td className="bd-num bd-missed" data-label="Missed">{row.missed > 0 ? money(row.missed) : '—'}</td>
+                <td className="bd-util">
                   <div className="util-bar-wrap">
                     <div className="util-bar-bg">
                       <div
@@ -251,17 +255,17 @@ export default function CashbackBreakdown({ cashbackResult, multiMonth }) {
             ))}
             <tr className="bd-row total">
               <td style={{ color: 'var(--white)' }}>Total</td>
-              <td className="bd-num bd-earned">₹{totalEarned.toFixed(0)}</td>
-              <td className="bd-num bd-missed">₹{totalMissed.toFixed(0)}</td>
-              <td className="bd-num" style={{ textAlign: 'right', color: 'var(--slate-400)' }}>—</td>
+              <td className="bd-num bd-earned" data-label="Earned">{money(totalEarned)}</td>
+              <td className="bd-num bd-missed" data-label="Missed">{money(totalMissed)}</td>
+              <td className="bd-num bd-util" style={{ textAlign: 'right', color: 'var(--slate-400)' }}>—</td>
             </tr>
           </tbody>
         </table>
         </div>
 
         <p style={{ fontSize: 13, color: 'var(--slate-400)', textAlign: 'center' }}>
-          You earned <strong style={{ color: 'var(--green-400)', fontFamily: 'var(--font-mono)' }}>₹{totalEarned.toFixed(0)}</strong> out of a possible{' '}
-          <strong style={{ color: 'var(--white)', fontFamily: 'var(--font-mono)' }}>₹{(totalEarned + totalMissed).toFixed(0)}</strong> this period.
+          You earned <strong style={{ color: 'var(--green-400)', fontFamily: 'var(--font-mono)' }}>{money(totalEarned)}</strong> out of a possible{' '}
+          <strong style={{ color: 'var(--white)', fontFamily: 'var(--font-mono)' }}>{money(totalEarned + totalMissed)}</strong> this period.
         </p>
       </div>
     </>

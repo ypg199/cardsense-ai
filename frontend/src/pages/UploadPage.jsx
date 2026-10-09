@@ -6,6 +6,8 @@ import PasswordModal from '../components/PasswordModal.jsx'
 import Tabs from '../components/Tabs.jsx'
 import FullScreenLoader, { PARSE_STEPS } from '../components/FullScreenLoader.jsx'
 import { startSession, submitPassword } from '../api.js'
+import { Logo } from '../components/Brand.jsx'
+import { AlertIcon, ArrowRightIcon } from '../components/Icons.jsx'
 
 export const uploadCss = `
 .upload-page {
@@ -19,21 +21,18 @@ export const uploadCss = `
   text-align: center;
   animation: fadeUp 400ms ease both;
 }
-.logo-mark {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 13px;
-  font-weight: 600;
-  letter-spacing: 0.15em;
-  text-transform: uppercase;
-  color: var(--amber-400);
-  margin-bottom: 24px;
-  padding: 6px 16px;
-  border: 1px solid rgba(245,158,11,0.3);
-  border-radius: 20px;
-  background: rgba(245,158,11,0.06);
+.logo-mark { margin-bottom: 24px; }
+.submit-hint { text-align: center; font-size: 12px; color: var(--slate-400); margin-top: 10px; }
+.error-banner svg { flex-shrink: 0; }
+@media (max-width: 560px) {
+  .upload-page { padding: 0 16px 48px; }
+  .page-header { padding: 32px 0 28px; }
+  .section { padding: 20px 16px; border-radius: var(--radius-lg); }
+  .upload-card { padding: 14px; }
+  .upload-card-title { flex-wrap: wrap; }
+  .submit-btn { padding: 16px 24px; }
 }
+.upload-card-title .bank-label { white-space: nowrap; }
 .page-title {
   font-family: var(--font-display);
   font-size: clamp(32px, 6vw, 54px);
@@ -312,7 +311,7 @@ export default function UploadPage() {
 
       <div className="upload-page">
         <div className="page-header">
-          <div className="logo-mark">💳 CardSense AI</div>
+          <div className="logo-mark"><Logo pill /></div>
           <h1 className="page-title">
             Know exactly how well<br />
             you're using your <em>card</em>
@@ -368,8 +367,8 @@ export default function UploadPage() {
 
         {/* Errors */}
         {error && (
-          <div className="error-banner" style={{ marginBottom: 16 }}>
-            ⚠️ {error}
+          <div className="error-banner" role="alert" style={{ marginBottom: 16 }}>
+            <AlertIcon size={16} /> {error}
           </div>
         )}
 
@@ -377,8 +376,13 @@ export default function UploadPage() {
           <FullScreenLoader title="Analysing your statements" steps={PARSE_STEPS} stepEvery={8} showTime />
         )}
         <button className="submit-btn" disabled={!canSubmit || loading} onClick={handleSubmit}>
-          Analyse My Card{selected.length > 1 ? 's' : ''} →
+          Analyse my card{selected.length > 1 ? 's' : ''} <ArrowRightIcon size={18} />
         </button>
+        {!canSubmit && !loading && (
+          <p className="submit-hint">
+            {selected.length === 0 ? 'Pick your card above to get started.' : 'Add at least one PDF statement for each card.'}
+          </p>
+        )}
       </div>
     </>
   )

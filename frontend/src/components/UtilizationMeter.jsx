@@ -1,3 +1,4 @@
+import { money } from '../format.js'
 import { useEffect, useRef, useState } from 'react'
 
 const styles = `
@@ -162,7 +163,7 @@ export default function UtilizationMeter({ score = 0, earnedMonthly = 0 }) {
 
         {earnedMonthly > 0 && (
           <p className="meter-earned">
-            Earning <strong>₹{earnedMonthly.toFixed(0)}</strong>/month in cashback
+            Earning <strong>{money(earnedMonthly)}</strong>/month in cashback
           </p>
         )}
       </div>

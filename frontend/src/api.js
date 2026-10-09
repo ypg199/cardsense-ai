@@ -11,8 +11,13 @@ async function request(method, path, body, isFormData = false) {
     headers: isFormData ? {} : { 'Content-Type': 'application/json' },
     body: isFormData ? body : body ? JSON.stringify(body) : undefined,
   }
-  const res = await fetch(`${BASE}${path}`, opts)
-  const data = await res.json()
+  let res
+  try {
+    res = await fetch(`${BASE}${path}`, opts)
+  } catch {
+    throw Object.assign(new Error('Could not reach the CardSense server. Check your connection and try again.'), { status: 0 })
+  }
+  const data = await res.json().catch(() => ({}))
   if (!res.ok) throw Object.assign(new Error(data.detail || 'Request failed'), { status: res.status, data })
   return data
 }

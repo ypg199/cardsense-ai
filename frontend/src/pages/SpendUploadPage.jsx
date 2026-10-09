@@ -5,6 +5,8 @@ import PasswordModal from '../components/PasswordModal.jsx'
 import FullScreenLoader, { PARSE_STEPS } from '../components/FullScreenLoader.jsx'
 import { startSession, submitPassword } from '../api.js'
 import { ModeSwitch, uploadCss } from './UploadPage.jsx'
+import { Logo } from '../components/Brand.jsx'
+import { AlertIcon, ArrowRightIcon } from '../components/Icons.jsx'
 
 const css = `
 .spend-points { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin-bottom: 20px; }
@@ -103,7 +105,7 @@ export default function SpendUploadPage() {
 
       <div className="upload-page">
         <div className="page-header">
-          <div className="logo-mark">💳 CardSense AI</div>
+          <div className="logo-mark"><Logo pill /></div>
           <h1 className="page-title">
             See where your<br />
             money <em>goes</em>
@@ -130,11 +132,12 @@ export default function SpendUploadPage() {
           <PdfDropZone cardName="Your statements" files={files} onFilesChange={setFiles} />
         </div>
 
-        {error && <div className="error-banner" style={{ marginBottom: 16 }}>⚠️ {error}</div>}
+        {error && <div className="error-banner" role="alert" style={{ marginBottom: 16 }}><AlertIcon size={16} /> {error}</div>}
 
         <button className="submit-btn" disabled={files.length === 0 || loading} onClick={handleSubmit}>
-          Show my spending →
+          Show my spending <ArrowRightIcon size={18} />
         </button>
+        {files.length === 0 && !loading && <p className="submit-hint">Add at least one PDF statement to continue.</p>}
       </div>
     </>
   )

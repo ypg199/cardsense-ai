@@ -1,7 +1,9 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useParams, useLocation, useNavigate } from 'react-router-dom'
 import QuestionCard from '../components/QuestionCard.jsx'
-import UtilizationMeter from '../components/UtilizationMeter.jsx'
+import { Logo, LoadFailed } from '../components/Brand.jsx'
+import { AlertIcon, CheckIcon } from '../components/Icons.jsx'
+import { money, monthLabel } from '../format.js'
 import { submitAnswer, getSessionStatus } from '../api.js'
 import FullScreenLoader, { RESULT_STEPS } from '../components/FullScreenLoader.jsx'
 
@@ -18,13 +20,6 @@ const css = `
   justify-content: space-between;
   margin-bottom: 36px;
   animation: fadeUp 300ms ease;
-}
-.util-logo {
-  font-size: 13px;
-  font-weight: 600;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--amber-400);
 }
 .util-progress-wrap {
   display: flex;
@@ -53,7 +48,17 @@ const css = `
   align-items: start;
 }
 @media (max-width: 680px) {
-  .util-layout { grid-template-columns: 1fr; }
+  .util-page { padding: 24px 16px 48px; }
+  .util-header { margin-bottom: 24px; }
+  .util-layout { grid-template-columns: 1fr; gap: 16px; }
+  /* Question first on phones; the card summary follows it */
+  .right-panel { order: -1; }
+  .left-panel { position: static; padding: 18px 16px; border-radius: var(--radius-lg); }
+}
+.quiz-error {
+  display: flex; gap: 8px; align-items: center; margin-top: 14px; padding: 10px 14px;
+  border-radius: var(--radius-md); background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.25);
+  color: var(--red-400); font-size: 13px;
 }
 .left-panel {
   position: sticky;
@@ -98,7 +103,8 @@ const css = `
   color: var(--slate-400);
   margin-bottom: 6px;
 }
-.auto-check { color: var(--green-400); font-size: 14px; }
+.auto-check { color: var(--green-400); display: inline-flex; }
+.auto-item strong { color: var(--slate-200); font-weight: 500; }
 
 .right-panel { animation: fadeUp 400ms ease; }
 .question-header {
@@ -205,8 +211,9 @@ export default function UtilizationPage() {
   const [session, setSession] = useState(location.state?.session || null)
   const [loading, setLoading] = useState(!location.state?.session)
   const [answerLoading, setAnswerLoading] = useState(false)
-  const [showAnswered, setShowAnswered] = useState(false)
   const [activeTab, setActiveTab] = useState(0)
+  const [loadError, setLoadError] = useState(null)
+  const [answerError, setAnswerError] = useState(null)
 
   const poll = useCallback(async () => {
     try {
@@ -216,7 +223,7 @@ export default function UtilizationPage() {
         navigate(`/results/${sessionId}`, { state: { session: s } })
       }
     } catch (e) {
-      console.error('Poll error', e)
+      setLoadError(e)
     }
   }, [sessionId, navigate])
 
@@ -230,6 +237,7 @@ export default function UtilizationPage() {
 
   async function handleAnswer(questionId, answer) {
     setAnswerLoading(true)
+    setAnswerError(null)
     try {
       const resp = await submitAnswer(sessionId, {
         question_id: questionId,
@@ -241,7 +249,7 @@ export default function UtilizationPage() {
         navigate(`/results/${sessionId}`, { state: { session: resp } })
       }
     } catch (e) {
-      console.error('Answer error', e)
+      setAnswerError(e.message || 'Could not save that answer. Please try again.')
     } finally {
       setAnswerLoading(false)
     }
@@ -249,14 +257,15 @@ export default function UtilizationPage() {
 
   if (loading) return <FullScreenLoader title="Loading your quiz" steps={['Fetching your session']} />
 
-  if (!session) return null
+  if (!session) return <LoadFailed error={loadError} />
 
   const { current_question, questions_answered, questions_total, cards, current_card_idx } = session
   const activeCard = cards[current_card_idx] || cards[0]
   const progress = questions_total > 0 ? (questions_answered / questions_total) * 100 : 0
-  const cr = activeCard?.cashback_result
-  const score = cr?.utilization_score || 0
-  const earned = cr ? Object.values(cr.earned_breakdown || {}).reduce((s, v) => s + v, 0) : 0
+  const months = activeCard?.months || []
+  const period = months.length > 1
+    ? `${monthLabel(months[0], true)} to ${monthLabel(months[months.length - 1], true)}`
+    : monthLabel(months[0], true)
 
   const lastQuestion = questions_total > 0 && questions_answered + 1 >= questions_total
 
@@ -273,10 +282,10 @@ export default function UtilizationPage() {
       )}
       <div className="util-page">
         <div className="util-header">
-          <div className="util-logo">💳 CardSense</div>
+          <Logo />
           <div className="util-progress-wrap">
             <span className="mono" style={{ fontSize: 12 }}>{questions_answered}/{questions_total}</span>
-            <div className="progress-track">
+            <div className="progress-track" role="progressbar" aria-label="Quiz progress" aria-valuemin={0} aria-valuemax={questions_total} aria-valuenow={questions_answered}>
               <div className="progress-fill" style={{ width: `${progress}%` }} />
             </div>
           </div>
@@ -301,25 +310,21 @@ export default function UtilizationPage() {
         <div className="util-layout">
           {/* Left panel */}
           <div className="left-panel">
-            <div className="card-info-bank">{activeCard?.card_name?.split(' ')[0] || 'Your Card'}</div>
+            <div className="card-info-bank">Analysing</div>
             <div className="card-info-name">{activeCard?.card_name}</div>
 
-            {/*<div className="meter-section">
-              <UtilizationMeter score={score} earnedMonthly={earned} />
-            </div>*/}
-
-            {/* Auto-detected */}
-            {questions_answered > 0 && (
-              <div className="auto-detected">
-                <div className="auto-detected-title">Auto-detected from statements</div>
-                {Array.from({ length: Math.min(questions_answered, 4) }).map((_, i) => (
-                  <div key={i} className="auto-item">
-                    <span className="auto-check">✓</span>
-                    <span>Usage confirmed automatically</span>
-                  </div>
-                ))}
-              </div>
-            )}
+            <div className="auto-detected">
+              <div className="auto-detected-title">Read from your statements</div>
+              {period && (
+                <div className="auto-item"><span className="auto-check"><CheckIcon size={14} /></span><span><strong>{period}</strong></span></div>
+              )}
+              {activeCard?.transactions_count > 0 && (
+                <div className="auto-item"><span className="auto-check"><CheckIcon size={14} /></span><span><strong>{activeCard.transactions_count}</strong> transaction{activeCard.transactions_count === 1 ? '' : 's'}</span></div>
+              )}
+              {activeCard?.total_spend > 0 && (
+                <div className="auto-item"><span className="auto-check"><CheckIcon size={14} /></span><span><strong>{money(activeCard.total_spend)}</strong> spent</span></div>
+              )}
+            </div>
           </div>
 
           {/* Right panel */}
@@ -343,24 +348,8 @@ export default function UtilizationPage() {
                   loading={answerLoading}
                 />
 
-                {questions_answered > 0 && (
-                  <div className="answered-section" style={{ marginTop: 16 }}>
-                    <button
-                      className="answered-toggle"
-                      onClick={() => setShowAnswered(s => !s)}
-                    >
-                      <span>Already answered ({questions_answered})</span>
-                      <span>{showAnswered ? '▲' : '▼'}</span>
-                    </button>
-                    {showAnswered && (
-                      <div className="answered-list">
-                        <div className="answered-item">
-                          <span className="answered-icon">ℹ</span>
-                          <span>Previous answers have been recorded.</span>
-                        </div>
-                      </div>
-                    )}
-                  </div>
+                {answerError && (
+                  <div className="quiz-error" role="alert"><AlertIcon size={16} /> {answerError}</div>
                 )}
               </>
             ) : (

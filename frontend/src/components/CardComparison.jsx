@@ -1,4 +1,6 @@
 import { useState } from 'react'
+import { InfoIcon, ArrowRightIcon } from './Icons.jsx'
+import { money, catLabel } from '../format.js'
 
 const styles = `
 .comparison-wrap { display: flex; flex-direction: column; gap: 20px; }
@@ -119,73 +121,33 @@ const styles = `
   color: var(--slate-400);
   font-size: 14px;
 }
-.verdict-banner {
-  padding: 20px 24px;
-  border-radius: var(--radius-lg);
-  display: flex;
-  align-items: center;
-  gap: 16px;
+@media (max-width: 560px) {
+  .rec-card { padding: 18px 16px; }
+  .rec-caveat { align-items: flex-start; }
 }
-.verdict-good    { background: rgba(34,197,94,0.08); border: 1px solid rgba(34,197,94,0.2); }
-.verdict-better  { background: rgba(249,115,22,0.08); border: 1px solid rgba(249,115,22,0.2); }
-.verdict-switch  { background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.2); }
-.verdict-icon { font-size: 28px; flex-shrink: 0; }
-.verdict-text-wrap {}
-.verdict-title { font-size: 16px; font-weight: 600; margin-bottom: 4px; }
-.verdict-reason { font-size: 13px; color: var(--slate-400); line-height: 1.5; }
 `
 
-function verdictClass(v) {
-  if (!v) return 'verdict-good'
-  const vl = v.toLowerCase()
-  if (vl.includes('good')) return 'verdict-good'
-  if (vl.includes('better')) return 'verdict-better'
-  return 'verdict-switch'
-}
-function verdictIcon(v) {
-  if (!v) return '✅'
-  const vl = v.toLowerCase()
-  if (vl.includes('good')) return '✅'
-  if (vl.includes('better')) return '⚡'
-  return '🔄'
-}
-function catLabel(c) {
-  return c.replace(/_/g, ' ').replace(/\b\w/g, x => x.toUpperCase())
-}
 
 export default function CardComparison({ comparisonResult }) {
   const [expandedIdx, setExpandedIdx] = useState(null)
 
   if (!comparisonResult) return null
-  const { verdict, verdict_reason, card_score, recommendations, routing_advice, tips } = comparisonResult
-
-  const vClass = verdictClass(verdict)
+  const { recommendations, routing_advice } = comparisonResult
 
   return (
     <>
       <style>{styles}</style>
       <div className="comparison-wrap">
-        {/* Verdict banner */}
-        <div className={`verdict-banner ${vClass}`}>
-          <span className="verdict-icon">{verdictIcon(verdict)}</span>
-          <div className="verdict-text-wrap">
-            <div className="verdict-title" style={{ color: vClass === 'verdict-good' ? 'var(--green-400)' : vClass === 'verdict-better' ? 'var(--orange-400)' : 'var(--red-400)' }}>
-              {verdict}
-            </div>
-            <div className="verdict-reason">{verdict_reason}</div>
-          </div>
-        </div>
-
         {/* Recommendations */}
         {recommendations.length === 0 ? (
           <div className="empty-state">
-            No alternative cards found for your spend profile.<br />
-            <span style={{ color: 'var(--amber-400)' }}>Run the card crawler to populate the database.</span>
+            No card in our catalogue beats yours for this spending.<br />
+            <span style={{ color: 'var(--slate-300)' }}>Keep using it the way you are.</span>
           </div>
         ) : (
           recommendations.map((rec, i) => (
             <div key={rec.card_id} className="rec-card" style={{ animationDelay: `${i * 80}ms` }}>
-              <div className="rec-rank">#{i + 1} Recommendation</div>
+              <div className="rec-rank">#{i + 1} recommendation</div>
               <div className="rec-header">
                 <div className="rec-info">
                   <div className="rec-name">{rec.card_name}</div>
@@ -196,8 +158,8 @@ export default function CardComparison({ comparisonResult }) {
                     className="improvement-val"
                     style={rec.improvement_over_current_monthly < 0 ? { color: 'var(--slate-400)' } : {}}
                   >
-                    {rec.improvement_over_current_monthly < 0 ? '−' : '+'}₹
-                    {Math.abs(rec.improvement_over_current_monthly).toFixed(0)}/mo
+                    {rec.improvement_over_current_monthly < 0 ? '−' : '+'}
+                    {money(Math.abs(rec.improvement_over_current_monthly))}/mo
                   </div>
                   <div className="improvement-label">
                     {rec.improvement_over_current_monthly < 0 ? 'vs your card' : 'improvement'}
@@ -207,12 +169,12 @@ export default function CardComparison({ comparisonResult }) {
 
               <div className="rec-cashback-row">
                 <div className="cashback-stat">
-                  <div className="cashback-stat-val">₹{rec.estimated_monthly_cashback.toFixed(0)}</div>
-                  <div className="cashback-stat-label">Est. Monthly</div>
+                  <div className="cashback-stat-val">{money(rec.estimated_monthly_cashback)}</div>
+                  <div className="cashback-stat-label">Est. monthly</div>
                 </div>
                 <div className="cashback-stat">
-                  <div className="cashback-stat-val">₹{rec.estimated_annual_cashback.toFixed(0)}</div>
-                  <div className="cashback-stat-label">Est. Annual</div>
+                  <div className="cashback-stat-val">{money(rec.estimated_annual_cashback)}</div>
+                  <div className="cashback-stat-label">Est. annual</div>
                 </div>
               </div>
 
@@ -225,7 +187,7 @@ export default function CardComparison({ comparisonResult }) {
               </div>
 
               {rec.caveat && (
-                <div className="rec-caveat">ℹ️ {rec.caveat}</div>
+                <div className="rec-caveat"><InfoIcon size={14} /> {rec.caveat}</div>
               )}
             </div>
           ))
@@ -235,11 +197,11 @@ export default function CardComparison({ comparisonResult }) {
         {routing_advice.length > 0 && (
           <div style={{ background: 'var(--navy-800)', border: '1px solid var(--navy-600)', borderRadius: 'var(--radius-md)', padding: '18px 20px' }}>
             <div style={{ fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--slate-400)', marginBottom: 12 }}>
-              Smart Routing Advice
+              Which card to use where
             </div>
             {routing_advice.map((tip, i) => (
               <div key={i} style={{ display: 'flex', gap: 10, marginBottom: i < routing_advice.length - 1 ? 8 : 0 }}>
-                <span style={{ color: 'var(--amber-400)', flexShrink: 0 }}>→</span>
+                <span style={{ color: 'var(--amber-400)', flexShrink: 0, marginTop: 2 }}><ArrowRightIcon size={15} /></span>
                 <span style={{ fontSize: 13, color: 'var(--slate-300)', lineHeight: 1.5 }}>{tip}</span>
               </div>
             ))}

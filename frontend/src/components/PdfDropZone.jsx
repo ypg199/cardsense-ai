@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react'
+import { FileIcon, LockIcon, UploadIcon, XIcon } from './Icons.jsx'
 
 const styles = `
 .dropzone {
@@ -11,14 +12,15 @@ const styles = `
   background: rgba(255,255,255,0.02);
   position: relative;
 }
+.dropzone:focus-visible { outline: 2px solid var(--amber-400); outline-offset: 2px; }
 .dropzone:hover, .dropzone.drag-over {
   border-color: var(--amber-500);
   background: rgba(245,158,11,0.04);
 }
 .dropzone-icon {
-  font-size: 28px;
-  margin-bottom: 8px;
-  display: block;
+  width: 44px; height: 44px; margin: 0 auto 10px; border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(245,158,11,0.08); color: var(--amber-400);
 }
 .dropzone-label {
   font-size: 13px;
@@ -36,7 +38,7 @@ const styles = `
   padding: 10px 14px;
   animation: fadeUp 200ms ease both;
 }
-.file-icon { font-size: 18px; flex-shrink: 0; }
+.file-icon { flex-shrink: 0; color: var(--slate-400); display: flex; }
 .file-info { flex: 1; min-width: 0; }
 .file-name {
   font-size: 13px;
@@ -73,19 +75,28 @@ const styles = `
   padding: 4px 8px;
   width: 90px;
 }
-.month-input:focus { outline: none; border-color: var(--amber-500); }
+.month-input:focus { outline: none; border-color: var(--amber-500); box-shadow: 0 0 0 3px rgba(245,158,11,0.2); }
 .remove-btn {
   background: none;
   border: none;
   color: var(--slate-400);
   cursor: pointer;
-  font-size: 16px;
-  padding: 2px;
-  line-height: 1;
+  padding: 6px;
+  border-radius: var(--radius-sm);
+  display: flex;
   flex-shrink: 0;
-  transition: color var(--transition);
+  transition: color var(--transition), background var(--transition);
 }
-.remove-btn:hover { color: var(--red-400); }
+.remove-btn:hover { color: var(--red-400); background: rgba(239,68,68,0.08); }
+.remove-btn:focus-visible { outline: 2px solid var(--amber-400); }
+.file-encrypted { display: inline-flex; align-items: center; gap: 4px; }
+/* Phones: give the file name the full row and drop the month below it */
+@media (max-width: 560px) {
+  .file-item { flex-wrap: wrap; row-gap: 8px; padding: 10px 10px 10px 12px; }
+  .file-info { flex: 1 1 calc(100% - 80px); }
+  .remove-btn { order: 2; }
+  .month-input { order: 3; margin-left: 28px; width: 110px; }
+}
 `
 
 function guessMonth(filename) {
@@ -130,15 +141,19 @@ export default function PdfDropZone({ cardName, files, onFilesChange }) {
       <style>{styles}</style>
       <div
         className={`dropzone${dragOver ? ' drag-over' : ''}`}
+        role="button"
+        tabIndex={0}
+        aria-label={`Add PDF statements for ${cardName}`}
         onClick={() => inputRef.current?.click()}
+        onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); inputRef.current?.click() } }}
         onDragOver={e => { e.preventDefault(); setDragOver(true) }}
         onDragLeave={() => setDragOver(false)}
         onDrop={e => { e.preventDefault(); setDragOver(false); addFiles(e.dataTransfer.files) }}
       >
-        <span className="dropzone-icon">📄</span>
+        <span className="dropzone-icon"><UploadIcon size={22} /></span>
         <p className="dropzone-label">
           Drop PDFs for <strong>{cardName}</strong> here<br />
-          or click to browse — multiple months supported
+          or click to browse. One file per month, as many months as you like.
         </p>
         <input
           ref={inputRef}
@@ -146,7 +161,7 @@ export default function PdfDropZone({ cardName, files, onFilesChange }) {
           multiple
           accept=".pdf,application/pdf"
           style={{ display: 'none' }}
-          onChange={e => addFiles(e.target.files)}
+          onChange={e => { addFiles(e.target.files); e.target.value = '' }}
         />
       </div>
 
@@ -154,13 +169,13 @@ export default function PdfDropZone({ cardName, files, onFilesChange }) {
         <div className="file-list">
           {files.map((entry, idx) => (
             <div key={idx} className="file-item">
-              <span className="file-icon">📋</span>
+              <span className="file-icon"><FileIcon size={18} /></span>
               <div className="file-info">
-                <div className="file-name">{entry.file.name}</div>
+                <div className="file-name" title={entry.file.name}>{entry.file.name}</div>
                 <div className="file-meta">
                   <span>{fmt(entry.file.size)}</span>
                   {isLikelyEncrypted(entry.file.name) && (
-                    <span className="file-encrypted">🔒 ENCRYPTED</span>
+                    <span className="file-encrypted"><LockIcon size={11} /> ENCRYPTED</span>
                   )}
                 </div>
               </div>
@@ -169,9 +184,10 @@ export default function PdfDropZone({ cardName, files, onFilesChange }) {
                 value={entry.month}
                 onChange={e => updateMonth(idx, e.target.value)}
                 placeholder="YYYY-MM"
+                aria-label={`Statement month for ${entry.file.name}`}
                 onClick={e => e.stopPropagation()}
               />
-              <button className="remove-btn" onClick={e => { e.stopPropagation(); remove(idx) }}>✕</button>
+              <button type="button" className="remove-btn" aria-label={`Remove ${entry.file.name}`} onClick={e => { e.stopPropagation(); remove(idx) }}><XIcon size={16} /></button>
             </div>
           ))}
         </div>

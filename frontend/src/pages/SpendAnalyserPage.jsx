@@ -1,7 +1,10 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import { getSpendSummary } from '../api.js'
 import FullScreenLoader from '../components/FullScreenLoader.jsx'
+import { Logo } from '../components/Brand.jsx'
+import { AlertIcon } from '../components/Icons.jsx'
+import { dayLabel } from '../format.js'
 import {
   BarList, CompareChart, Legend, MonthlyChart, TipRows,
   catLabel, compactMoney, money, monthLabel,
@@ -21,13 +24,14 @@ const css = `
 }
 .sa-page { max-width: 1040px; margin: 0 auto; padding: 32px 24px 80px; }
 .sa-header { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 28px; flex-wrap: wrap; }
-.sa-logo { font-size: 13px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--amber-400); }
 .sa-btn {
   background: var(--navy-800); border: 1px solid var(--navy-600); border-radius: var(--radius-md);
   color: var(--slate-300); font-family: var(--font-sans); font-size: 13px; padding: 9px 18px; cursor: pointer;
+  text-decoration: none; display: inline-flex; align-items: center;
   transition: all var(--transition);
 }
 .sa-btn:hover { border-color: var(--amber-500); color: var(--amber-400); }
+.sa-btn:focus-visible, .sa-pill:focus-visible, .sa-link:focus-visible, .sa-select:focus-visible { outline: 2px solid var(--amber-400); outline-offset: 2px; }
 .sa-title { font-family: var(--font-display); font-size: clamp(28px, 5vw, 40px); line-height: 1.15; margin-bottom: 6px; }
 .sa-sub { color: var(--slate-400); font-size: 14px; margin-bottom: 20px; }
 
@@ -102,11 +106,31 @@ const css = `
 .sa-table td.txt { font-family: var(--font-sans); }
 
 .sa-empty { text-align: center; color: var(--slate-400); padding: 60px 0; }
+.sa-error { display: flex; flex-direction: column; align-items: center; gap: 12px; text-align: center; padding: 56px 16px; color: var(--slate-300); }
+.sa-error svg { color: var(--amber-400); }
+.sa-error-actions { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin-top: 4px; }
+
+/* Largest purchases: table on wide screens, two-line list on phones */
+.sa-txns { display: none; list-style: none; }
+.sa-txn { display: grid; grid-template-columns: 1fr auto; gap: 2px 12px; padding: 10px 0; border-bottom: 1px solid var(--navy-700); }
+.sa-txn:last-child { border-bottom: none; }
+.sa-txn-name { font-size: 13px; color: var(--white); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sa-txn-amt { font-family: var(--font-mono); font-size: 13px; color: var(--white); text-align: right; }
+.sa-txn-meta { grid-column: 1 / -1; font-size: 11px; color: var(--slate-400); display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.hint-touch { display: none; }
+@media (hover: none) { .hint-mouse { display: none; } .hint-touch { display: inline; } }
 .sa-note { font-size: 13px; color: var(--slate-400); padding: 12px 0; }
 @media (max-width: 520px) {
   .sa-page { padding: 24px 16px 60px; }
   .sa-grid2 { grid-template-columns: 1fr; }
-  .sa-section { padding: 18px 14px; }
+  .sa-section { padding: 18px 14px; border-radius: var(--radius-lg); }
+  .sa-kpis { grid-template-columns: 1fr 1fr; gap: 10px; }
+  .sa-kpi { padding: 12px 14px; }
+  .sa-kpi-label { font-size: 10px; }
+  .sa-kpi-value { font-size: 19px; }
+  .sa-kpi-value.txt { font-size: 16px; }
+  .sa-largest .sa-table-wrap { display: none; }
+  .sa-largest .sa-txns { display: block; }
 }
 `
 
@@ -123,7 +147,7 @@ export default function SpendAnalyserPage() {
       <style>{css}</style>
       <div className="sa-page">
         <div className="sa-header">
-          <div className="sa-logo">💳 CardSense AI</div>
+          <Logo />
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             <button className="sa-btn" onClick={() => navigate('/spend')}>Upload other statements</button>
             <button className="sa-btn" onClick={() => navigate('/')}>Analyse a card</button>
@@ -176,7 +200,18 @@ export function SpendAnalyser({ sessionId, showTitle = true }) {
     return { series: hasOther ? [...top, 'other_group'] : top, colorOf: color }
   }, [overall])
 
-  if (error) return <Frame><div className="sa-empty">{error}</div></Frame>
+  if (error) return (
+    <Frame>
+      <div className="sa-section sa-error" role="alert">
+        <AlertIcon size={28} />
+        <div>{error}</div>
+        <div className="sa-error-actions">
+          <Link className="sa-btn" to="/spend">Upload statements</Link>
+          <Link className="sa-btn" to="/">Analyse a card</Link>
+        </div>
+      </div>
+    </Frame>
+  )
   if (!data) return (
     <Frame>
       <div className="sa-empty" />
@@ -232,7 +267,7 @@ export function SpendAnalyser({ sessionId, showTitle = true }) {
             <Kpi label="Average per month" value={money(avg)} note={`over ${months.length} month${months.length === 1 ? '' : 's'}`} />
             <Kpi
               label={`${monthLabel(last.month, true)} vs previous`}
-              value={lastChange === null ? '—' : `${lastChange > 0 ? '▲' : lastChange < 0 ? '▼' : ''} ${Math.abs(lastChange)}%`}
+              value={lastChange === null ? '—' : lastChange === 0 ? 'No change' : `${lastChange > 0 ? 'Up' : 'Down'} ${Math.abs(lastChange)}%`}
               note={prev ? `${money(last.total)} vs ${money(prev.total)}` : 'needs two months'}
             />
             {topCat && <Kpi text label="Biggest category" value={catLabel(topCat.category)} note={`${money(topCat.total)} · ${Math.round(topCat.share * 100)}% of spend`} />}
@@ -242,7 +277,10 @@ export function SpendAnalyser({ sessionId, showTitle = true }) {
             <div className="sa-section-head">
               <div>
                 <div className="sa-h">Monthly spend{focus ? ` · ${catLabel(focus)}` : ''}</div>
-                <div className="sa-hint">Hover a month for the breakdown. Click one to compare it with the month before.</div>
+                <div className="sa-hint">
+                  <span className="hint-mouse">Hover a month for the breakdown. Click one to compare it with the month before.</span>
+                  <span className="hint-touch">Tap a month for the breakdown and to compare it with the month before.</span>
+                </div>
               </div>
               <div style={{ display: 'flex', gap: 14 }}>
                 {focus && <button className="sa-link" onClick={() => setFocus(null)}>Show all categories</button>}
@@ -318,7 +356,7 @@ export function SpendAnalyser({ sessionId, showTitle = true }) {
               <div className="sa-section-head">
                 <div>
                   <div className="sa-h">Where it goes</div>
-                  <div className="sa-hint">Click a category to see it month by month.</div>
+                  <div className="sa-hint"><span className="hint-mouse">Click</span><span className="hint-touch">Tap</span> a category to see it month by month.</div>
                 </div>
               </div>
               <BarList
@@ -362,7 +400,7 @@ export function SpendAnalyser({ sessionId, showTitle = true }) {
           </div>
 
           {data.largest.length > 0 && (
-            <section className="sa-section" style={{ marginTop: 20 }}>
+            <section className="sa-section sa-largest" style={{ marginTop: 20 }}>
               <div className="sa-section-head"><div className="sa-h">Largest purchases</div></div>
               <div className="sa-table-wrap">
                 <table className="sa-table">
@@ -370,7 +408,7 @@ export function SpendAnalyser({ sessionId, showTitle = true }) {
                   <tbody>
                     {data.largest.map((t, i) => (
                       <tr key={i}>
-                        <td className="txt">{t.date}</td>
+                        <td className="txt">{dayLabel(t.date)}</td>
                         <td className="txt" style={{ textAlign: 'left' }}>{t.merchant}</td>
                         <td className="txt" style={{ textAlign: 'left' }}>
                           <span className="sa-swatch" style={{ background: colorOf(t.category), marginRight: 6 }} />{catLabel(t.category)}
@@ -382,6 +420,18 @@ export function SpendAnalyser({ sessionId, showTitle = true }) {
                   </tbody>
                 </table>
               </div>
+              <ul className="sa-txns">
+                {data.largest.map((t, i) => (
+                  <li key={i} className="sa-txn">
+                    <span className="sa-txn-name">{t.merchant}</span>
+                    <span className="sa-txn-amt">{money(t.amount)}</span>
+                    <span className="sa-txn-meta">
+                      {dayLabel(t.date)} · <span className="sa-swatch" style={{ background: colorOf(t.category) }} />{catLabel(t.category)}
+                      {data.cards.length > 1 && ` · ${t.card_name}`}
+                    </span>
+                  </li>
+                ))}
+              </ul>
             </section>
           )}
         </>
