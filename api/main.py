@@ -19,6 +19,7 @@ Features
 from __future__ import annotations
 
 import logging
+import os
 from contextlib import asynccontextmanager
 
 from dotenv import load_dotenv
@@ -67,6 +68,9 @@ async def lifespan(app: FastAPI):
             logger.warning("MongoDB ping failed — DB features may be unavailable")
     except Exception as exc:
         logger.warning("MongoDB ping error: %s", exc)
+
+    if not os.getenv("GEMINI_API_KEY"):
+        logger.error("GEMINI_API_KEY is not set: statement parsing will fail until it is configured")
 
     # Ensure the sessions TTL index exists so statement data expires
     try:

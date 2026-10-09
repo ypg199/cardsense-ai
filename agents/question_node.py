@@ -40,6 +40,7 @@ State fields written
 
 from __future__ import annotations
 
+import asyncio
 import logging
 import os
 from collections import defaultdict
@@ -412,7 +413,9 @@ async def question_gen_node(state: AnalysisState) -> dict[str, Any]:
     base_questions = _build_questions_from_card_doc(card_doc, category_spend, qa_answers)
 
     # ── 5. Optionally enrich with LLM ────────────────────────────────
-    all_questions = _enrich_questions_with_llm(card_doc, category_spend, base_questions)
+    all_questions = await asyncio.to_thread(
+        _enrich_questions_with_llm, card_doc, category_spend, base_questions
+    )
 
     # ── 6. Split into pending vs answered ────────────────────────────
     pending: list[Question] = []

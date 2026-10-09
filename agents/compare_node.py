@@ -45,6 +45,7 @@ State fields written
 
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
 import os
@@ -613,7 +614,7 @@ async def compare_node(state: AnalysisState) -> dict[str, Any]:
     profile_text = _build_spend_profile_text(cards, top_cats)
 
     # ── 3. Embed + vector search (with category fallback) ────────────
-    embedding = _get_embedding(profile_text)
+    embedding = await asyncio.to_thread(_get_embedding, profile_text)
     candidates = await _run_async(_vector_search_async(embedding, top_cats))
 
     logger.info("Vector search / category fallback returned %d candidates", len(candidates))
@@ -629,7 +630,9 @@ async def compare_node(state: AnalysisState) -> dict[str, Any]:
     cashback_summary = _build_cashback_summary(cards)
 
     # ── 7. Gemini Pro ranking ─────────────────────────────────────────
-    comparison_result = _rank_with_gemini(cashback_summary, filtered, top_cats, total_spend, routing_advice)
+    comparison_result = await asyncio.to_thread(
+        _rank_with_gemini, cashback_summary, filtered, top_cats, total_spend, routing_advice
+    )
 
     logger.info(
         "compare_node complete — verdict='%s' score=%d recs=%d",
