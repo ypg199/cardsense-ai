@@ -48,7 +48,7 @@ async def create_credit_cards_indexes(db: AsyncIOMotorDatabase) -> None:
     await col.create_index([("last_crawled", ASCENDING)], name="credit_cards_last_crawled")
     logger.info("  [credit_cards] last_crawled index ✓")
 
-    # ── Atlas Vector Search index (768-dim text-embedding-004) ──
+    # ── Atlas Vector Search index (768-dim gemini-embedding-001) ──
     # NOTE: Atlas Vector Search indexes CANNOT be created via the driver.
     #       Create this manually in the Atlas UI (or via Atlas CLI) with:
     #

@@ -148,9 +148,10 @@ async def _save_session(state: AnalysisState) -> None:
         for card in doc.get("cards", []):
             # Passwords are only needed for the request that supplies them.
             card["pdf_passwords"] = [None] * len(card.get("pdf_passwords") or [])
-            # PDF bytes are only kept while the card waits for a password,
-            # so the next request can decrypt them. Otherwise drop them.
-            if card.get("status") != "pdf_locked":
+            # PDF bytes are only kept until the card's text is extracted:
+            # while it waits for a password, or for its turn in a
+            # multi-card session. After that, drop them.
+            if card.get("status") not in ("pdf_locked", "uploading"):
                 card["pdf_bytes_list"] = []
         doc["_id"] = doc["session_id"]
         doc["expires_at"] = datetime.now(UTC) + timedelta(hours=SESSION_TTL_HOURS)
@@ -227,11 +228,15 @@ async def _run_graph(state: AnalysisState) -> AnalysisState:
     Routing is determined entirely by state["status"] — the status saved
     in MongoDB between HTTP calls tells us exactly where to resume.
 
-    Pipeline stages:
-      uploading / pdf_locked → pdf_check → parse → question_gen → [interrupt]
-      questioning             →                     question_gen → [interrupt or continue]
-      calculating             →                                    cashback_calc → compare
-      comparing               →                                                   compare
+    Pipeline stages (per card, in order):
+      uploading / pdf_locked → pdf_check → parse → question_gen → [pause for answers]
+      questioning             →                     question_gen → [pause or continue]
+      calculating             →                                    cashback_calc
+    then, once every card is done:
+      comparing               →                                    compare (all cards)
+
+    The loop pauses (returns) whenever the user is needed: a PDF password,
+    a quiz question, or an error.
     """
     from agents.cashback_node import cashback_calc_node
     from agents.compare_node import compare_node
@@ -242,71 +247,52 @@ async def _run_graph(state: AnalysisState) -> AnalysisState:
     def _merge(base: dict, patch: dict) -> dict:
         return {**base, **patch}
 
+    def _next_unprocessed_card(current: dict) -> int | None:
+        cards = current.get("cards", [])
+        for idx in range(current.get("current_card_idx", 0) + 1, len(cards)):
+            if cards[idx].get("status") in ("uploading", "pdf_locked"):
+                return idx
+        return None
+
     try:
         current = dict(state)
-        entry_status = current.get("status", "uploading")
+        logger.info(
+            "_run_graph entry — session=%s status=%s", current.get("session_id", "?"), current.get("status")
+        )
 
-        logger.info("_run_graph entry — session=%s status=%s", current.get("session_id", "?"), entry_status)
+        # Bounded so a bad status can never spin forever
+        for _ in range(100):
+            stage = current.get("status", "uploading")
 
-        # ── Fresh session: run full pipeline from PDF check ────────────────
-        if entry_status in ("uploading", "pdf_locked"):
-            patch = pdf_check_node(current)
-            current = _merge(current, patch)
-            if current["status"] == "error":
-                await _save_session(current)
-                return current
-            if current["status"] == "pdf_locked":
-                await _save_session(current)
-                return current
+            if stage in ("uploading", "pdf_locked"):
+                current = _merge(current, pdf_check_node(current))
+                if current["status"] in ("error", "pdf_locked"):
+                    break
+                current = _merge(current, await parse_transactions_node(current))
+                if current["status"] == "error":
+                    break
 
-            patch = await parse_transactions_node(current)
-            current = _merge(current, patch)
+            elif stage == "questioning":
+                current = _merge(current, await question_gen_node(current))
+                if current["ui_action"] == "show_question":
+                    break
 
-            patch = await question_gen_node(current)
-            current = _merge(current, patch)
+            elif stage == "calculating":
+                current = _merge(current, await cashback_calc_node(current))
+                next_idx = _next_unprocessed_card(current)
+                if next_idx is not None:
+                    # Analyse the next uploaded card before comparing
+                    current["current_card_idx"] = next_idx
+                    current["status"] = "uploading"
 
-            if current["ui_action"] == "show_question":
-                await _save_session(current)
-                return current
+            elif stage == "comparing":
+                current = _merge(current, await compare_node(current))
+                break
 
-            # No questions — fall through to cashback
-            patch = await cashback_calc_node(current)
-            current = _merge(current, patch)
-            patch = await compare_node(current)
-            current = _merge(current, patch)
-
-        # ── Resume from quiz: answer was just submitted ────────────────────
-        elif entry_status == "questioning":
-            patch = await question_gen_node(current)
-            current = _merge(current, patch)
-
-            if current["ui_action"] == "show_question":
-                await _save_session(current)
-                return current
-
-            # All questions answered — continue to cashback + compare
-            patch = await cashback_calc_node(current)
-            current = _merge(current, patch)
-            patch = await compare_node(current)
-            current = _merge(current, patch)
-
-        # ── Already at cashback/compare stage ─────────────────────────────
-        elif entry_status == "calculating":
-            patch = await cashback_calc_node(current)
-            current = _merge(current, patch)
-            patch = await compare_node(current)
-            current = _merge(current, patch)
-
-        elif entry_status == "comparing":
-            patch = await compare_node(current)
-            current = _merge(current, patch)
-
-        elif entry_status in ("done", "error"):
-            # Already finished — just return as-is
-            pass
-
-        else:
-            logger.warning("_run_graph: unknown status '%s' — treating as done", entry_status)
+            else:
+                if stage not in ("done", "error"):
+                    logger.warning("_run_graph: unknown status '%s' — treating as done", stage)
+                break
 
     except Exception:
         logger.exception("Pipeline error (session=%s)", state.get("session_id"))

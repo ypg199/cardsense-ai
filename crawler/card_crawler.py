@@ -10,7 +10,7 @@ Flow per URL
 3. Strip nav/footer/aside/script/style tags with BeautifulSoup.
 4. Truncate cleaned text to 8 000 chars.
 5. Send to Gemini Flash with EXTRACTION_PROMPT → receive JSON.
-6. Generate card slug and text-embedding-004 embedding.
+6. Generate card slug and gemini-embedding-001 (768-dim) embedding.
 7. Upsert to MongoDB credit_cards collection.
 
 Error handling
@@ -34,6 +34,8 @@ from typing import Any
 from bs4 import BeautifulSoup
 from dotenv import load_dotenv
 from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential
+
+from agents.embeddings import EMBEDDING_DIMENSIONS, EMBEDDING_MODEL
 
 load_dotenv()
 logger = logging.getLogger(__name__)
@@ -184,7 +186,7 @@ def _call_gemini_flash(page_content: str) -> dict:
 
 def _generate_embedding(card_data: dict) -> tuple[list[float], str]:
     """
-    Generate 768-dim text-embedding-004 embedding for the card.
+    Generate 768-dim gemini-embedding-001 (768-dim) embedding for the card.
     Embedding text: "Card: {name} by {bank}. Benefits: {benefit_labels}"
     Returns (embedding_vector, embedding_text).
     """
@@ -201,10 +203,10 @@ def _generate_embedding(card_data: dict) -> tuple[list[float], str]:
         from langchain_google_genai import GoogleGenerativeAIEmbeddings
 
         embedder = GoogleGenerativeAIEmbeddings(
-            model="models/text-embedding-004",
+            model=EMBEDDING_MODEL,
             google_api_key=os.getenv("GEMINI_API_KEY", ""),
         )
-        vector = embedder.embed_query(embedding_text)
+        vector = embedder.embed_query(embedding_text, output_dimensionality=EMBEDDING_DIMENSIONS)
         return vector, embedding_text
     except Exception as exc:
         logger.warning("Embedding failed: %s — storing empty vector", exc)

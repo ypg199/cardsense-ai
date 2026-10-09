@@ -6,7 +6,7 @@ Node 5: compare_node
 Responsibilities
 ────────────────
 1. Build a spend-profile text from the user's top 3 spend categories.
-2. Embed with text-embedding-004 (768-dim) and run MongoDB Atlas $vectorSearch
+2. Embed with the shared embedding model (768-dim) and run MongoDB Atlas $vectorSearch
    on credit_cards collection to retrieve top 10 candidates.
 3. Rule-filter candidates: remove current card(s), cards with incompatible
    card_type for the user's spend pattern.
@@ -28,7 +28,7 @@ Section 14 — Known pitfalls handled
 ─────────────────────────────────────
   - Atlas Vector Search not set up → fall back to category filter query.
   - Gemini JSON wrapped in ``` fences → strip before json.loads().
-  - text-embedding-004 returns 768 dimensions.
+  - Embeddings are truncated to 768 dimensions to match the Atlas index.
 
 State fields read
 ─────────────────
@@ -57,6 +57,7 @@ from typing import Any
 from dotenv import load_dotenv
 from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential
 
+from agents.embeddings import EMBEDDING_DIMENSIONS, EMBEDDING_MODEL
 from agents.state import AnalysisState, CardRecommendation, CardState, ComparisonResult
 
 load_dotenv()
@@ -68,7 +69,6 @@ logger = logging.getLogger(__name__)
 
 VECTOR_SEARCH_INDEX = "credit_cards_embedding_index"
 VECTOR_SEARCH_CANDIDATES = 10
-EMBEDDING_DIMENSIONS = 768
 
 # Categories that indicate a "travel" user (used for card_type filter)
 TRAVEL_CATEGORIES = {"travel_flights", "travel_hotels"}
@@ -184,17 +184,17 @@ async def _vector_search_async(embedding: list[float], top_categories: list[str]
 
 def _get_embedding(text: str) -> list[float]:
     """
-    Embed text with text-embedding-004 (768-dim).
+    Embed text with the shared embedding model (768-dim).
     Returns zero vector on failure (so vector search gracefully degrades).
     """
     try:
         from langchain_google_genai import GoogleGenerativeAIEmbeddings
 
         embedder = GoogleGenerativeAIEmbeddings(
-            model="models/text-embedding-004",
+            model=EMBEDDING_MODEL,
             google_api_key=os.getenv("GEMINI_API_KEY", ""),
         )
-        vec = embedder.embed_query(text)
+        vec = embedder.embed_query(text, output_dimensionality=EMBEDDING_DIMENSIONS)
         if len(vec) != EMBEDDING_DIMENSIONS:
             logger.warning(
                 "Embedding dimension mismatch: got %d, expected %d", len(vec), EMBEDDING_DIMENSIONS

@@ -109,7 +109,7 @@ cardsense/
 │   └── src/
 │       ├── pages/   # UploadPage, UtilizationPage, ResultsPage
 │       └── components/  # CardSelector, PdfDropZone, UtilizationMeter, etc.
-├── tests/           # 157 offline pytest tests (Gemini and MongoDB mocked)
+├── tests/           # 161 offline pytest tests (Gemini and MongoDB mocked)
 └── docker/          # Dockerfiles
 ```
 
@@ -139,7 +139,7 @@ All tests run offline: Gemini, MongoDB and Playwright are mocked, so no API keys
 
 ```bash
 pip install -r requirements-dev.txt
-pytest                                  # all 157 tests
+pytest                                  # all 161 tests
 pytest tests/test_cashback_node.py      # one suite
 ruff check . && ruff format --check .   # lint + formatting
 ```
