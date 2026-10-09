@@ -12,11 +12,11 @@
 CardSense reads Indian credit card statement PDFs (including password-protected ones), extracts every transaction with an LLM, asks a few targeted questions about how you use the card, and scores your benefit utilization from 0 to 100. It then searches a database of cards by vector similarity and ranks better-fitting alternatives for your actual spending.
 
 <p align="center">
-  <img src="docs/demo.gif" alt="Demo: uploading four months of statements, answering the quiz, viewing results and exploring the Spend Analyser" width="820">
+  <img src="docs/demo.gif" alt="Demo: uploading four months of statements, answering the quiz, viewing results, switching to the Analyse spending tab, then using the standalone Spend Analyser" width="820">
 </p>
 
 <p align="center">
-  <img src="docs/screenshots/results.png" alt="Results page: utilization score, cashback breakdown by category, and card recommendations" width="720">
+  <img src="docs/screenshots/results.png" alt="Results page with Results and Analyse spending tabs: utilization score, cashback breakdown by category, and card recommendations" width="720">
 </p>
 
 > The demo and screenshots use generated sample statements, not real financial data.
@@ -53,9 +53,9 @@ The benchmark has already paid for itself: it caught long statements silently lo
 |---|---|
 | ![Card selection and PDF upload](docs/screenshots/upload.png) | ![Yes/no question about a spending category](docs/screenshots/quiz.png) |
 
-**Spend Analyser**
-
-![Spend Analyser: monthly spend by category with a month selected for comparison](docs/screenshots/analyser.png)
+| Analyse spending tab | Standalone Spend Analyser |
+|---|---|
+| ![Analyse spending tab: monthly spend by category with a month selected for comparison](docs/screenshots/analyser.png) | ![Standalone Spend Analyser upload page, reached from the switch on the home page](docs/screenshots/spend.png) |
 
 ## Architecture
 
