@@ -156,8 +156,12 @@ RULES:
   Use "others" for the card's base rate on all other spends. Leave out benefits
   that fit none of these (lounge access, milestone vouchers, insurance covers).
 - maps_to_category must be one of the benefit categories you returned
-- If the page lists several cards or is not a credit card product page, return
+- If the page is not about one specific credit card (a category or listing of
+  several different cards, a help, FAQ, PIN or card-blocking page), return
   "name": null
+- One card sold in several variants (network, Signature/Platinum, Visa/RuPay)
+  is still one card: extract it, naming the variant the page leads with
+- The page title and main heading at the top usually carry the card's name
 - rate is always decimal (5% = 0.05, 25% = 0.25)
 - If reward is points, estimate point_value_inr (e.g. 1 point = 0.25 INR)
 - merchant_keywords: lowercase words found in bank statement merchant names
@@ -204,6 +208,13 @@ def _clean_html(html: str) -> str:
     (menus rendered twice for mobile and desktop) removed.
     """
     soup = BeautifulSoup(html, "lxml")
+    # The card's name often sits only in <title> or a hero <h1> inside <header>,
+    # both of which the cleanup below drops, so keep them as the first lines
+    top: list[str] = []
+    for label, tag in (("Page title", soup.find("title")), ("Main heading", soup.find("h1"))):
+        value = " ".join(tag.get_text(" ", strip=True).split()) if tag else ""
+        if value:
+            top.append(f"{label}: {value}")
     for tag in soup.find_all(["nav", "footer", "aside", "script", "style", "header", "noscript"]):
         tag.decompose()
 
@@ -212,7 +223,7 @@ def _clean_html(html: str) -> str:
         root = soup
 
     seen: set[str] = set()
-    lines: list[str] = []
+    lines: list[str] = list(top)
     for line in root.get_text(separator="\n", strip=True).splitlines():
         key = line.strip().lower()
         if not key or key in seen:
@@ -248,7 +259,11 @@ def discover_card_links(hrefs: list[str], base_url: str, link_pattern: str) -> l
         url = _normalize_url(href, base_url)
         slug = url.rsplit("/", 1)[-1]
         # Whole hyphen-separated words only, so "emi" doesn't reject "premium"
+        slug = slug.removesuffix(".page").removesuffix(".html")
         if not pattern.match(url) or any(f"-{word}-" in f"-{slug}-" for word in NON_PRODUCT_LINK_WORDS):
+            continue
+        # A plural slug ("travel-credit-cards") is a category listing, not a card
+        if slug.endswith("-cards"):
             continue
         if url not in found:
             found.append(url)
@@ -525,7 +540,17 @@ async def _touch_card(card_id: str) -> None:
 # ─────────────────────────────────────────────────────────────────────────────
 
 
-async def _fetch_html(browser, url: str, attempts: int = 2) -> str:
+async def _scroll_to_bottom(page, rounds: int = 8) -> None:
+    """Scroll in steps so listings that load cards lazily render all of them."""
+    for _ in range(rounds):
+        before = await page.evaluate("document.body.scrollHeight")
+        await page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
+        await asyncio.sleep(0.8)
+        if await page.evaluate("document.body.scrollHeight") == before:
+            break
+
+
+async def _fetch_html(browser, url: str, attempts: int = 2, scroll: bool = False) -> str:
     """Load a page and return its HTML, retrying once on navigation errors."""
     last_exc: Exception | None = None
     for attempt in range(attempts):
@@ -539,6 +564,8 @@ async def _fetch_html(browser, url: str, attempts: int = 2) -> str:
             await page.goto(url, wait_until="domcontentloaded", timeout=30_000)
             # Give client-side rendering a moment
             await asyncio.sleep(random.uniform(PAGE_WAIT_MIN, PAGE_WAIT_MAX))
+            if scroll:
+                await _scroll_to_bottom(page)
             return await page.content()
         except Exception as exc:
             last_exc = exc
@@ -557,8 +584,17 @@ async def _fetch_html(browser, url: str, attempts: int = 2) -> str:
 # ─────────────────────────────────────────────────────────────────────────────
 
 
-def _result(success: bool, name=None, slug=None, error=None, unchanged: bool = False) -> dict[str, Any]:
-    return {"success": success, "card_name": name, "slug": slug, "error": error, "unchanged": unchanged}
+def _result(
+    success: bool, name=None, slug=None, error=None, unchanged: bool = False, skipped: bool = False
+) -> dict[str, Any]:
+    return {
+        "success": success,
+        "card_name": name,
+        "slug": slug,
+        "error": error,
+        "unchanged": unchanged,
+        "skipped": skipped,
+    }
 
 
 async def crawl_url(url: str, browser=None) -> dict[str, Any]:
@@ -603,6 +639,11 @@ async def crawl_url(url: str, browser=None) -> dict[str, Any]:
     except Exception as exc:
         logger.error("Failed: %s — Gemini extraction error: %s", url, exc)
         return _result(False, error=f"Gemini extraction failed: {exc}")
+
+    if isinstance(raw, dict) and not str(raw.get("name") or "").strip():
+        # The model judged it a category, help or FAQ page: not a failure
+        logger.info("Skipped: %s — not a single card's page", url)
+        return _result(False, error="Not a card page", skipped=True)
 
     try:
         card = normalize_card(raw)
@@ -655,7 +696,7 @@ async def _crawl_many(urls: list[str], browser, source: str) -> list[dict]:
 
 async def _listing_hrefs(browser, listing_url: str, selector: str = "a[href]") -> list[str]:
     """Return the hrefs of all links matching selector on a listing page."""
-    html = await _fetch_html(browser, listing_url)
+    html = await _fetch_html(browser, listing_url, scroll=True)
     soup = BeautifulSoup(html, "lxml")
     return [a.get("href", "") for a in soup.select(selector)]
 
@@ -773,8 +814,10 @@ async def run_crawl_job(
 
     upserted = sum(1 for r in all_results if r.get("success") and not r.get("unchanged"))
     unchanged = sum(1 for r in all_results if r.get("unchanged"))
-    failed = sum(1 for r in all_results if not r.get("success"))
-    errors = [f"{r.get('url', '?')}: {r.get('error', '?')}" for r in all_results if not r.get("success")][:20]
+    skipped = [r for r in all_results if r.get("skipped")]
+    failures = [r for r in all_results if not r.get("success") and not r.get("skipped")]
+    failed = len(failures)
+    errors = [f"{r.get('url', '?')}: {r.get('error', '?')}" for r in failures][:20]
 
     await _update_job_status(
         job_id,
@@ -783,11 +826,18 @@ async def run_crawl_job(
             "cards_upserted": upserted,
             "cards_unchanged": unchanged,
             "cards_failed": failed,
+            "pages_skipped": len(skipped),
+            "skipped_urls": [r.get("url", "?") for r in skipped][:50],
             "errors": errors,
             "finished_at": datetime.now(UTC).isoformat(),
         },
     )
 
     logger.info(
-        "Crawl job %s complete — upserted=%d unchanged=%d failed=%d", job_id, upserted, unchanged, failed
+        "Crawl job %s complete — upserted=%d unchanged=%d failed=%d skipped=%d (not card pages)",
+        job_id,
+        upserted,
+        unchanged,
+        failed,
+        len(skipped),
     )

@@ -79,7 +79,8 @@ BANK_SOURCES = {
     "sbi": {
         "bank": "SBI Card",
         "listing_url": "https://www.sbicard.com/en/personal/credit-cards.html",
-        "link_pattern": r"^https://www\.sbicard\.com/en/personal/credit-cards/[a-z0-9-]+/[a-z0-9-]+\.page$",
+        # Cards sit one or two folders deep: /credit-cards/rewards/x.page or /credit-cards/x.page
+        "link_pattern": r"^https://www\.sbicard\.com/en/personal/credit-cards/([a-z0-9-]+/)?[a-z0-9-]+\.page$",
         "card_urls": [
             "https://www.sbicard.com/en/personal/credit-cards/rewards/cashback-sbi-card.page",
         ],
@@ -103,6 +104,19 @@ NON_PRODUCT_LINK_WORDS = (
     "business",
     "corporate",
     "nri",
+    "faqs",
+    "help",
+    "block",
+    "pin",
+    "lost",
+    "stolen",
+    "statement",
+    "how",
+    "track",
+    "status",
+    "upgrade",
+    "tnc",
+    "terms",
 )
 
 # ── Direct bank URLs (known product pages across all banks) ──────────────────

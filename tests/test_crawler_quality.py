@@ -344,3 +344,96 @@ def test_seed_skips_cards_already_crawled():
     written = {c.args[0]["_id"] for c in col.update_one.await_args_list}
     assert "axis-flipkart" not in written
     assert written == {c["_id"] for c in seed.SEED_CARDS} - {"axis-flipkart"}
+
+
+# ── Coverage gaps: names in headers, non-card pages, SBI links ──────────────
+
+
+def test_clean_html_keeps_title_and_hero_heading():
+    html = (
+        "<html><head><title>InterMiles HDFC Bank Diners Club Credit Card | HDFC Bank</title></head>"
+        "<body><header><h1>InterMiles HDFC Bank Credit Card</h1></header>"
+        "<main>"
+        + "".join(f"<p>Earn miles on spend item {i}.</p>" for i in range(30))
+        + "</main></body></html>"
+    )
+    text = cc._clean_html(html)
+    lines = text.splitlines()
+    assert lines[0] == "Page title: InterMiles HDFC Bank Diners Club Credit Card | HDFC Bank"
+    assert lines[1] == "Main heading: InterMiles HDFC Bank Credit Card"
+    assert "Earn miles on spend item 0." in text
+
+
+def test_discover_card_links_drops_help_and_category_pages():
+    hdfc = BANK_SOURCES["hdfc"]
+    hrefs = [
+        "/credit-cards/regalia-first-credit-card",
+        "/credit-cards/block-credit-card",
+        "/credit-cards/how-to-generate-pin-credit-card",
+        "/credit-cards/faqs-credit-card",
+        "/credit-cards/travel-credit-cards",
+    ]
+    assert cc.discover_card_links(hrefs, hdfc["listing_url"], hdfc["link_pattern"]) == [
+        "https://www.hdfc.bank.in/credit-cards/regalia-first-credit-card"
+    ]
+
+
+def test_sbi_pattern_accepts_cards_one_or_two_folders_deep():
+    sbi = BANK_SOURCES["sbi"]
+    hrefs = [
+        "/en/personal/credit-cards/rewards/cashback-sbi-card.page",
+        "/en/personal/credit-cards/simplyclick-sbi-card.page",
+        "https://www.sbicard.com/en/personal/credit-cards/travel/irctc-sbi-card-premier.page?src=nav",
+        "/en/personal/credit-cards/travel-credit-cards.page",
+        "/en/personal/credit-cards/faqs.page",
+    ]
+    assert cc.discover_card_links(hrefs, sbi["listing_url"], sbi["link_pattern"]) == [
+        "https://www.sbicard.com/en/personal/credit-cards/rewards/cashback-sbi-card.page",
+        "https://www.sbicard.com/en/personal/credit-cards/simplyclick-sbi-card.page",
+        "https://www.sbicard.com/en/personal/credit-cards/travel/irctc-sbi-card-premier.page",
+    ]
+
+
+def test_page_without_a_card_is_skipped_not_failed():
+    browser, _ = _browser_returning(PAGE_HTML)
+    upsert = mock.AsyncMock()
+    with (
+        mock.patch.object(cc, "_find_unchanged_card", mock.AsyncMock(return_value=None)),
+        mock.patch.object(cc, "_call_gemini_flash", return_value={"name": None, "bank": "HDFC Bank"}),
+        mock.patch.object(cc, "_upsert_card", upsert),
+        mock.patch("asyncio.sleep", mock.AsyncMock()),
+    ):
+        result = asyncio.run(cc.crawl_url("https://www.hdfc.bank.in/credit-cards/x", browser=browser))
+    assert result["skipped"] and not result["success"]
+    upsert.assert_not_awaited()
+
+    async def fake_source(key):
+        return [
+            {"success": True, "url": f"{key}/card"},
+            {"success": False, "skipped": True, "error": "Not a card page", "url": f"{key}/faq"},
+            {"success": False, "error": "Page load failed", "url": f"{key}/broken"},
+        ]
+
+    status = mock.AsyncMock()
+    with (
+        mock.patch.object(cc, "crawl_source", side_effect=fake_source),
+        mock.patch.object(cc, "_update_job_status", status),
+    ):
+        asyncio.run(cc.run_crawl_job("job-2", sources=["hdfc"]))
+    final = status.await_args.args[1]
+    assert final["cards_failed"] == 1 and final["pages_skipped"] == 1
+    assert final["skipped_urls"] == ["hdfc/faq"]
+    assert final["errors"] == ["hdfc/broken: Page load failed"]
+
+
+def test_listing_pages_are_scrolled_for_lazy_cards():
+    page = mock.AsyncMock()
+    page.content = mock.AsyncMock(return_value="<html></html>")
+    page.evaluate = mock.AsyncMock(side_effect=[1000, None, 2000, 2000, None, 2000])
+    context = mock.AsyncMock()
+    context.new_page = mock.AsyncMock(return_value=page)
+    browser = mock.AsyncMock()
+    browser.new_context = mock.AsyncMock(return_value=context)
+    with mock.patch("asyncio.sleep", mock.AsyncMock()):
+        asyncio.run(cc._listing_hrefs(browser, "https://www.sbicard.com/en/personal/credit-cards.html"))
+    assert page.evaluate.await_count == 6  # grew once, then stopped when the height held

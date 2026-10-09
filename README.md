@@ -186,7 +186,7 @@ docker compose exec api python -m crawler.run               # crawl Axis, HDFC, 
 docker compose exec api python -m crawler.run --sources axis hdfc   # selected banks only
 ```
 
-The crawler finds each bank's card pages from its listing page, skips pages that haven't changed since the last run, and only stores benefits whose category and rate pass validation. Re-running it is cheap.
+The crawler finds each bank's card pages from its listing page (scrolling it so lazily loaded cards appear), skips pages that haven't changed since the last run, and only stores benefits whose category and rate pass validation. Category, FAQ and help pages are reported as skipped, not failed. Re-running it is cheap.
 
 Then create a vector search index named `credit_cards_embedding_index` on `cardsense.credit_cards` in the Atlas UI:
 
