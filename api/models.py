@@ -100,6 +100,60 @@ class SessionResponse(BaseModel):
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# Spend analyser
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+class SpendCardOut(BaseModel):
+    card_id: str
+    card_name: str
+
+
+class SpendMonthOut(BaseModel):
+    month: str
+    total: float
+    count: int
+    by_category: dict[str, float] = {}
+    by_card: dict[str, float] = {}
+
+
+class SpendCategoryOut(BaseModel):
+    category: str
+    total: float
+    share: float
+    count: int
+
+
+class SpendMerchantOut(BaseModel):
+    merchant: str
+    total: float
+    count: int
+    category: str
+
+
+class SpendTransactionOut(BaseModel):
+    date: str
+    merchant: str
+    amount: float
+    category: str
+    card_name: str
+
+
+class SpendSummaryResponse(BaseModel):
+    session_id: str
+    card_id: str | None = None
+    cards: list[SpendCardOut]
+    months: list[str]
+    total_spend: float
+    refunds: float
+    transactions: int
+    monthly: list[SpendMonthOut]
+    categories: list[SpendCategoryOut]
+    merchants: list[SpendMerchantOut]
+    largest: list[SpendTransactionOut]
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # Request bodies
 # ─────────────────────────────────────────────────────────────────────────────
 

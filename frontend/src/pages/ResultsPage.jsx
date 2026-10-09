@@ -38,6 +38,7 @@ const css = `
   transition: all var(--transition);
 }
 .new-analysis-btn:hover { border-color: var(--amber-500); color: var(--amber-400); }
+.analyser-btn { border-color: rgba(245,158,11,0.45); color: var(--amber-400); }
 
 .hero-section {
   text-align: center;
@@ -209,9 +210,14 @@ export default function ResultsPage() {
       <div className="results-page">
         <div className="results-header">
           <div className="results-logo">💳 CardSense AI</div>
-          <button className="new-analysis-btn" onClick={() => navigate('/')}>
-            ← New Analysis
-          </button>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button className="new-analysis-btn analyser-btn" onClick={() => navigate(`/analyser/${sessionId}`)}>
+              📈 Spend Analyser
+            </button>
+            <button className="new-analysis-btn" onClick={() => navigate('/')}>
+              ← New Analysis
+            </button>
+          </div>
         </div>
 
         {/* Hero */}

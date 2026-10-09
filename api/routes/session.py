@@ -7,6 +7,7 @@ POST /session/start          — upload PDFs, kick off pipeline
 POST /session/{id}/password  — supply password for encrypted PDF
 POST /session/{id}/answer    — submit one YES/NO quiz answer
 GET  /session/{id}/status    — poll current graph state
+GET  /session/{id}/spend     — spend aggregates for the Spend Analyser
 POST /session/{id}/add_card  — add a new card to an existing session
 ─────────────────────────────────────────────────────────────────────────────
 """
@@ -21,6 +22,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, File, Form, HTTPException, UploadFile, status
 
+from agents.spend_summary import summarise_spend
 from agents.state import AnalysisState, CardState
 from api.models import (
     AnswerRequest,
@@ -32,6 +34,7 @@ from api.models import (
     PasswordRequest,
     QuestionOut,
     SessionResponse,
+    SpendSummaryResponse,
 )
 from api.settings import MAX_FILES_PER_REQUEST, MAX_UPLOAD_BYTES, MAX_UPLOAD_MB, SESSION_TTL_HOURS
 
@@ -505,6 +508,26 @@ async def get_session_status(session_id: str):
     if state is None:
         _raise_not_found(session_id)
     return _state_to_response(state)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# GET /session/{id}/spend
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+@router.get("/{session_id}/spend", response_model=SpendSummaryResponse)
+async def get_spend_summary(session_id: str, card_id: str | None = None):
+    """
+    Spend aggregates for the Spend Analyser: totals per month and category,
+    top merchants and the largest purchases. Pass card_id to limit it to one card.
+    """
+    state = await _load_session(session_id)
+    if state is None:
+        _raise_not_found(session_id)
+    cards = state.get("cards", [])
+    if card_id is not None and not any(c.get("card_id") == card_id for c in cards):
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Card not in this session.")
+    return SpendSummaryResponse(session_id=session_id, card_id=card_id, **summarise_spend(cards, card_id))
 
 
 # ─────────────────────────────────────────────────────────────────────────────
