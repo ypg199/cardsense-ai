@@ -37,6 +37,8 @@ export const submitAnswer = (sessionId, payload) => request('POST', `/session/${
 export const getSessionStatus = (sessionId) => request('GET', `/session/${sessionId}/status`)
 export const getSpendSummary = (sessionId, cardId) =>
   request('GET', `/session/${sessionId}/spend${cardId ? `?card_id=${encodeURIComponent(cardId)}` : ''}`)
+/** Direct link to the PDF report (the browser downloads it). */
+export const reportUrl = (sessionId) => `${BASE}/session/${sessionId}/report.pdf`
 export const addCard = (sessionId, formData) => request('POST', `/session/${sessionId}/add_card`, formData, true)
 
 // ── Crawl (admin) ─────────────────────────────────────────────────────────────
