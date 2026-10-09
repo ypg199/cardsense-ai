@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react'
-import { useParams, useLocation, useNavigate } from 'react-router-dom'
+import { useParams, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import CashbackBreakdown from '../components/CashbackBreakdown.jsx'
 import CardComparison from '../components/CardComparison.jsx'
 import UtilizationMeter from '../components/UtilizationMeter.jsx'
 import { getSessionStatus } from '../api.js'
+import FullScreenLoader, { RESULT_STEPS } from '../components/FullScreenLoader.jsx'
+import { SpendAnalyser } from './SpendAnalyserPage.jsx'
 
 const css = `
 .results-page {
@@ -38,7 +40,32 @@ const css = `
   transition: all var(--transition);
 }
 .new-analysis-btn:hover { border-color: var(--amber-500); color: var(--amber-400); }
-.analyser-btn { border-color: rgba(245,158,11,0.45); color: var(--amber-400); }
+.view-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  background: var(--navy-900);
+  border: 1px solid var(--navy-700);
+  border-radius: 14px;
+  width: fit-content;
+  margin: 0 auto 8px;
+  animation: fadeUp 300ms ease;
+}
+.view-tab {
+  border: none;
+  background: transparent;
+  color: var(--slate-400);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 500;
+  padding: 10px 22px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all var(--transition);
+}
+.view-tab:hover { color: var(--white); }
+.view-tab.active { background: var(--navy-700); color: var(--amber-400); box-shadow: 0 1px 0 rgba(255,255,255,0.04) inset; }
+.view-tab:focus-visible { outline: 2px solid var(--amber-500); outline-offset: 2px; }
 
 .hero-section {
   text-align: center;
@@ -173,6 +200,9 @@ export default function ResultsPage() {
   const [session, setSession] = useState(location.state?.session || null)
   const [loading, setLoading] = useState(!location.state?.session)
   const [activeCard, setActiveCard] = useState(0)
+  const [params, setParams] = useSearchParams()
+  const tab = params.get('tab') === 'analyse' ? 'analyse' : 'results'
+  const setTab = t => setParams(t === 'results' ? {} : { tab: t }, { replace: true })
 
   useEffect(() => {
     if (!session) {
@@ -182,17 +212,7 @@ export default function ResultsPage() {
     }
   }, [sessionId])
 
-  if (loading) return (
-    <>
-      <style>{css}</style>
-      <div className="results-page">
-        <div className="loading-full">
-          <div className="spinner-xl" />
-          <p style={{ color: 'var(--slate-400)', fontSize: 15 }}>Calculating your results…</p>
-        </div>
-      </div>
-    </>
-  )
+  if (loading) return <FullScreenLoader title="Loading your results" steps={['Fetching your analysis']} />
 
   if (!session) return null
 
@@ -210,108 +230,124 @@ export default function ResultsPage() {
       <div className="results-page">
         <div className="results-header">
           <div className="results-logo">💳 CardSense AI</div>
-          <div style={{ display: 'flex', gap: 8 }}>
-            <button className="new-analysis-btn analyser-btn" onClick={() => navigate(`/analyser/${sessionId}`)}>
-              📈 Spend Analyser
+          <button className="new-analysis-btn" onClick={() => navigate('/')}>
+            ← New Analysis
+          </button>
+        </div>
+
+        <div className="view-tabs" role="tablist" aria-label="Results views">
+          {[['results', '📊 Results'], ['analyse', '📈 Analyse spending']].map(([key, label]) => (
+            <button
+              key={key}
+              role="tab"
+              aria-selected={tab === key}
+              className={`view-tab${tab === key ? ' active' : ''}`}
+              onClick={() => setTab(key)}
+            >
+              {label}
             </button>
-            <button className="new-analysis-btn" onClick={() => navigate('/')}>
-              ← New Analysis
-            </button>
-          </div>
+          ))}
         </div>
 
-        {/* Hero */}
-        <div className="hero-section">
-          <div className="hero-badge">
-            📊 Analysis Complete
-          </div>
-          <h1 className="hero-title">
-            {comp?.verdict === 'Good fit'
-              ? "You're getting good value"
-              : comp?.verdict === 'Switch recommended'
-              ? "Time for a better card"
-              : "Room to do better"}
-          </h1>
-          <p className="hero-subtitle">
-            {comp?.verdict_reason || `You earned ₹${earnedTotal.toFixed(0)} and missed ₹${missedTotal.toFixed(0)} in cashback.`}
-          </p>
+        {tab === 'analyse' ? (
+          <SpendAnalyser sessionId={sessionId} showTitle={false} />
+        ) : (
+          <>
 
-          {/* Score meters per card */}
-          <div className="scores-row">
-            {cards.map((c, i) => (
-              <div key={c.card_id} style={{ textAlign: 'center' }}>
-                <div style={{ fontSize: 11, color: 'var(--slate-400)', marginBottom: 8, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
-                  {c.card_name.split(' ').slice(-2).join(' ')}
-                </div>
-                <UtilizationMeter
-                  score={cashback_result?.utilization_score || 0}
-                  earnedMonthly={Object.values(cashback_result?.earned_breakdown || {}).reduce((s, v) => s + v, 0)}
-                />
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Multi-card tabs for breakdown */}
-        {cards.length > 1 && (
-          <div className="multi-card-tabs">
-            {cards.map((c, i) => (
-              <button
-                key={c.card_id}
-                className={`mc-tab${i === activeCard ? ' active' : ''}`}
-                onClick={() => setActiveCard(i)}
-              >
-                {c.card_name}
-              </button>
-            ))}
-          </div>
-        )}
-
-        {/* Section B: Cashback Breakdown */}
-        <div className="results-section" style={{ animationDelay: '80ms' }}>
-          <div className="rs-header">
-            <div className="rs-icon">📊</div>
-            <div>
-              <div className="rs-title">Cashback Breakdown</div>
-              <div className="rs-subtitle">{card?.card_name} — Earned vs. Potential</div>
+          {/* Hero */}
+          <div className="hero-section">
+            <div className="hero-badge">
+              📊 Analysis Complete
             </div>
-          </div>
-          <CashbackBreakdown cashbackResult={cr} multiMonth={card?.months?.length > 1} />
-        </div>
+            <h1 className="hero-title">
+              {comp?.verdict === 'Good fit'
+                ? "You're getting good value"
+                : comp?.verdict === 'Switch recommended'
+                ? "Time for a better card"
+                : "Room to do better"}
+            </h1>
+            <p className="hero-subtitle">
+              {comp?.verdict_reason || `You earned ₹${earnedTotal.toFixed(0)} and missed ₹${missedTotal.toFixed(0)} in cashback.`}
+            </p>
 
-        {/* Section C: Card Comparison */}
-        {comp && (
-          <div className="results-section" style={{ animationDelay: '140ms' }}>
-            <div className="rs-header">
-              <div className="rs-icon">🔄</div>
-              <div>
-                <div className="rs-title">Better Card Alternatives</div>
-                <div className="rs-subtitle">Cards that could earn you more based on your spend</div>
-              </div>
-            </div>
-            <CardComparison comparisonResult={comp} />
-          </div>
-        )}
-
-        {/* Section D: Tips */}
-        {tips.length > 0 && (
-          <div className="results-section" style={{ animationDelay: '200ms' }}>
-            <div className="rs-header">
-              <div className="rs-icon">💡</div>
-              <div>
-                <div className="rs-title">Actionable Tips</div>
-                <div className="rs-subtitle">Personalised to your spending pattern</div>
-              </div>
-            </div>
-            <div className="tips-grid">
-              {tips.map((tip, i) => (
-                <div key={i} className="tip-card" style={{ animationDelay: `${i * 60}ms` }}>
-                  <span className="tip-icon">{TIP_ICONS[i % TIP_ICONS.length]}</span>
-                  <p className="tip-text">{tip}</p>
+            {/* Score meters per card */}
+            <div className="scores-row">
+              {cards.map((c, i) => (
+                <div key={c.card_id} style={{ textAlign: 'center' }}>
+                  <div style={{ fontSize: 11, color: 'var(--slate-400)', marginBottom: 8, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+                    {c.card_name.split(' ').slice(-2).join(' ')}
+                  </div>
+                  <UtilizationMeter
+                    score={cashback_result?.utilization_score || 0}
+                    earnedMonthly={Object.values(cashback_result?.earned_breakdown || {}).reduce((s, v) => s + v, 0)}
+                  />
                 </div>
               ))}
             </div>
           </div>
+
+          {/* Multi-card tabs for breakdown */}
+          {cards.length > 1 && (
+            <div className="multi-card-tabs">
+              {cards.map((c, i) => (
+                <button
+                  key={c.card_id}
+                  className={`mc-tab${i === activeCard ? ' active' : ''}`}
+                  onClick={() => setActiveCard(i)}
+                >
+                  {c.card_name}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* Section B: Cashback Breakdown */}
+          <div className="results-section" style={{ animationDelay: '80ms' }}>
+            <div className="rs-header">
+              <div className="rs-icon">📊</div>
+              <div>
+                <div className="rs-title">Cashback Breakdown</div>
+                <div className="rs-subtitle">{card?.card_name} — Earned vs. Potential</div>
+              </div>
+            </div>
+            <CashbackBreakdown cashbackResult={cr} multiMonth={card?.months?.length > 1} />
+          </div>
+
+          {/* Section C: Card Comparison */}
+          {comp && (
+            <div className="results-section" style={{ animationDelay: '140ms' }}>
+              <div className="rs-header">
+                <div className="rs-icon">🔄</div>
+                <div>
+                  <div className="rs-title">Better Card Alternatives</div>
+                  <div className="rs-subtitle">Cards that could earn you more based on your spend</div>
+                </div>
+              </div>
+              <CardComparison comparisonResult={comp} />
+            </div>
+          )}
+
+          {/* Section D: Tips */}
+          {tips.length > 0 && (
+            <div className="results-section" style={{ animationDelay: '200ms' }}>
+              <div className="rs-header">
+                <div className="rs-icon">💡</div>
+                <div>
+                  <div className="rs-title">Actionable Tips</div>
+                  <div className="rs-subtitle">Personalised to your spending pattern</div>
+                </div>
+              </div>
+              <div className="tips-grid">
+                {tips.map((tip, i) => (
+                  <div key={i} className="tip-card" style={{ animationDelay: `${i * 60}ms` }}>
+                    <span className="tip-icon">{TIP_ICONS[i % TIP_ICONS.length]}</span>
+                    <p className="tip-text">{tip}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          </>
         )}
       </div>
     </>

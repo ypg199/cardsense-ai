@@ -3,7 +3,7 @@
 [![CI](https://github.com/ypg199/cardsense-ai/actions/workflows/ci.yml/badge.svg)](https://github.com/ypg199/cardsense-ai/actions/workflows/ci.yml)
 ![Python](https://img.shields.io/badge/python-3.12-blue)
 ![React](https://img.shields.io/badge/react-18-61dafb)
-![Tests](https://img.shields.io/badge/tests-215%20passing-brightgreen)
+![Tests](https://img.shields.io/badge/tests-217%20passing-brightgreen)
 [![Extraction accuracy](https://img.shields.io/badge/transactions%20found-100%25-brightgreen)](eval/RESULTS.md)
 [![Category accuracy](https://img.shields.io/badge/category%20accuracy-99.3%25-brightgreen)](eval/RESULTS.md)
 
@@ -40,7 +40,7 @@ The benchmark has already paid for itself: it caught long statements silently lo
 
 - **Statement parsing with an LLM.** Gemini extracts transactions from free-form PDF text into a strict schema with 16 spending categories, so new bank layouts need no hand-written parser. Long statements are parsed in parts, and replies are requested as JSON and retried if invalid.
 - **Encrypted PDF support.** Most Indian banks password-protect statements. CardSense detects this, asks for the password, and unlocks the file without ever storing the password.
-- **Spend Analyser.** Interactive charts of monthly spend by category, a side-by-side comparison of any two months, top categories and merchants, and the largest purchases. Click a month or category to drill in, filter by card, or switch to a table view.
+- **Spend Analyser.** Interactive charts of monthly spend by category, a side-by-side comparison of any two months, top categories and merchants, and the largest purchases. Click a month or category to drill in, filter by card, or switch to a table view. It sits in an Analyse tab next to your results, or runs on its own: upload statements and go straight to the charts, with no card selection or quiz.
 - **Multi-month and multi-card analysis.** Upload several months per card, or several cards in one session. Each card is analysed in turn, with a month-by-month trend.
 - **Adaptive quiz.** Questions are generated from the card's reward rules and your detected spend. Anything already visible in the statement is confirmed automatically, so you only answer what the data can't tell.
 - **Utilization score.** A 0–100 score with a per-category breakdown of cashback earned versus missed.
@@ -207,7 +207,7 @@ cd frontend && npm install && npm run dev
 
 | Method | Path | Description |
 |---|---|---|
-| `POST` | `/session/start` | Upload PDFs for one or more cards and start the analysis |
+| `POST` | `/session/start` | Upload PDFs for one or more cards and start the analysis (`mode=spend` stops after parsing, for the standalone Spend Analyser) |
 | `POST` | `/session/{id}/password` | Unlock an encrypted statement |
 | `POST` | `/session/{id}/answer` | Answer a quiz question |
 | `GET` | `/session/{id}/status` | Current state, next question or results |
@@ -222,7 +222,7 @@ cd frontend && npm install && npm run dev
 
 ## Testing and CI
 
-All 215 tests run offline. Gemini, MongoDB and Playwright are mocked, so no keys or services are needed.
+All 217 tests run offline. Gemini, MongoDB and Playwright are mocked, so no keys or services are needed.
 
 ```bash
 pytest                                  # full suite with coverage config
@@ -239,7 +239,7 @@ agents/      Pipeline nodes (pdf, parse, question, cashback, compare), shared st
 api/         FastAPI app, settings, Pydantic models, routes (session, cards, crawl)
 crawler/     Playwright crawler, bank sources, one-shot runner
 db/          Motor connection, index setup (TTL and lookups), seed data
-frontend/    React 18 + Vite app (upload, quiz, results and Spend Analyser pages)
+frontend/    React 18 + Vite app (upload, quiz, results with an Analyse tab, standalone Spend Analyser)
 docker/      Production Dockerfiles and nginx template
 eval/        Extraction accuracy benchmark: synthetic statements, scorer, results
 tests/       pytest suites and a sample statement fixture
