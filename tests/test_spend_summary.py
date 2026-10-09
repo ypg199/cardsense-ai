@@ -113,3 +113,64 @@ def test_spend_route_unknown_session():
         assert client.get("/session/missing/spend").status_code == 404
     finally:
         _stop_patches(patches)
+
+
+def _spend_state(n_cards):
+    return {
+        "session_id": "s",
+        "status": "uploading",
+        "mode": "spend",
+        "current_card_idx": 0,
+        "ui_action": "show_upload",
+        "cards": [{"card_id": f"c{i}", "card_name": f"C{i}", "status": "uploading"} for i in range(n_cards)],
+    }
+
+
+def test_spend_mode_stops_after_parsing_every_card():
+    import asyncio
+    import unittest.mock as mock
+
+    from api.routes import session as routes
+
+    def _pdf(state):
+        return {"status": "parsing", "ui_action": "show_loading"}
+
+    async def _parse(state):
+        return {"status": "questioning", "ui_action": "show_loading"}
+
+    quiz = mock.AsyncMock()
+    with (
+        mock.patch("agents.pdf_node.pdf_check_node", side_effect=_pdf) as pdf,
+        mock.patch("agents.parse_node.parse_transactions_node", side_effect=_parse),
+        mock.patch("agents.question_node.question_gen_node", quiz),
+        mock.patch.object(routes, "_save_session", mock.AsyncMock()),
+    ):
+        out = asyncio.run(routes._run_graph(_spend_state(2)))
+
+    assert out["status"] == "done"
+    assert out["ui_action"] == "show_analyser"
+    assert pdf.call_count == 2  # both cards parsed
+    assert [c["status"] for c in out["cards"]] == ["done", "done"]
+    quiz.assert_not_called()
+
+
+def test_spend_mode_route_flag():
+    client, patches = _make_client(run_graph_return={"status": "done", "ui_action": "show_analyser"})
+    try:
+        r = client.post(
+            "/session/start",
+            data={"card_ids": ["statements"], "month_labels": ["2024-01"], "mode": "spend"},
+            files=[("pdf_files", ("s.pdf", b"%PDF-1.4 fake", "application/pdf"))],
+        )
+        assert r.status_code == 201, r.text
+        assert r.json()["mode"] == "spend"
+        assert r.json()["ui_action"] == "show_analyser"
+
+        bad = client.post(
+            "/session/start",
+            data={"card_ids": ["statements"], "month_labels": ["2024-01"], "mode": "hack"},
+            files=[("pdf_files", ("s.pdf", b"%PDF-1.4 fake", "application/pdf"))],
+        )
+        assert bad.status_code == 422
+    finally:
+        _stop_patches(patches)

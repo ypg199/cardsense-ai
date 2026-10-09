@@ -129,6 +129,7 @@ def _state_to_response(state: AnalysisState) -> SessionResponse:
         session_id=state.get("session_id", ""),
         status=state.get("status", "uploading"),
         ui_action=state.get("ui_action", "show_upload"),
+        mode=state.get("mode", "full"),
         current_card_idx=state.get("current_card_idx", 0),
         cards=cards_out,
         current_question=cq_out,
@@ -279,6 +280,19 @@ async def _run_graph(state: AnalysisState) -> AnalysisState:
                 current = _merge(current, await parse_transactions_node(current))
                 if current["status"] == "error":
                     break
+                if current.get("mode") == "spend":
+                    # Spend-only session: no quiz or scoring, just parse every card
+                    cards = list(current["cards"])
+                    idx = current["current_card_idx"]
+                    cards[idx] = {**cards[idx], "status": "done"}
+                    current["cards"] = cards
+                    next_idx = _next_unprocessed_card(current)
+                    if next_idx is not None:
+                        current["current_card_idx"] = next_idx
+                        current["status"] = "uploading"
+                        continue
+                    current.update(status="done", ui_action="show_analyser", current_question=None)
+                    break
 
             elif stage == "questioning":
                 current = _merge(current, await question_gen_node(current))
@@ -325,6 +339,7 @@ async def start_session(
     card_ids: Annotated[list[str], Form()],
     pdf_files: Annotated[list[UploadFile], File()],
     month_labels: Annotated[list[str], Form()],
+    mode: Annotated[str, Form(pattern="^(full|spend)$")] = "full",
 ):
     """
     Start a new analysis session.
@@ -333,6 +348,8 @@ async def start_session(
       card_ids[]    — one or more card slug strings
       pdf_files[]   — one PDF per card (or multiple per card for multi-month)
       month_labels[] — e.g. "2024-01" parallel to pdf_files[]
+      mode          — "full" (default) or "spend" to stop after parsing for the
+                      standalone Spend Analyser
 
     The number of card_ids, pdf_files, and month_labels must match.
     Returns the full SessionResponse with ui_action reflecting the
@@ -372,7 +389,7 @@ async def start_session(
         db = get_db()
         for cid in card_ids:
             doc = await db["credit_cards"].find_one({"_id": cid}, {"name": 1})
-            card_names[cid] = doc["name"] if doc else cid
+            card_names[cid] = doc["name"] if doc else (cid if mode == "full" else "Your statements")
     except Exception:
         card_names = {cid: cid for cid in card_ids}
 
@@ -415,6 +432,7 @@ async def start_session(
         "answered_questions_count": 0,
         "error": None,
         "created_at": datetime.now(UTC).isoformat(),
+        "mode": mode,
     }
 
     final_state = await _run_graph(initial_state)
