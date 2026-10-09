@@ -112,7 +112,7 @@ export default function SpendUploadPage() {
         />
       )}
       {(loading || pwLoading) && (
-        <FullScreenLoader title="Reading your statements" steps={PARSE_STEPS} stepEvery={8} showTime />
+        <FullScreenLoader title="Reading your statements" steps={PARSE_STEPS} stepEvery={8} showTime trivia />
       )}
 
       <div className="upload-page">

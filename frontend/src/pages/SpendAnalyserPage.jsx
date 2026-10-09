@@ -218,7 +218,7 @@ export function SpendAnalyser({ sessionId, showTitle = true }) {
   if (!data) return (
     <Frame>
       <div className="sa-empty" />
-      <FullScreenLoader title="Crunching your spending" steps={['Adding up spend per month', 'Grouping by category and merchant']} stepEvery={2} delay={250} />
+      <FullScreenLoader title="Crunching your spending" steps={['Adding up spend per month', 'Grouping by category and merchant']} stepEvery={2} delay={250} trivia />
     </Frame>
   )
 
