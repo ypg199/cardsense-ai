@@ -1,0 +1,146 @@
+{
+  "bank": "HDFC Bank",
+  "password": null,
+  "transactions": [
+    {
+      "date": "2026-01-02",
+      "description": "RAZ*EATSURE ONLINE",
+      "amount": 1415.65,
+      "transaction_type": "debit",
+      "category": "food_delivery"
+    },
+    {
+      "date": "2026-01-04",
+      "description": "ZOMATO LTD GURGAON",
+      "amount": 605.0,
+      "transaction_type": "debit",
+      "category": "food_delivery"
+    },
+    {
+      "date": "2026-01-05",
+      "description": "FLIPKART INTERNET PVT LTD BANGALORE",
+      "amount": 1134.54,
+      "transaction_type": "debit",
+      "category": "shopping_online"
+    },
+    {
+      "date": "2026-01-08",
+      "description": "POS 4521 LIFESTYLE INTL",
+      "amount": 1389.35,
+      "transaction_type": "debit",
+      "category": "shopping_offline"
+    },
+    {
+      "date": "2026-01-09",
+      "description": "CRED RENTPAY HOUSE RENT",
+      "amount": 17360.0,
+      "transaction_type": "debit",
+      "category": "rent"
+    },
+    {
+      "date": "2026-01-11",
+      "description": "NYKAA E RETAIL PVT LTD MUMBAI",
+      "amount": 3019.0,
+      "transaction_type": "debit",
+      "category": "shopping_online"
+    },
+    {
+      "date": "2026-01-11",
+      "description": "PAYMENT RECEIVED - THANK YOU",
+      "amount": 10000.0,
+      "transaction_type": "credit",
+      "category": "others"
+    },
+    {
+      "date": "2026-01-13",
+      "description": "POS 4521 LIFESTYLE INTL",
+      "amount": 927.0,
+      "transaction_type": "debit",
+      "category": "shopping_offline"
+    },
+    {
+      "date": "2026-01-13",
+      "description": "WWW AMAZON IN BANGALORE IN",
+      "amount": 2399.0,
+      "transaction_type": "debit",
+      "category": "shopping_online"
+    },
+    {
+      "date": "2026-01-16",
+      "description": "SPOTIFY INDIA",
+      "amount": 2542.33,
+      "transaction_type": "debit",
+      "category": "entertainment"
+    },
+    {
+      "date": "2026-01-17",
+      "description": "NETFLIX.COM MUMBAI",
+      "amount": 2072.98,
+      "transaction_type": "debit",
+      "category": "entertainment"
+    },
+    {
+      "date": "2026-01-18",
+      "description": "AIR INDIA WEB",
+      "amount": 3746.34,
+      "transaction_type": "debit",
+      "category": "travel_flights"
+    },
+    {
+      "date": "2026-01-19",
+      "description": "RAZ*ZEPTO MARKETPLACE",
+      "amount": 2178.76,
+      "transaction_type": "debit",
+      "category": "grocery"
+    },
+    {
+      "date": "2026-01-21",
+      "description": "MARRIOTT HOTEL PUNE",
+      "amount": 3782.0,
+      "transaction_type": "debit",
+      "category": "travel_hotels"
+    },
+    {
+      "date": "2026-01-22",
+      "description": "PRACTO HEALTH CONSULT",
+      "amount": 2759.56,
+      "transaction_type": "debit",
+      "category": "healthcare"
+    },
+    {
+      "date": "2026-01-24",
+      "description": "ICICI LOMBARD MOTOR INSURANCE",
+      "amount": 11677.0,
+      "transaction_type": "debit",
+      "category": "insurance"
+    },
+    {
+      "date": "2026-01-25",
+      "description": "ZOMATO LTD GURGAON",
+      "amount": 1159.0,
+      "transaction_type": "debit",
+      "category": "food_delivery"
+    },
+    {
+      "date": "2026-01-28",
+      "description": "TATA POWER MUMBAI",
+      "amount": 2915.0,
+      "transaction_type": "debit",
+      "category": "utility_bills"
+    },
+    {
+      "date": "2026-01-28",
+      "description": "VIT UNIVERSITY FEE PAYMENT",
+      "amount": 2075.0,
+      "transaction_type": "debit",
+      "category": "education"
+    },
+    {
+      "date": "2026-01-28",
+      "description": "CASHBACK CREDITED",
+      "amount": 190.0,
+      "transaction_type": "credit",
+      "category": "others"
+    }
+  ]
+}

@@ -52,7 +52,7 @@ logger = logging.getLogger(__name__)
 # Constants
 # ─────────────────────────────────────────────────────────────────────────────
 
-PDF_TEXT_CHAR_LIMIT = 10_000  # Truncate before sending to Gemini (spec: 10 000 chars)
+PDF_TEXT_CHAR_LIMIT = 10_000  # Max chars per Gemini request; longer statements are sent in parts
 
 VALID_CATEGORIES = frozenset(
     {
@@ -104,7 +104,7 @@ Auto-rules:
   EMI deductions → emi
   Cashback credit lines → transaction_type='credit', category='others'
 
-Statement text (truncated to 10000 chars):
+Statement text (may be one part of a longer statement):
 {pdf_text}"""
 
 
@@ -128,6 +128,8 @@ def _get_llm():
         model="gemini-2.5-flash",
         google_api_key=api_key,
         temperature=0,
+        # JSON mode: the model must return syntactically valid JSON
+        response_mime_type="application/json",
     )
 
 
@@ -217,35 +219,68 @@ def _call_gemini(pdf_text: str) -> str:
     return response.content
 
 
-def _parse_transactions_from_text(pdf_text: str, month_fallback: str) -> list[Transaction]:
+def _chunk_text(text: str, limit: int = PDF_TEXT_CHAR_LIMIT) -> list[str]:
     """
-    Send pdf_text to Gemini and parse the JSON response into Transaction dicts.
-    Returns an empty list on failure. Raises GeminiNotConfiguredError only
-    when no API key is configured, since every statement would then parse
-    to nothing and the user would get a meaningless score.
+    Split statement text into parts of at most `limit` chars, breaking only
+    between lines so no transaction row is cut in half. Long statements used
+    to be truncated, which silently dropped their last transactions.
     """
-    if not pdf_text.strip():
-        logger.warning("pdf_text is empty — skipping Gemini call")
-        return []
+    chunks: list[str] = []
+    current: list[str] = []
+    size = 0
+    for line in text.splitlines():
+        while len(line) > limit:  # a single huge line: hard split
+            if current:
+                chunks.append("\n".join(current))
+                current, size = [], 0
+            chunks.append(line[:limit])
+            line = line[limit:]
+        if size + len(line) + 1 > limit and current:
+            chunks.append("\n".join(current))
+            current, size = [], 0
+        current.append(line)
+        size += len(line) + 1
+    if current:
+        chunks.append("\n".join(current))
+    return [c for c in chunks if c.strip()]
 
-    try:
-        raw_response = _call_gemini(pdf_text)
-    except GeminiNotConfiguredError:
-        raise
-    except Exception as exc:
-        logger.error("Gemini call failed after retries: %s", exc)
-        return []
 
-    cleaned = _clean_gemini_json(raw_response)
+JSON_ATTEMPTS = 2  # a malformed or off-topic response gets one more try
 
-    try:
-        raw_list = json.loads(cleaned)
-    except json.JSONDecodeError as exc:
-        logger.error("JSON parse error after cleaning: %s\nCleaned text: %.500s", exc, cleaned)
-        return []
 
-    if not isinstance(raw_list, list):
-        logger.error("Gemini returned non-list JSON: %s", type(raw_list))
+def _parse_chunk(chunk: str, month_fallback: str) -> list[Transaction]:
+    """
+    Parse one part of a statement. A response that isn't a JSON list is
+    retried once (the benchmark caught Gemini occasionally returning broken
+    or unrelated output, which used to drop the whole statement). Returns []
+    if Gemini still fails.
+    """
+    raw_list = None
+    for attempt in range(1, JSON_ATTEMPTS + 1):
+        try:
+            raw_response = _call_gemini(chunk)
+        except GeminiNotConfiguredError:
+            raise
+        except Exception as exc:
+            logger.error("Gemini call failed after retries: %s", exc)
+            return []
+
+        cleaned = _clean_gemini_json(raw_response)
+        try:
+            raw_list = json.loads(cleaned)
+        except json.JSONDecodeError as exc:
+            logger.warning(
+                "Invalid JSON from Gemini (attempt %d/%d): %s — %.200s", attempt, JSON_ATTEMPTS, exc, cleaned
+            )
+            raw_list = None
+            continue
+        if isinstance(raw_list, list):
+            break
+        logger.warning("Gemini returned %s instead of a list (attempt %d)", type(raw_list).__name__, attempt)
+        raw_list = None
+
+    if raw_list is None:
+        logger.error("No valid transaction list from Gemini after %d attempts", JSON_ATTEMPTS)
         return []
 
     transactions: list[Transaction] = []
@@ -255,8 +290,33 @@ def _parse_transactions_from_text(pdf_text: str, month_fallback: str) -> list[Tr
         txn = _normalise_transaction(item, month_fallback)
         if txn is not None:
             transactions.append(txn)
+    return transactions
 
-    logger.info("Parsed %d transactions from statement (month=%s)", len(transactions), month_fallback)
+
+def _parse_transactions_from_text(pdf_text: str, month_fallback: str) -> list[Transaction]:
+    """
+    Send pdf_text to Gemini (in parts when it is longer than
+    PDF_TEXT_CHAR_LIMIT) and parse the JSON responses into Transaction dicts.
+    A part that fails is skipped and the rest are kept. Raises
+    GeminiNotConfiguredError only when no API key is configured, since every
+    statement would then parse to nothing and the user would get a
+    meaningless score.
+    """
+    if not pdf_text.strip():
+        logger.warning("pdf_text is empty — skipping Gemini call")
+        return []
+
+    chunks = _chunk_text(pdf_text)
+    transactions: list[Transaction] = []
+    for chunk in chunks:
+        transactions.extend(_parse_chunk(chunk, month_fallback))
+
+    logger.info(
+        "Parsed %d transactions from statement (month=%s, parts=%d)",
+        len(transactions),
+        month_fallback,
+        len(chunks),
+    )
     return transactions
 
 

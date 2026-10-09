@@ -1,0 +1,146 @@
+{
+  "bank": "SBI Card",
+  "password": null,
+  "transactions": [
+    {
+      "date": "2026-06-01",
+      "description": "RAZ*EATSURE ONLINE",
+      "amount": 2370.44,
+      "transaction_type": "debit",
+      "category": "food_delivery"
+    },
+    {
+      "date": "2026-06-02",
+      "description": "AIR INDIA WEB",
+      "amount": 7881.38,
+      "transaction_type": "debit",
+      "category": "travel_flights"
+    },
+    {
+      "date": "2026-06-04",
+      "description": "UDEMY ONLINE COURSES",
+      "amount": 3095.0,
+      "transaction_type": "debit",
+      "category": "education"
+    },
+    {
+      "date": "2026-06-05",
+      "description": "CRED RENTPAY HOUSE RENT",
+      "amount": 15538.22,
+      "transaction_type": "debit",
+      "category": "rent"
+    },
+    {
+      "date": "2026-06-07",
+      "description": "INDIAN OIL FUEL STATION",
+      "amount": 2157.0,
+      "transaction_type": "debit",
+      "category": "fuel"
+    },
+    {
+      "date": "2026-06-08",
+      "description": "HDFC LIFE INSURANCE PREMIUM",
+      "amount": 5739.0,
+      "transaction_type": "debit",
+      "category": "insurance"
+    },
+    {
+      "date": "2026-06-11",
+      "description": "IND*FLIPKART PAYMENTS",
+      "amount": 1363.17,
+      "transaction_type": "debit",
+      "category": "shopping_online"
+    },
+    {
+      "date": "2026-06-12",
+      "description": "AIRTEL POSTPAID BILL PAYMENT",
+      "amount": 2729.97,
+      "transaction_type": "debit",
+      "category": "airtel_recharge"
+    },
+    {
+      "date": "2026-06-15",
+      "description": "SHOPPERS STOP PHOENIX MALL",
+      "amount": 2681.16,
+      "transaction_type": "debit",
+      "category": "shopping_offline"
+    },
+    {
+      "date": "2026-06-17",
+      "description": "IRCTC E-TICKETING NEW DELHI",
+      "amount": 3259.36,
+      "transaction_type": "debit",
+      "category": "travel_flights"
+    },
+    {
+      "date": "2026-06-19",
+      "description": "PAYMENT RECEIVED - THANK YOU",
+      "amount": 21000.0,
+      "transaction_type": "credit",
+      "category": "others"
+    },
+    {
+      "date": "2026-06-20",
+      "description": "MMT*MAKEMYTRIP FLIGHTS",
+      "amount": 7921.0,
+      "transaction_type": "debit",
+      "category": "travel_flights"
+    },
+    {
+      "date": "2026-06-22",
+      "description": "MAHANAGAR GAS LTD",
+      "amount": 1499.12,
+      "transaction_type": "debit",
+      "category": "utility_bills"
+    },
+    {
+      "date": "2026-06-22",
+      "description": "COURSERA ONLINE COURSE FEE",
+      "amount": 4406.76,
+      "transaction_type": "debit",
+      "category": "education"
+    },
+    {
+      "date": "2026-06-24",
+      "description": "MMT*MAKEMYTRIP FLIGHTS",
+      "amount": 4969.0,
+      "transaction_type": "debit",
+      "category": "travel_flights"
+    },
+    {
+      "date": "2026-06-25",
+      "description": "BBNOW BANGALORE",
+      "amount": 207.15,
+      "transaction_type": "debit",
+      "category": "grocery"
+    },
+    {
+      "date": "2026-06-26",
+      "description": "FLIPKART INTERNET PVT LTD BANGALORE",
+      "amount": 1774.87,
+      "transaction_type": "debit",
+      "category": "shopping_online"
+    },
+    {
+      "date": "2026-06-26",
+      "description": "INDIGO 6E 2X4KQ",
+      "amount": 7243.86,
+      "transaction_type": "debit",
+      "category": "travel_flights"
+    },
+    {
+      "date": "2026-06-27",
+      "description": "IRCTC E-TICKETING NEW DELHI",
+      "amount": 5845.0,
+      "transaction_type": "debit",
+      "category": "travel_flights"
+    },
+    {
+      "date": "2026-06-28",
+      "description": "CASHBACK CREDITED",
+      "amount": 562.0,
+      "transaction_type": "credit",
+      "category": "others"
+    }
+  ]
+}
