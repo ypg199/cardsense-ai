@@ -9,7 +9,7 @@ const styles = `
   text-align: center;
   cursor: pointer;
   transition: border-color var(--transition), background var(--transition);
-  background: rgba(255,255,255,0.02);
+  background: rgba(var(--tint), 0.02);
   position: relative;
 }
 .dropzone:focus-visible { outline: 2px solid var(--amber-400); outline-offset: 2px; }
@@ -32,7 +32,7 @@ const styles = `
   display: flex;
   align-items: center;
   gap: 10px;
-  background: rgba(255,255,255,0.04);
+  background: rgba(var(--tint), 0.04);
   border: 1px solid var(--navy-600);
   border-radius: var(--radius-sm);
   padding: 10px 14px;

@@ -85,7 +85,7 @@ export const uploadCss = `
   border: 1px solid var(--navy-600);
   border-radius: var(--radius-lg);
   padding: 20px;
-  background: rgba(255,255,255,0.02);
+  background: rgba(var(--tint), 0.02);
 }
 .upload-card-title {
   font-size: 14px;
@@ -112,7 +112,7 @@ export const uploadCss = `
   background: linear-gradient(135deg, var(--amber-500), var(--amber-400));
   border: none;
   border-radius: var(--radius-md);
-  color: var(--navy-950);
+  color: var(--on-accent);
   font-family: var(--font-sans);
   font-size: 16px;
   font-weight: 700;

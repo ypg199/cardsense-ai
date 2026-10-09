@@ -90,7 +90,7 @@ const styles = `
 .card-item.selected .card-check {
   background: var(--amber-500);
   border-color: var(--amber-500);
-  color: var(--navy-950);
+  color: var(--on-accent);
 }
 .card-bank {
   font-size: 10px;
@@ -115,7 +115,7 @@ const styles = `
   margin-bottom: 10px;
 }
 .card-tag {
-  background: rgba(255,255,255,0.06);
+  background: rgba(var(--tint), 0.06);
   border-radius: 4px;
   font-size: 10px;
   padding: 2px 7px;

@@ -41,15 +41,84 @@ const globalStyles = `
     --radius-lg: 16px;
     --radius-xl: 24px;
 
+    --on-accent: #06091a;       /* text on amber buttons */
+    --tint: 255, 255, 255;      /* rgb for faint overlays: rgba(var(--tint), 0.03) */
+    --overlay: rgba(6, 9, 26, 0.86);
+    color-scheme: dark;
+
     --shadow-glow-amber: 0 0 20px rgba(245,158,11,0.15);
     --shadow-glow-green: 0 0 20px rgba(34,197,94,0.15);
     --transition: 220ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* Light theme: the same tokens, re-stepped for a light surface. Follows the
+     system setting unless the visitor picked a theme with the toggle. */
+  :root[data-theme='light'] {
+    --navy-950: #f5f6fa;
+    --navy-900: #ffffff;
+    --navy-800: #f0f2f7;
+    --navy-700: #e4e8f0;
+    --navy-600: #d3d9e4;
+    --navy-500: #aab4c5;
+    --slate-400: #5b6779;
+    --slate-300: #3f4a5c;
+    --slate-200: #283244;
+    --white: #0f172a;
+
+    --amber-500: #f59e0b;
+    --amber-400: #b45309;
+    --amber-300: #92400e;
+    --green-500: #16a34a;
+    --green-400: #15803d;
+    --red-500: #dc2626;
+    --red-400: #b91c1c;
+    --orange-500: #ea580c;
+    --orange-400: #c2410c;
+    --blue-400: #1d4ed8;
+
+    --tint: 15, 23, 42;
+    --overlay: rgba(245, 246, 250, 0.9);
+    --shadow-glow-amber: 0 0 20px rgba(245,158,11,0.12);
+    --shadow-glow-green: 0 0 20px rgba(22,163,74,0.12);
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: light) {
+    :root:not([data-theme='dark']) {
+    --navy-950: #f5f6fa;
+    --navy-900: #ffffff;
+    --navy-800: #f0f2f7;
+    --navy-700: #e4e8f0;
+    --navy-600: #d3d9e4;
+    --navy-500: #aab4c5;
+    --slate-400: #5b6779;
+    --slate-300: #3f4a5c;
+    --slate-200: #283244;
+    --white: #0f172a;
+
+    --amber-500: #f59e0b;
+    --amber-400: #b45309;
+    --amber-300: #92400e;
+    --green-500: #16a34a;
+    --green-400: #15803d;
+    --red-500: #dc2626;
+    --red-400: #b91c1c;
+    --orange-500: #ea580c;
+    --orange-400: #c2410c;
+    --blue-400: #1d4ed8;
+
+    --tint: 15, 23, 42;
+    --overlay: rgba(245, 246, 250, 0.9);
+    --shadow-glow-amber: 0 0 20px rgba(245,158,11,0.12);
+    --shadow-glow-green: 0 0 20px rgba(22,163,74,0.12);
+    color-scheme: light;
+    }
   }
 
   html, body { height: 100%; }
 
   body {
     background: var(--navy-950);
+    transition: background-color var(--transition), color var(--transition);
     color: var(--white);
     font-family: var(--font-sans);
     font-size: 15px;
@@ -64,8 +133,8 @@ const globalStyles = `
     position: fixed;
     inset: 0;
     background-image:
-      linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px);
+      linear-gradient(rgba(var(--tint), 0.015) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(var(--tint), 0.015) 1px, transparent 1px);
     background-size: 40px 40px;
     pointer-events: none;
     z-index: 0;
