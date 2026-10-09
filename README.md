@@ -39,7 +39,7 @@ The `crawler` service seeds 5 test cards automatically on startup.
 To re-run manually:
 
 ```bash
-docker compose run --rm crawler python -m crawler.run --seed-only
+docker compose run --rm api python -m crawler.run --seed-only
 ```
 
 ### 5. Create MongoDB Atlas Vector Search index
@@ -109,7 +109,7 @@ cardsense/
 │   └── src/
 │       ├── pages/   # UploadPage, UtilizationPage, ResultsPage
 │       └── components/  # CardSelector, PdfDropZone, UtilizationMeter, etc.
-├── tests/           # 141 offline pytest tests (Gemini and MongoDB mocked)
+├── tests/           # 154 offline pytest tests (Gemini and MongoDB mocked)
 └── docker/          # Dockerfiles
 ```
 
@@ -123,13 +123,23 @@ cardsense/
 4. **Score** — Utilization Score 0-100: `(actual_earned / theoretical_max) × 100`
 5. **Compare** — Atlas Vector Search → rule filter → Gemini Pro ranking of top 3 alternatives
 
+## Security & Privacy
+
+- **Statement data expires.** Each session carries an `expires_at` date, and a MongoDB TTL index (created on API startup) deletes it after `SESSION_TTL_HOURS` (default 24).
+- **PDF passwords are never stored.** A password is used only for the request that supplies it. Encrypted PDF bytes are kept only while the session waits for a password.
+- **Uploads are validated.** Only real PDFs (checked by file signature) up to `MAX_UPLOAD_MB` each, with at most `MAX_FILES_PER_REQUEST` per request.
+- **Admin endpoints need a key.** `POST /crawl` and `GET /crawl/jobs` require an `X-Admin-Key` header matching `ADMIN_API_KEY`, and are disabled when it is unset.
+- **Internal errors stay internal.** Clients get generic messages, while full tracebacks go to the server log.
+
+---
+
 ## Running Tests
 
 All tests run offline: Gemini, MongoDB and Playwright are mocked, so no API keys are needed.
 
 ```bash
 pip install -r requirements-dev.txt
-pytest                                  # all 141 tests
+pytest                                  # all 154 tests
 pytest tests/test_cashback_node.py      # one suite
 ```
 

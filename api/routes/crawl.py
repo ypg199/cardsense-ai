@@ -11,15 +11,27 @@ GET  /crawl/jobs      — list last 20 crawl jobs with status
 from __future__ import annotations
 
 import logging
+import secrets
 import uuid
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, Header, HTTPException
 
+from api import settings
 from api.models import CrawlJobListResponse, CrawlJobResponse, CrawlJobStatusOut, CrawlRequest
 
 logger = logging.getLogger(__name__)
-router = APIRouter(prefix="/crawl", tags=["crawl"])
+
+
+async def require_admin_key(x_admin_key: str = Header(default="")) -> None:
+    """Allow the request only if X-Admin-Key matches ADMIN_API_KEY."""
+    if not settings.ADMIN_API_KEY:
+        raise HTTPException(status_code=403, detail="Admin endpoints are disabled.")
+    if not secrets.compare_digest(x_admin_key, settings.ADMIN_API_KEY):
+        raise HTTPException(status_code=401, detail="Invalid admin key.")
+
+
+router = APIRouter(prefix="/crawl", tags=["crawl"], dependencies=[Depends(require_admin_key)])
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -29,7 +41,7 @@ router = APIRouter(prefix="/crawl", tags=["crawl"])
 @router.post("", response_model=CrawlJobResponse, status_code=202)
 async def trigger_crawl(body: CrawlRequest):
     """
-    Admin endpoint — trigger a Celery background crawl job.
+    Admin endpoint (requires the X-Admin-Key header) — trigger a Celery background crawl job.
 
     Body (optional):
       sources:      list of source keys (e.g. ["cardinsider", "bankbazaar"])
@@ -107,4 +119,4 @@ async def list_crawl_jobs():
 
     except Exception as exc:
         logger.error("list_crawl_jobs error: %s", exc)
-        raise HTTPException(status_code=500, detail=f"Database error: {exc}")
+        raise HTTPException(status_code=500, detail="Could not load crawl jobs.")

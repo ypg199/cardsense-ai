@@ -185,7 +185,7 @@ def pdf_check_node(state: AnalysisState) -> dict[str, Any]:
     card_idx: int = state["current_card_idx"]
     card: CardState = cards[card_idx]
 
-    pdf_bytes_list: list[bytes] = card.get("pdf_bytes_list") or []
+    pdf_bytes_list: list[bytes] = list(card.get("pdf_bytes_list") or [])
     pdf_passwords: list[str | None] = card.get("pdf_passwords") or []
     months: list[str] = card.get("months") or []
 
@@ -212,6 +212,10 @@ def pdf_check_node(state: AnalysisState) -> dict[str, Any]:
             decrypted_bytes, was_encrypted = _decrypt_pdf(pdf_bytes, password)
             if was_encrypted:
                 any_encrypted = True
+                # Keep the unlocked copy so a later PDF in this card asking for
+                # its own password doesn't send the user back to this one.
+                pdf_bytes_list[pdf_idx] = decrypted_bytes
+                card["pdf_bytes_list"] = pdf_bytes_list
 
         except ValueError as exc:
             reason = str(exc)

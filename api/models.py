@@ -103,14 +103,14 @@ class SessionResponse(BaseModel):
 # ─────────────────────────────────────────────────────────────────────────────
 
 class PasswordRequest(BaseModel):
-    password: str
-    card_idx: int = 0
+    password: str = Field(..., min_length=1, max_length=128)
+    card_idx: int = Field(0, ge=0)
 
 
 class AnswerRequest(BaseModel):
-    question_id: str
+    question_id: str = Field(..., min_length=1, max_length=128)
     answer: bool
-    card_idx: int = 0
+    card_idx: int = Field(0, ge=0)
 
 
 class CrawlRequest(BaseModel):
