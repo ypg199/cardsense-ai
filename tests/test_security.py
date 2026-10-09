@@ -20,10 +20,10 @@ from fastapi.testclient import TestClient
 from agents.pdf_node import pdf_check_node
 from api.routes import session as session_routes
 
-
 # ─────────────────────────────────────────────────────────────────────────────
 # Helpers
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 def _pdf_bytes(text: str = "ZOMATO 450.00", password: str | None = None) -> bytes:
     doc = fitz.open()
@@ -41,23 +41,25 @@ def _state(pdfs: list[bytes], status: str = "uploading") -> dict:
     return {
         "session_id": "sec-test",
         "status": status,
-        "cards": [{
-            "card_id": "axis-airtel",
-            "card_name": "Axis Airtel",
-            "months": [f"2024-0{i + 1}" for i in range(len(pdfs))],
-            "pdf_bytes_list": list(pdfs),
-            "pdf_passwords": [None] * len(pdfs),
-            "pdf_encrypted": False,
-            "pdf_text": "",
-            "transactions": [],
-            "total_spend": 0.0,
-            "pending_questions": [],
-            "answered_questions": [],
-            "qa_answers": {},
-            "cashback_result": None,
-            "utilization_score": 0,
-            "status": "uploading",
-        }],
+        "cards": [
+            {
+                "card_id": "axis-airtel",
+                "card_name": "Axis Airtel",
+                "months": [f"2024-0{i + 1}" for i in range(len(pdfs))],
+                "pdf_bytes_list": list(pdfs),
+                "pdf_passwords": [None] * len(pdfs),
+                "pdf_encrypted": False,
+                "pdf_text": "",
+                "transactions": [],
+                "total_spend": 0.0,
+                "pending_questions": [],
+                "answered_questions": [],
+                "qa_answers": {},
+                "cashback_result": None,
+                "utilization_score": 0,
+                "status": "uploading",
+            }
+        ],
         "current_card_idx": 0,
         "locked_card_idx": None,
         "locked_pdf_idx": None,
@@ -109,15 +111,19 @@ def _submit_password(state: dict, password: str) -> dict:
 
 @pytest.fixture
 def client():
-    with mock.patch("db.connection.ping_db", return_value=True), \
-         mock.patch("agents.graph.get_compiled_graph", return_value=None):
+    with (
+        mock.patch("db.connection.ping_db", return_value=True),
+        mock.patch("agents.graph.get_compiled_graph", return_value=None),
+    ):
         from api.main import app
+
         yield TestClient(app, raise_server_exceptions=False)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Encrypted PDF unlock flow (regression: bytes were dropped on save)
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 def test_locked_pdf_survives_save_and_unlocks(fake_db):
     state = _state([_pdf_bytes(password="secret")])
@@ -161,6 +167,7 @@ def test_wrong_password_keeps_session_recoverable(fake_db):
 # Session persistence
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 def test_passwords_are_never_persisted(fake_db):
     state = _state([_pdf_bytes(password="secret")])
     state["cards"][0]["pdf_passwords"] = ["secret"]
@@ -183,6 +190,7 @@ def test_session_has_expiry_date(fake_db):
 # ─────────────────────────────────────────────────────────────────────────────
 # Upload validation
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 def _upload(client, content: bytes, filename: str = "s.pdf"):
     return client.post(
@@ -223,6 +231,7 @@ def test_negative_card_idx_rejected(client):
 # Admin auth on /crawl
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 def test_crawl_disabled_without_admin_key(client):
     with mock.patch("api.settings.ADMIN_API_KEY", ""):
         assert client.post("/crawl", json={}).status_code == 403
@@ -238,6 +247,7 @@ def test_crawl_rejects_wrong_admin_key(client):
 # ─────────────────────────────────────────────────────────────────────────────
 # Card search
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 def test_search_regex_input_is_escaped(client):
     seen = {}

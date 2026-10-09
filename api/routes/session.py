@@ -16,23 +16,23 @@ from __future__ import annotations
 import logging
 import uuid
 from copy import deepcopy
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import Annotated
 
 from fastapi import APIRouter, File, Form, HTTPException, UploadFile, status
 
+from agents.state import AnalysisState, CardState
 from api.models import (
     AnswerRequest,
+    CardRecommendationOut,
     CardSummaryOut,
     CashbackResultOut,
     ComparisonResultOut,
     MonthlyBreakdownOut,
-    CardRecommendationOut,
     PasswordRequest,
     QuestionOut,
     SessionResponse,
 )
-from agents.state import AnalysisState, CardState
 from api.settings import MAX_FILES_PER_REQUEST, MAX_UPLOAD_BYTES, MAX_UPLOAD_MB, SESSION_TTL_HOURS
 
 logger = logging.getLogger(__name__)
@@ -43,20 +43,23 @@ router = APIRouter(prefix="/session", tags=["session"])
 # State → SessionResponse converter
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 def _state_to_response(state: AnalysisState) -> SessionResponse:
     """Convert a LangGraph AnalysisState dict into a SessionResponse."""
 
     cards_out: list[CardSummaryOut] = []
     for card in state.get("cards", []):
-        cards_out.append(CardSummaryOut(
-            card_id=card.get("card_id", ""),
-            card_name=card.get("card_name", ""),
-            months=card.get("months", []),
-            transactions_count=len(card.get("transactions", [])),
-            total_spend=card.get("total_spend", 0.0),
-            pdf_encrypted=card.get("pdf_encrypted", False),
-            status=card.get("status", "uploading"),
-        ))
+        cards_out.append(
+            CardSummaryOut(
+                card_id=card.get("card_id", ""),
+                card_name=card.get("card_name", ""),
+                months=card.get("months", []),
+                transactions_count=len(card.get("transactions", [])),
+                total_spend=card.get("total_spend", 0.0),
+                pdf_encrypted=card.get("pdf_encrypted", False),
+                status=card.get("status", "uploading"),
+            )
+        )
 
     # current_question
     cq_raw = state.get("current_question")
@@ -83,10 +86,7 @@ def _state_to_response(state: AnalysisState) -> SessionResponse:
                 earned_breakdown=cr_raw.get("earned_breakdown", {}),
                 missed_breakdown=cr_raw.get("missed_breakdown", {}),
                 utilization_score=cr_raw.get("utilization_score", 0),
-                monthly_breakdown=[
-                    MonthlyBreakdownOut(**mb)
-                    for mb in cr_raw.get("monthly_breakdown", [])
-                ],
+                monthly_breakdown=[MonthlyBreakdownOut(**mb) for mb in cr_raw.get("monthly_breakdown", [])],
                 trend=cr_raw.get("trend", "single_month"),
             )
 
@@ -136,10 +136,12 @@ def _state_to_response(state: AnalysisState) -> SessionResponse:
 # DB session persistence helpers
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 async def _save_session(state: AnalysisState) -> None:
     """Persist session state to MongoDB sessions collection."""
     try:
         from db.connection import get_db
+
         db = get_db()
         # Strip non-serialisable bytes before saving
         doc = deepcopy(state)
@@ -151,7 +153,7 @@ async def _save_session(state: AnalysisState) -> None:
             if card.get("status") != "pdf_locked":
                 card["pdf_bytes_list"] = []
         doc["_id"] = doc["session_id"]
-        doc["expires_at"] = datetime.now(timezone.utc) + timedelta(hours=SESSION_TTL_HOURS)
+        doc["expires_at"] = datetime.now(UTC) + timedelta(hours=SESSION_TTL_HOURS)
         await db["sessions"].replace_one({"_id": doc["_id"]}, doc, upsert=True)
     except Exception as exc:
         logger.warning("Failed to persist session '%s': %s", state.get("session_id"), exc)
@@ -161,6 +163,7 @@ async def _load_session(session_id: str) -> AnalysisState | None:
     """Load session state from MongoDB."""
     try:
         from db.connection import get_db
+
         db = get_db()
         doc = await db["sessions"].find_one({"_id": session_id})
         if doc:
@@ -185,6 +188,7 @@ def _raise_not_found(session_id: str):
 # ─────────────────────────────────────────────────────────────────────────────
 # Upload validation
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 async def _read_pdf_uploads(pdf_files: list[UploadFile]) -> list[bytes]:
     """Read uploaded PDFs, enforcing count, size and file-type limits."""
@@ -215,6 +219,7 @@ async def _read_pdf_uploads(pdf_files: list[UploadFile]) -> list[bytes]:
 # Graph runner
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 async def _run_graph(state: AnalysisState) -> AnalysisState:
     """
     Drive the pipeline by calling node functions directly as async functions.
@@ -228,11 +233,11 @@ async def _run_graph(state: AnalysisState) -> AnalysisState:
       calculating             →                                    cashback_calc → compare
       comparing               →                                                   compare
     """
-    from agents.pdf_node import pdf_check_node
-    from agents.parse_node import parse_transactions_node
-    from agents.question_node import question_gen_node
     from agents.cashback_node import cashback_calc_node
     from agents.compare_node import compare_node
+    from agents.parse_node import parse_transactions_node
+    from agents.pdf_node import pdf_check_node
+    from agents.question_node import question_gen_node
 
     def _merge(base: dict, patch: dict) -> dict:
         return {**base, **patch}
@@ -241,19 +246,18 @@ async def _run_graph(state: AnalysisState) -> AnalysisState:
         current = dict(state)
         entry_status = current.get("status", "uploading")
 
-        logger.info(
-            "_run_graph entry — session=%s status=%s",
-            current.get("session_id", "?"), entry_status
-        )
+        logger.info("_run_graph entry — session=%s status=%s", current.get("session_id", "?"), entry_status)
 
         # ── Fresh session: run full pipeline from PDF check ────────────────
         if entry_status in ("uploading", "pdf_locked"):
             patch = pdf_check_node(current)
             current = _merge(current, patch)
             if current["status"] == "error":
-                await _save_session(current); return current
+                await _save_session(current)
+                return current
             if current["status"] == "pdf_locked":
-                await _save_session(current); return current
+                await _save_session(current)
+                return current
 
             patch = await parse_transactions_node(current)
             current = _merge(current, patch)
@@ -262,7 +266,8 @@ async def _run_graph(state: AnalysisState) -> AnalysisState:
             current = _merge(current, patch)
 
             if current["ui_action"] == "show_question":
-                await _save_session(current); return current
+                await _save_session(current)
+                return current
 
             # No questions — fall through to cashback
             patch = await cashback_calc_node(current)
@@ -276,7 +281,8 @@ async def _run_graph(state: AnalysisState) -> AnalysisState:
             current = _merge(current, patch)
 
             if current["ui_action"] == "show_question":
-                await _save_session(current); return current
+                await _save_session(current)
+                return current
 
             # All questions answered — continue to cashback + compare
             patch = await cashback_calc_node(current)
@@ -302,7 +308,7 @@ async def _run_graph(state: AnalysisState) -> AnalysisState:
         else:
             logger.warning("_run_graph: unknown status '%s' — treating as done", entry_status)
 
-    except Exception as exc:
+    except Exception:
         logger.exception("Pipeline error (session=%s)", state.get("session_id"))
         current = {
             **state,
@@ -318,6 +324,7 @@ async def _run_graph(state: AnalysisState) -> AnalysisState:
 # ─────────────────────────────────────────────────────────────────────────────
 # POST /session/start
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 @router.post("/start", response_model=SessionResponse, status_code=status.HTTP_201_CREATED)
 async def start_session(
@@ -353,7 +360,7 @@ async def start_session(
     # Distribute PDFs to cards. Simple strategy: one PDF per card (in order).
     # If more PDFs than cards, assign excess to the last card.
     pdf_contents = await _read_pdf_uploads(pdf_files)
-    for i, (pdf_data, month) in enumerate(zip(pdf_contents, month_labels)):
+    for i, (pdf_data, month) in enumerate(zip(pdf_contents, month_labels, strict=True)):
         card_idx = min(i, len(card_ids) - 1)
         card_id = card_ids[card_idx]
         pdf_bytes_map[card_id].append((pdf_data, month))
@@ -362,6 +369,7 @@ async def start_session(
     card_names: dict[str, str] = {}
     try:
         from db.connection import get_db
+
         db = get_db()
         for cid in card_ids:
             doc = await db["credit_cards"].find_one({"_id": cid}, {"name": 1})
@@ -374,23 +382,25 @@ async def start_session(
     cards: list[CardState] = []
     for cid in card_ids:
         pairs = pdf_bytes_map.get(cid, [])
-        cards.append(CardState(
-            card_id=cid,
-            card_name=card_names.get(cid, cid),
-            months=[m for _, m in pairs],
-            pdf_bytes_list=[b for b, _ in pairs],
-            pdf_passwords=[None] * len(pairs),
-            pdf_encrypted=False,
-            pdf_text="",
-            transactions=[],
-            total_spend=0.0,
-            pending_questions=[],
-            answered_questions=[],
-            qa_answers={},
-            cashback_result=None,
-            utilization_score=0,
-            status="uploading",
-        ))
+        cards.append(
+            CardState(
+                card_id=cid,
+                card_name=card_names.get(cid, cid),
+                months=[m for _, m in pairs],
+                pdf_bytes_list=[b for b, _ in pairs],
+                pdf_passwords=[None] * len(pairs),
+                pdf_encrypted=False,
+                pdf_text="",
+                transactions=[],
+                total_spend=0.0,
+                pending_questions=[],
+                answered_questions=[],
+                qa_answers={},
+                cashback_result=None,
+                utilization_score=0,
+                status="uploading",
+            )
+        )
 
     initial_state: AnalysisState = {
         "session_id": session_id,
@@ -405,7 +415,7 @@ async def start_session(
         "total_questions_count": 0,
         "answered_questions_count": 0,
         "error": None,
-        "created_at": datetime.now(timezone.utc).isoformat(),
+        "created_at": datetime.now(UTC).isoformat(),
     }
 
     final_state = await _run_graph(initial_state)
@@ -415,6 +425,7 @@ async def start_session(
 # ─────────────────────────────────────────────────────────────────────────────
 # POST /session/{id}/password
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 @router.post("/{session_id}/password", response_model=SessionResponse)
 async def submit_password(session_id: str, body: PasswordRequest):
@@ -454,6 +465,7 @@ async def submit_password(session_id: str, body: PasswordRequest):
 # POST /session/{id}/answer
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 @router.post("/{session_id}/answer", response_model=SessionResponse)
 async def submit_answer(session_id: str, body: AnswerRequest):
     """
@@ -480,8 +492,8 @@ async def submit_answer(session_id: str, body: AnswerRequest):
 
     state["cards"] = cards
     state["current_card_idx"] = card_idx
-    state["status"] = "questioning"   # _run_graph will resume from question_gen_node
-    state["error"] = None             # clear any previous error
+    state["status"] = "questioning"  # _run_graph will resume from question_gen_node
+    state["error"] = None  # clear any previous error
 
     final_state = await _run_graph(state)
     return _state_to_response(final_state)
@@ -490,6 +502,7 @@ async def submit_answer(session_id: str, body: AnswerRequest):
 # ─────────────────────────────────────────────────────────────────────────────
 # GET /session/{id}/status
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 @router.get("/{session_id}/status", response_model=SessionResponse)
 async def get_session_status(session_id: str):
@@ -506,6 +519,7 @@ async def get_session_status(session_id: str):
 # ─────────────────────────────────────────────────────────────────────────────
 # POST /session/{id}/add_card
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 @router.post("/{session_id}/add_card", response_model=SessionResponse)
 async def add_card(
@@ -529,6 +543,7 @@ async def add_card(
     card_name = card_id
     try:
         from db.connection import get_db
+
         db = get_db()
         doc = await db["credit_cards"].find_one({"_id": card_id}, {"name": 1})
         if doc:
@@ -537,7 +552,7 @@ async def add_card(
         pass
 
     pdf_contents = await _read_pdf_uploads(pdf_files)
-    pairs = list(zip(pdf_contents, month_labels))
+    pairs = list(zip(pdf_contents, month_labels, strict=True))
     new_card = CardState(
         card_id=card_id,
         card_name=card_name,

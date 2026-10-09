@@ -28,13 +28,12 @@ import logging
 import os
 import random
 import re
-import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from bs4 import BeautifulSoup
 from dotenv import load_dotenv
-from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
+from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential
 
 load_dotenv()
 logger = logging.getLogger(__name__)
@@ -43,8 +42,8 @@ logger = logging.getLogger(__name__)
 # Constants
 # ─────────────────────────────────────────────────────────────────────────────
 
-PAGE_TEXT_LIMIT = 8_000   # chars sent to Gemini (spec: 8000)
-PAGE_WAIT_MIN = 1.5       # seconds after load
+PAGE_TEXT_LIMIT = 8_000  # chars sent to Gemini (spec: 8000)
+PAGE_WAIT_MIN = 1.5  # seconds after load
 PAGE_WAIT_MAX = 2.0
 
 USER_AGENTS = [
@@ -52,8 +51,7 @@ USER_AGENTS = [
     "(KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
     "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 "
     "(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
-    "(KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36",
 ]
 
 # ── Exact extraction prompt — Section 8 ──────────────────────────────────────
@@ -111,6 +109,7 @@ Page content: {page_content}"""
 # Slug generator
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 def _make_slug(bank: str, name: str) -> str:
     """
     Generate URL-safe slug: bank-name. Truncated to 80 chars.
@@ -126,6 +125,7 @@ def _make_slug(bank: str, name: str) -> str:
 # HTML cleaning
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 def _clean_html(html: str) -> str:
     """Strip nav/footer/aside/script/style and return plain text."""
     soup = BeautifulSoup(html, "lxml")
@@ -140,6 +140,7 @@ def _clean_html(html: str) -> str:
 # ─────────────────────────────────────────────────────────────────────────────
 # Gemini LLM call
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 @retry(
     stop=stop_after_attempt(3),
@@ -180,6 +181,7 @@ def _call_gemini_flash(page_content: str) -> dict:
 # Embedding
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 def _generate_embedding(card_data: dict) -> tuple[list[float], str]:
     """
     Generate 768-dim text-embedding-004 embedding for the card.
@@ -192,12 +194,12 @@ def _generate_embedding(card_data: dict) -> tuple[list[float], str]:
         if b.get("rate", 0) > 0
     )
     embedding_text = (
-        f"Card: {card_data.get('name', '')} by {card_data.get('bank', '')}. "
-        f"Benefits: {benefit_labels}"
+        f"Card: {card_data.get('name', '')} by {card_data.get('bank', '')}. Benefits: {benefit_labels}"
     )
 
     try:
         from langchain_google_genai import GoogleGenerativeAIEmbeddings
+
         embedder = GoogleGenerativeAIEmbeddings(
             model="models/text-embedding-004",
             google_api_key=os.getenv("GEMINI_API_KEY", ""),
@@ -213,10 +215,12 @@ def _generate_embedding(card_data: dict) -> tuple[list[float], str]:
 # MongoDB upsert
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 async def _upsert_card(card_doc: dict) -> bool:
     """Upsert a card document to MongoDB. Returns True on success."""
     try:
         from db.connection import get_db
+
         db = get_db()
         await db["credit_cards"].update_one(
             {"_id": card_doc["_id"]},
@@ -233,6 +237,7 @@ async def _upsert_card(card_doc: dict) -> bool:
 # Core per-URL extraction function
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 async def crawl_url(url: str, browser=None) -> dict[str, Any]:
     """
     Crawl a single card page URL.
@@ -245,6 +250,7 @@ async def crawl_url(url: str, browser=None) -> dict[str, Any]:
         # Launch browser if not provided
         if own_browser:
             from playwright.async_api import async_playwright
+
             pw = await async_playwright().start()
             browser = await pw.chromium.launch(headless=True)
 
@@ -282,8 +288,12 @@ async def crawl_url(url: str, browser=None) -> dict[str, Any]:
     # Clean HTML
     page_text = _clean_html(html)
     if len(page_text.strip()) < 100:
-        return {"success": False, "card_name": None, "slug": None,
-                "error": f"Page text too short ({len(page_text)} chars) — likely blocked"}
+        return {
+            "success": False,
+            "card_name": None,
+            "slug": None,
+            "error": f"Page text too short ({len(page_text)} chars) — likely blocked",
+        }
 
     # Gemini extraction
     try:
@@ -296,8 +306,12 @@ async def crawl_url(url: str, browser=None) -> dict[str, Any]:
     name = card_data.get("name", "").strip()
     bank = card_data.get("bank", "").strip()
     if not name or not bank:
-        return {"success": False, "card_name": None, "slug": None,
-                "error": "Gemini returned empty name or bank"}
+        return {
+            "success": False,
+            "card_name": None,
+            "slug": None,
+            "error": "Gemini returned empty name or bank",
+        }
 
     # Generate slug
     slug = _make_slug(bank, name)
@@ -322,7 +336,7 @@ async def crawl_url(url: str, browser=None) -> dict[str, Any]:
         "best_for_tags": card_data.get("best_for_tags", []),
         "not_good_for": card_data.get("not_good_for", []),
         "source_url": url,
-        "last_crawled": datetime.now(timezone.utc).isoformat(),
+        "last_crawled": datetime.now(UTC).isoformat(),
         "embedding": embedding,
         "embedding_text": embedding_text,
     }
@@ -333,13 +347,13 @@ async def crawl_url(url: str, browser=None) -> dict[str, Any]:
         logger.info("Upserted: %s (%s)", name, slug)
         return {"success": True, "card_name": name, "slug": slug, "error": None}
     else:
-        return {"success": False, "card_name": name, "slug": slug,
-                "error": "DB upsert failed"}
+        return {"success": False, "card_name": name, "slug": slug, "error": "DB upsert failed"}
 
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Source crawler — discovers card links then crawls each
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 async def crawl_source(source_key: str) -> list[dict]:
     """
@@ -401,6 +415,7 @@ async def crawl_urls(urls: list[str]) -> list[dict]:
     """Crawl a list of direct URLs. Used for bank-direct and admin one-off crawls."""
     results = []
     from playwright.async_api import async_playwright
+
     try:
         async with async_playwright() as pw:
             browser = await pw.chromium.launch(headless=True)
@@ -420,9 +435,11 @@ async def crawl_urls(urls: list[str]) -> list[dict]:
 # Job status updater (called from the crawl task)
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 async def _update_job_status(job_id: str, patch: dict) -> None:
     try:
         from db.connection import get_db
+
         db = get_db()
         await db["crawl_jobs"].update_one({"_id": job_id}, {"$set": patch})
     except Exception as exc:
@@ -438,7 +455,7 @@ async def run_crawl_job(
     Full crawl job: runs source crawls + direct URL crawls,
     updates job status in MongoDB throughout.
     """
-    from datetime import timezone
+
     from crawler.sources import ALL_SOURCE_KEYS, DIRECT_BANK_URLS
 
     await _update_job_status(job_id, {"status": "running"})
@@ -465,15 +482,17 @@ async def run_crawl_job(
 
     upserted = sum(1 for r in all_results if r.get("success"))
     failed = sum(1 for r in all_results if not r.get("success"))
-    errors = [f"{r.get('url','?')}: {r.get('error','?')}"
-              for r in all_results if not r.get("success")][:20]
+    errors = [f"{r.get('url', '?')}: {r.get('error', '?')}" for r in all_results if not r.get("success")][:20]
 
-    await _update_job_status(job_id, {
-        "status": "done",
-        "cards_upserted": upserted,
-        "cards_failed": failed,
-        "errors": errors,
-        "finished_at": datetime.now(timezone.utc).isoformat(),
-    })
+    await _update_job_status(
+        job_id,
+        {
+            "status": "done",
+            "cards_upserted": upserted,
+            "cards_failed": failed,
+            "errors": errors,
+            "finished_at": datetime.now(UTC).isoformat(),
+        },
+    )
 
     logger.info("Crawl job %s complete — upserted=%d failed=%d", job_id, upserted, failed)

@@ -12,25 +12,27 @@ execution and are never persisted directly.
 
 from __future__ import annotations
 
-from typing import Any, TypedDict
-
+from typing import TypedDict
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Sub-type helpers (plain dicts — kept simple for LangGraph serialisation)
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 class Transaction(TypedDict):
     """A single parsed debit/credit line from a bank statement."""
-    date: str               # "YYYY-MM-DD"
-    merchant: str           # Cleaned merchant name
-    amount: float           # Positive INR amount
-    transaction_type: str   # "debit" | "credit" | "refund"
-    category: str           # One of the 16 standard categories
-    month: str              # Source month label e.g. "2024-01"
+
+    date: str  # "YYYY-MM-DD"
+    merchant: str  # Cleaned merchant name
+    amount: float  # Positive INR amount
+    transaction_type: str  # "debit" | "credit" | "refund"
+    category: str  # One of the 16 standard categories
+    month: str  # Source month label e.g. "2024-01"
 
 
 class MonthlyBreakdown(TypedDict):
     """Per-month cashback summary produced by cashback_calc_node."""
+
     month: str
     earned: float
     missed: float
@@ -39,79 +41,85 @@ class MonthlyBreakdown(TypedDict):
 
 class CashbackResult(TypedDict):
     """Output of cashback_calc_node for a single card."""
-    earned_breakdown: dict[str, float]      # { category: INR earned }
-    missed_breakdown: dict[str, float]      # { category: INR missed }
-    utilization_score: int                  # 0-100
+
+    earned_breakdown: dict[str, float]  # { category: INR earned }
+    missed_breakdown: dict[str, float]  # { category: INR missed }
+    utilization_score: int  # 0-100
     monthly_breakdown: list[MonthlyBreakdown]
-    trend: str                              # "improving" | "declining" | "flat" | "single_month"
+    trend: str  # "improving" | "declining" | "flat" | "single_month"
 
 
 class CardRecommendation(TypedDict):
     """A single alternative card recommendation from compare_node."""
+
     card_id: str
     card_name: str
     bank: str
     estimated_monthly_cashback: float
     estimated_annual_cashback: float
     improvement_over_current_monthly: float
-    why_better: str                         # 2 sentences with specific % and ₹ amounts
+    why_better: str  # 2 sentences with specific % and ₹ amounts
     best_categories: list[str]
     caveat: str | None
 
 
 class ComparisonResult(TypedDict):
     """Output of compare_node."""
-    verdict: str                            # "Good fit" | "Could do better" | "Switch recommended"
-    verdict_reason: str                     # One sentence with numbers
-    card_score: int                         # 0-100 overall efficiency score
+
+    verdict: str  # "Good fit" | "Could do better" | "Switch recommended"
+    verdict_reason: str  # One sentence with numbers
+    card_score: int  # 0-100 overall efficiency score
     recommendations: list[CardRecommendation]
-    routing_advice: list[str]              # Multi-card: "Use Axis Airtel for Zomato (25% vs 1%)"
-    tips: list[str]                        # 3-5 actionable tips
+    routing_advice: list[str]  # Multi-card: "Use Axis Airtel for Zomato (25% vs 1%)"
+    tips: list[str]  # 3-5 actionable tips
 
 
 class Question(TypedDict):
     """A single YES/NO utilization question shown to the user."""
+
     id: str
-    category: str                           # Benefit category key, or "general"
-    text: str                               # Full question text
-    hint: str                               # e.g. "Earns 25% cashback — ₹300 potential this month"
-    detected_spend: float                   # Sum of txn amounts in this category
-    potential_cashback: float               # detected_spend × benefit rate
-    is_general: bool                        # True for generic usage questions
+    category: str  # Benefit category key, or "general"
+    text: str  # Full question text
+    hint: str  # e.g. "Earns 25% cashback — ₹300 potential this month"
+    detected_spend: float  # Sum of txn amounts in this category
+    potential_cashback: float  # detected_spend × benefit rate
+    is_general: bool  # True for generic usage questions
 
 
 class CardState(TypedDict):
     """Per-card slice of state. One entry per uploaded card."""
+
     card_id: str
-    card_name: str                          # Denormalised from DB for convenience
-    months: list[str]                       # e.g. ["2024-01", "2024-02"]
+    card_name: str  # Denormalised from DB for convenience
+    months: list[str]  # e.g. ["2024-01", "2024-02"]
 
     # ── PDF pipeline ─────────────────────────────────────────────────────
-    pdf_bytes_list: list[bytes]             # Raw bytes for each uploaded PDF (in-flight only)
-    pdf_passwords: list[str | None]         # Per-PDF password attempts (parallel to pdf_bytes_list)
-    pdf_encrypted: bool                     # True if any PDF in this card is/was encrypted
-    pdf_text: str                           # Concatenated extracted text from all PDFs
+    pdf_bytes_list: list[bytes]  # Raw bytes for each uploaded PDF (in-flight only)
+    pdf_passwords: list[str | None]  # Per-PDF password attempts (parallel to pdf_bytes_list)
+    pdf_encrypted: bool  # True if any PDF in this card is/was encrypted
+    pdf_text: str  # Concatenated extracted text from all PDFs
 
     # ── Parsing ──────────────────────────────────────────────────────────
     transactions: list[Transaction]
-    total_spend: float                      # Sum of all debit transaction amounts
+    total_spend: float  # Sum of all debit transaction amounts
 
     # ── Quiz ─────────────────────────────────────────────────────────────
-    pending_questions: list[Question]       # Questions not yet answered by user
-    answered_questions: list[Question]      # Questions already answered (auto or manual)
-    qa_answers: dict[str, bool]             # { question_id: True/False }
+    pending_questions: list[Question]  # Questions not yet answered by user
+    answered_questions: list[Question]  # Questions already answered (auto or manual)
+    qa_answers: dict[str, bool]  # { question_id: True/False }
 
     # ── Results ──────────────────────────────────────────────────────────
     cashback_result: CashbackResult | None
-    utilization_score: int                  # 0-100 mirror of cashback_result.utilization_score
+    utilization_score: int  # 0-100 mirror of cashback_result.utilization_score
 
     # ── Per-card status ───────────────────────────────────────────────────
-    status: str                             # Mirrors top-level status but scoped to this card
+    status: str  # Mirrors top-level status but scoped to this card
 
 
 # ─────────────────────────────────────────────────────────────────────────────
 # AnalysisState — the top-level LangGraph state TypedDict
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 class AnalysisState(TypedDict):
     """
@@ -133,7 +141,7 @@ class AnalysisState(TypedDict):
     """
 
     # ── Session identity ──────────────────────────────────────────────────
-    session_id: str                         # UUID v4; also used as LangGraph thread_id
+    session_id: str  # UUID v4; also used as LangGraph thread_id
 
     # ── Top-level pipeline status ─────────────────────────────────────────
     # "uploading" | "pdf_locked" | "parsing" | "questioning" |
@@ -141,8 +149,8 @@ class AnalysisState(TypedDict):
     status: str
 
     # ── Multi-card data ───────────────────────────────────────────────────
-    cards: list[CardState]                  # One entry per selected card
-    current_card_idx: int                   # Which card is currently being processed
+    cards: list[CardState]  # One entry per selected card
+    current_card_idx: int  # Which card is currently being processed
 
     # ── Password flow ─────────────────────────────────────────────────────
     # When status == "pdf_locked":
@@ -166,11 +174,11 @@ class AnalysisState(TypedDict):
     ui_action: str
 
     # ── Aggregate helpers (computed, not stored in MongoDB) ────────────────
-    total_questions_count: int              # Total questions across all cards
-    answered_questions_count: int           # How many have been answered so far
+    total_questions_count: int  # Total questions across all cards
+    answered_questions_count: int  # How many have been answered so far
 
     # ── Error handling ────────────────────────────────────────────────────
-    error: str | None                       # Error message if status == "error"
+    error: str | None  # Error message if status == "error"
 
     # ── Metadata ─────────────────────────────────────────────────────────
-    created_at: str                         # ISO-8601 timestamp
+    created_at: str  # ISO-8601 timestamp

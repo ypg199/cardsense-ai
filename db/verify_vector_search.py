@@ -30,7 +30,6 @@ from __future__ import annotations
 
 import asyncio
 import logging
-import os
 import sys
 
 from dotenv import load_dotenv
@@ -42,18 +41,22 @@ logger = logging.getLogger(__name__)
 PASS = 0
 FAIL = 0
 
+
 def ok(msg: str):
-    global PASS; PASS += 1
+    global PASS
+    PASS += 1
     logger.info("✅  %s", msg)
 
+
 def fail(msg: str):
-    global FAIL; FAIL += 1
+    global FAIL
+    FAIL += 1
     logger.error("❌  %s", msg)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
 async def run_checks():
-    from db.connection import get_db, ping_db, close_db
+    from db.connection import close_db, get_db, ping_db
 
     # ── 1. Connectivity ───────────────────────────────────────────────────────
     logger.info("─── Check 1: MongoDB connectivity ───")
@@ -69,7 +72,7 @@ async def run_checks():
     logger.info("─── Check 2: credit_cards collection ───")
     count = await db["credit_cards"].count_documents({})
     if count == 0:
-        fail(f"credit_cards is empty — run: python -m db.seed")
+        fail("credit_cards is empty — run: python -m db.seed")
         return
     ok(f"credit_cards has {count} document(s)")
 
@@ -83,9 +86,7 @@ async def run_checks():
             "No cards have embedding vectors. Run the crawler to generate them, "
             "or manually patch a seed card with a 768-float vector."
         )
-        logger.warning(
-            "    compare_node will use category-filter fallback until embeddings exist."
-        )
+        logger.warning("    compare_node will use category-filter fallback until embeddings exist.")
         # Non-fatal — fallback works
     else:
         ok(f"{with_embedding}/{count} card(s) have populated embedding vectors")
@@ -135,22 +136,14 @@ async def run_checks():
     except Exception as exc:
         err = str(exc)
         if "PlanExecutor error" in err or "index" in err.lower() or "vectorSearch" in err.lower():
-            logger.warning(
-                "    ⚠  Atlas Vector Search index NOT found (%s).", err.split("\n")[0]
-            )
-            logger.warning(
-                "    Create the index in Atlas UI:"
-            )
-            logger.warning(
-                "      Collection : %s.credit_cards", db.name
-            )
+            logger.warning("    ⚠  Atlas Vector Search index NOT found (%s).", err.split("\n")[0])
+            logger.warning("    Create the index in Atlas UI:")
+            logger.warning("      Collection : %s.credit_cards", db.name)
             logger.warning("      Index name : credit_cards_embedding_index")
             logger.warning("      Field      : embedding")
             logger.warning("      Dimensions : 768")
             logger.warning("      Similarity : cosine")
-            logger.warning(
-                "    compare_node will use category-filter FALLBACK until the index exists."
-            )
+            logger.warning("    compare_node will use category-filter FALLBACK until the index exists.")
             # Count this as a warning, not a fatal failure — fallback handles it
             ok("$vectorSearch gracefully handled (index not yet created — fallback will be used)")
         else:
@@ -160,12 +153,11 @@ async def run_checks():
     logger.info("─── Check 5: compare_node category-filter fallback ───")
     try:
         from agents.compare_node import _fetch_cards_by_categories_async
+
         fallback_results = await _fetch_cards_by_categories_async(
             ["food_delivery", "grocery", "shopping_online"]
         )
-        ok(
-            f"Category-filter fallback works — returned {len(fallback_results)} candidate(s)"
-        )
+        ok(f"Category-filter fallback works — returned {len(fallback_results)} candidate(s)")
     except Exception as exc:
         fail(f"Category-filter fallback failed: {exc}")
 
@@ -173,22 +165,17 @@ async def run_checks():
     logger.info("─── Check 6: _vector_search_async (with fallback) ───")
     try:
         from agents.compare_node import _vector_search_async
-        vs_results = await _vector_search_async(
-            dummy_vector, ["food_delivery", "shopping_online"]
-        )
-        ok(
-            f"_vector_search_async completed — {len(vs_results)} candidate(s) "
-            f"(vector search OR fallback)"
-        )
+
+        vs_results = await _vector_search_async(dummy_vector, ["food_delivery", "shopping_online"])
+        ok(f"_vector_search_async completed — {len(vs_results)} candidate(s) (vector search OR fallback)")
     except Exception as exc:
         fail(f"_vector_search_async raised: {exc}")
 
     # ── 7. Index spec constants ───────────────────────────────────────────────
     logger.info("─── Check 7: index spec constants ───")
-    from agents.compare_node import VECTOR_SEARCH_INDEX, EMBEDDING_DIMENSIONS
-    assert VECTOR_SEARCH_INDEX == "credit_cards_embedding_index", (
-        f"Wrong index name: {VECTOR_SEARCH_INDEX}"
-    )
+    from agents.compare_node import EMBEDDING_DIMENSIONS, VECTOR_SEARCH_INDEX
+
+    assert VECTOR_SEARCH_INDEX == "credit_cards_embedding_index", f"Wrong index name: {VECTOR_SEARCH_INDEX}"
     ok(f"Index name constant correct: '{VECTOR_SEARCH_INDEX}'")
 
     assert EMBEDDING_DIMENSIONS == 768, f"Wrong dimensions: {EMBEDDING_DIMENSIONS}"

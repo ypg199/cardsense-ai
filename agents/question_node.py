@@ -58,8 +58,8 @@ logger = logging.getLogger(__name__)
 # ─────────────────────────────────────────────────────────────────────────────
 
 MAX_QUESTIONS_PER_CARD = 8
-MIN_BENEFIT_RATE = 0.01          # 1% — questions only for benefits above this
-MIN_CATEGORY_SPEND = 0.01        # ₹0.01 — must have some spend in the category
+MIN_BENEFIT_RATE = 0.01  # 1% — questions only for benefits above this
+MIN_CATEGORY_SPEND = 0.01  # ₹0.01 — must have some spend in the category
 
 # ── Exact prompt from Section 11 ─────────────────────────────────────────────
 QUESTION_GEN_PROMPT = """\
@@ -124,6 +124,7 @@ GENERAL_QUESTIONS: list[dict] = [
 # DB helpers (sync-compatible wrapper used inside the sync LangGraph node)
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 async def _fetch_card_doc(card_id: str) -> dict | None:
     """
     Fetch a credit_cards document from MongoDB (async).
@@ -131,6 +132,7 @@ async def _fetch_card_doc(card_id: str) -> dict | None:
     """
     try:
         from db.connection import get_db
+
         db = get_db()
         return await db["credit_cards"].find_one({"_id": card_id})
     except Exception as exc:
@@ -141,6 +143,7 @@ async def _fetch_card_doc(card_id: str) -> dict | None:
 # ─────────────────────────────────────────────────────────────────────────────
 # Spend aggregation
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 def _aggregate_spend_by_category(transactions: list[Transaction]) -> dict[str, float]:
     """Sum debit transaction amounts per category."""
@@ -163,6 +166,7 @@ def _aggregate_spend_by_merchant(transactions: list[Transaction]) -> dict[str, f
 # ─────────────────────────────────────────────────────────────────────────────
 # Auto-detection
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 def _auto_detect_answers(
     utilization_questions: list[dict],
@@ -195,7 +199,8 @@ def _auto_detect_answers(
                 answers[q_id] = True
                 logger.debug(
                     "Auto-detected question '%s' answered True (merchant='%s')",
-                    q_id, txn["merchant"],
+                    q_id,
+                    txn["merchant"],
                 )
                 break
 
@@ -205,6 +210,7 @@ def _auto_detect_answers(
 # ─────────────────────────────────────────────────────────────────────────────
 # Question building (offline — from card DB doc, no LLM needed)
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 def _build_questions_from_card_doc(
     card_doc: dict,
@@ -277,6 +283,7 @@ def _build_questions_from_card_doc(
 # Optional LLM enrichment (question_gen_node uses this if GEMINI_API_KEY set)
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 def _enrich_questions_with_llm(
     card_doc: dict,
     category_spend: dict[str, float],
@@ -295,6 +302,7 @@ def _enrich_questions_with_llm(
 
     try:
         import json as _json
+
         from langchain_google_genai import ChatGoogleGenerativeAI
 
         # Build compact context for Gemini
@@ -368,6 +376,7 @@ def _enrich_questions_with_llm(
 # Node
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 async def question_gen_node(state: AnalysisState) -> dict[str, Any]:
     """
     LangGraph node — generate / advance utilization quiz questions.
@@ -390,8 +399,7 @@ async def question_gen_node(state: AnalysisState) -> dict[str, Any]:
     if card_doc is None:
         logger.error("question_gen_node: card '%s' not found in DB", card_id)
         # Graceful degradation — skip to calculating with only general questions
-        card_doc = {"_id": card_id, "name": card_id, "bank": "", "benefits": [],
-                    "utilization_questions": []}
+        card_doc = {"_id": card_id, "name": card_id, "bank": "", "benefits": [], "utilization_questions": []}
 
     # ── 2. Auto-detect answers ────────────────────────────────────────
     utilization_questions = card_doc.get("utilization_questions", [])
@@ -437,7 +445,10 @@ async def question_gen_node(state: AnalysisState) -> dict[str, Any]:
 
         logger.info(
             "question_gen_node: card_idx=%d pending=%d answered=%d next='%s'",
-            card_idx, len(pending), len(answered), next_question["id"],
+            card_idx,
+            len(pending),
+            len(answered),
+            next_question["id"],
         )
 
         return {
@@ -459,7 +470,8 @@ async def question_gen_node(state: AnalysisState) -> dict[str, Any]:
 
     logger.info(
         "question_gen_node: card_idx=%d all %d questions answered → calculating",
-        card_idx, len(answered),
+        card_idx,
+        len(answered),
     )
 
     return {

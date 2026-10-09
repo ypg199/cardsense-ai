@@ -14,15 +14,15 @@ import unittest.mock as mock
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from agents.question_node import (
+    GENERAL_QUESTIONS,
+    MAX_QUESTIONS_PER_CARD,
+    MIN_BENEFIT_RATE,
+    QUESTION_GEN_PROMPT,
     _aggregate_spend_by_category,
     _aggregate_spend_by_merchant,
     _auto_detect_answers,
     _build_questions_from_card_doc,
     question_gen_node,
-    QUESTION_GEN_PROMPT,
-    MAX_QUESTIONS_PER_CARD,
-    MIN_BENEFIT_RATE,
-    GENERAL_QUESTIONS,
 )
 from agents.state import AnalysisState, CardState, Transaction
 
@@ -33,12 +33,16 @@ from agents.state import AnalysisState, CardState, Transaction
 PASS = 0
 FAIL = 0
 
+
 def ok(msg: str):
-    global PASS; PASS += 1
+    global PASS
+    PASS += 1
     print(f"  ✅ {msg}")
 
+
 def fail(msg: str):
-    global FAIL; FAIL += 1
+    global FAIL
+    FAIL += 1
     print(f"  ❌ {msg}")
 
 
@@ -48,54 +52,103 @@ AXIS_AIRTEL_DOC = {
     "name": "Axis Airtel Credit Card",
     "bank": "Axis Bank",
     "benefits": [
-        {"category": "airtel_recharge", "label": "Airtel Recharge", "rate": 0.25,
-         "merchant_keywords": ["airtel"]},
-        {"category": "utility_bills", "label": "Utility Bills", "rate": 0.10,
-         "merchant_keywords": ["bescom", "msedcl"]},
-        {"category": "food_delivery", "label": "Zomato", "rate": 0.10,
-         "merchant_keywords": ["zomato"]},
-        {"category": "grocery", "label": "BigBasket", "rate": 0.10,
-         "merchant_keywords": ["bigbasket"]},
-        {"category": "others", "label": "Others", "rate": 0.01,
-         "merchant_keywords": ["*"]},
+        {
+            "category": "airtel_recharge",
+            "label": "Airtel Recharge",
+            "rate": 0.25,
+            "merchant_keywords": ["airtel"],
+        },
+        {
+            "category": "utility_bills",
+            "label": "Utility Bills",
+            "rate": 0.10,
+            "merchant_keywords": ["bescom", "msedcl"],
+        },
+        {"category": "food_delivery", "label": "Zomato", "rate": 0.10, "merchant_keywords": ["zomato"]},
+        {"category": "grocery", "label": "BigBasket", "rate": 0.10, "merchant_keywords": ["bigbasket"]},
+        {"category": "others", "label": "Others", "rate": 0.01, "merchant_keywords": ["*"]},
     ],
     "utilization_questions": [
-        {"id": "q_airtel_sim",
-         "text": "Do you recharge your Airtel mobile SIM using this card?",
-         "hint": "Earns 25% cashback on Airtel recharges",
-         "maps_to_category": "airtel_recharge",
-         "auto_detect_keywords": ["airtel prepaid", "airtel postpaid", "airtel recharge", "airtel"]},
-        {"id": "q_utility",
-         "text": "Do you pay your electricity and utility bills with this card?",
-         "hint": "Earns 10% cashback on utility bill payments",
-         "maps_to_category": "utility_bills",
-         "auto_detect_keywords": ["bescom", "msedcl"]},
-        {"id": "q_zomato",
-         "text": "Do you order food on Zomato using this card?",
-         "hint": "Earns 10% cashback on Zomato orders",
-         "maps_to_category": "food_delivery",
-         "auto_detect_keywords": ["zomato"]},
-        {"id": "q_bigbasket",
-         "text": "Do you shop for groceries on BigBasket with this card?",
-         "hint": "Earns 10% cashback on BigBasket purchases",
-         "maps_to_category": "grocery",
-         "auto_detect_keywords": ["bigbasket"]},
+        {
+            "id": "q_airtel_sim",
+            "text": "Do you recharge your Airtel mobile SIM using this card?",
+            "hint": "Earns 25% cashback on Airtel recharges",
+            "maps_to_category": "airtel_recharge",
+            "auto_detect_keywords": ["airtel prepaid", "airtel postpaid", "airtel recharge", "airtel"],
+        },
+        {
+            "id": "q_utility",
+            "text": "Do you pay your electricity and utility bills with this card?",
+            "hint": "Earns 10% cashback on utility bill payments",
+            "maps_to_category": "utility_bills",
+            "auto_detect_keywords": ["bescom", "msedcl"],
+        },
+        {
+            "id": "q_zomato",
+            "text": "Do you order food on Zomato using this card?",
+            "hint": "Earns 10% cashback on Zomato orders",
+            "maps_to_category": "food_delivery",
+            "auto_detect_keywords": ["zomato"],
+        },
+        {
+            "id": "q_bigbasket",
+            "text": "Do you shop for groceries on BigBasket with this card?",
+            "hint": "Earns 10% cashback on BigBasket purchases",
+            "maps_to_category": "grocery",
+            "auto_detect_keywords": ["bigbasket"],
+        },
     ],
 }
 
 SAMPLE_TRANSACTIONS: list[Transaction] = [
-    {"date": "2024-01-01", "merchant": "Zomato", "amount": 450.0,
-     "transaction_type": "debit", "category": "food_delivery", "month": "2024-01"},
-    {"date": "2024-01-05", "merchant": "Airtel Recharge", "amount": 299.0,
-     "transaction_type": "debit", "category": "airtel_recharge", "month": "2024-01"},
-    {"date": "2024-01-10", "merchant": "Amazon", "amount": 1200.0,
-     "transaction_type": "debit", "category": "shopping_online", "month": "2024-01"},
-    {"date": "2024-01-15", "merchant": "BigBasket Grocery", "amount": 850.0,
-     "transaction_type": "debit", "category": "grocery", "month": "2024-01"},
-    {"date": "2024-01-20", "merchant": "BESCOM", "amount": 1500.0,
-     "transaction_type": "debit", "category": "utility_bills", "month": "2024-01"},
-    {"date": "2024-01-25", "merchant": "Cashback Credit", "amount": 100.0,
-     "transaction_type": "credit", "category": "others", "month": "2024-01"},
+    {
+        "date": "2024-01-01",
+        "merchant": "Zomato",
+        "amount": 450.0,
+        "transaction_type": "debit",
+        "category": "food_delivery",
+        "month": "2024-01",
+    },
+    {
+        "date": "2024-01-05",
+        "merchant": "Airtel Recharge",
+        "amount": 299.0,
+        "transaction_type": "debit",
+        "category": "airtel_recharge",
+        "month": "2024-01",
+    },
+    {
+        "date": "2024-01-10",
+        "merchant": "Amazon",
+        "amount": 1200.0,
+        "transaction_type": "debit",
+        "category": "shopping_online",
+        "month": "2024-01",
+    },
+    {
+        "date": "2024-01-15",
+        "merchant": "BigBasket Grocery",
+        "amount": 850.0,
+        "transaction_type": "debit",
+        "category": "grocery",
+        "month": "2024-01",
+    },
+    {
+        "date": "2024-01-20",
+        "merchant": "BESCOM",
+        "amount": 1500.0,
+        "transaction_type": "debit",
+        "category": "utility_bills",
+        "month": "2024-01",
+    },
+    {
+        "date": "2024-01-25",
+        "merchant": "Cashback Credit",
+        "amount": 100.0,
+        "transaction_type": "credit",
+        "category": "others",
+        "month": "2024-01",
+    },
 ]
 
 
@@ -110,33 +163,43 @@ def _make_card(
         "card_id": card_id,
         "card_name": "Axis Airtel Credit Card",
         "months": ["2024-01"],
-        "pdf_bytes_list": [], "pdf_passwords": [],
-        "pdf_encrypted": False, "pdf_text": "...",
+        "pdf_bytes_list": [],
+        "pdf_passwords": [],
+        "pdf_encrypted": False,
+        "pdf_text": "...",
         "transactions": transactions or list(SAMPLE_TRANSACTIONS),
         "total_spend": 4299.0,
         "pending_questions": pending_questions or [],
         "answered_questions": answered_questions or [],
         "qa_answers": qa_answers or {},
-        "cashback_result": None, "utilization_score": 0,
+        "cashback_result": None,
+        "utilization_score": 0,
         "status": "questioning",
     }
 
 
 def _make_state(card: CardState, card_idx: int = 0) -> AnalysisState:
     return {
-        "session_id": "test-q-001", "status": "questioning",
-        "cards": [card], "current_card_idx": card_idx,
-        "locked_card_idx": None, "locked_pdf_idx": None,
-        "current_question": None, "comparison_result": None,
+        "session_id": "test-q-001",
+        "status": "questioning",
+        "cards": [card],
+        "current_card_idx": card_idx,
+        "locked_card_idx": None,
+        "locked_pdf_idx": None,
+        "current_question": None,
+        "comparison_result": None,
         "ui_action": "show_loading",
-        "total_questions_count": 0, "answered_questions_count": 0,
-        "error": None, "created_at": "2024-01-01T00:00:00Z",
+        "total_questions_count": 0,
+        "answered_questions_count": 0,
+        "error": None,
+        "created_at": "2024-01-01T00:00:00Z",
     }
 
 
 # ─────────────────────────────────────────────────────────────────────────────
 # 1. Prompt constant
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 def test_prompt_constant():
     print("\n[1] QUESTION_GEN_PROMPT constant")
@@ -165,6 +228,7 @@ def test_prompt_constant():
 # 2. Spend aggregation
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 def test_aggregate_spend():
     print("\n[2] _aggregate_spend_by_category")
 
@@ -191,6 +255,7 @@ def test_aggregate_spend():
 # ─────────────────────────────────────────────────────────────────────────────
 # 3. Auto-detection
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 def test_auto_detect_answers():
     print("\n[3] _auto_detect_answers")
@@ -234,6 +299,7 @@ def test_auto_detect_does_not_overwrite():
 # ─────────────────────────────────────────────────────────────────────────────
 # 4. Question building
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 def test_build_questions_from_card_doc():
     print("\n[5] _build_questions_from_card_doc — basic")
@@ -292,9 +358,7 @@ def test_build_questions_skips_already_answered():
 
     category_spend = _aggregate_spend_by_category(SAMPLE_TRANSACTIONS)
     already_answered = {"q_zomato": True, "q_airtel_sim": True}
-    questions = _build_questions_from_card_doc(
-        AXIS_AIRTEL_DOC, category_spend, already_answered
-    )
+    questions = _build_questions_from_card_doc(AXIS_AIRTEL_DOC, category_spend, already_answered)
     ids = [q["id"] for q in questions]
     assert "q_zomato" not in ids
     ok("q_zomato excluded (already answered)")
@@ -334,15 +398,17 @@ def test_build_questions_potential_cashback_correct():
 # 5. Full node — mocked DB
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 def test_node_first_call_shows_question():
     print("\n[11] question_gen_node — first call, questions pending")
 
     card = _make_card()
     state = _make_state(card)
 
-    with mock.patch("agents.question_node._fetch_card_doc", return_value=AXIS_AIRTEL_DOC), \
-         mock.patch("agents.question_node._enrich_questions_with_llm",
-                    side_effect=lambda *a, **kw: a[2]):  # return base_questions unchanged
+    with (
+        mock.patch("agents.question_node._fetch_card_doc", return_value=AXIS_AIRTEL_DOC),
+        mock.patch("agents.question_node._enrich_questions_with_llm", side_effect=lambda *a, **kw: a[2]),
+    ):  # return base_questions unchanged
         result = asyncio.run(question_gen_node(state))
 
     assert result["status"] == "questioning"
@@ -373,9 +439,10 @@ def test_node_all_answered_advances_to_calculating():
     card = _make_card(qa_answers=qa_answers)
     state = _make_state(card)
 
-    with mock.patch("agents.question_node._fetch_card_doc", return_value=AXIS_AIRTEL_DOC), \
-         mock.patch("agents.question_node._enrich_questions_with_llm",
-                    side_effect=lambda *a, **kw: a[2]):
+    with (
+        mock.patch("agents.question_node._fetch_card_doc", return_value=AXIS_AIRTEL_DOC),
+        mock.patch("agents.question_node._enrich_questions_with_llm", side_effect=lambda *a, **kw: a[2]),
+    ):
         result = asyncio.run(question_gen_node(state))
 
     assert result["status"] == "calculating"
@@ -398,9 +465,10 @@ def test_node_auto_detects_on_first_call():
     card = _make_card(qa_answers={})
     state = _make_state(card)
 
-    with mock.patch("agents.question_node._fetch_card_doc", return_value=AXIS_AIRTEL_DOC), \
-         mock.patch("agents.question_node._enrich_questions_with_llm",
-                    side_effect=lambda *a, **kw: a[2]):
+    with (
+        mock.patch("agents.question_node._fetch_card_doc", return_value=AXIS_AIRTEL_DOC),
+        mock.patch("agents.question_node._enrich_questions_with_llm", side_effect=lambda *a, **kw: a[2]),
+    ):
         result = asyncio.run(question_gen_node(state))
 
     card_out = result["cards"][0]
@@ -422,9 +490,10 @@ def test_node_db_not_found_graceful():
     card = _make_card(card_id="nonexistent-card")
     state = _make_state(card)
 
-    with mock.patch("agents.question_node._fetch_card_doc", return_value=None), \
-         mock.patch("agents.question_node._enrich_questions_with_llm",
-                    side_effect=lambda *a, **kw: a[2]):
+    with (
+        mock.patch("agents.question_node._fetch_card_doc", return_value=None),
+        mock.patch("agents.question_node._enrich_questions_with_llm", side_effect=lambda *a, **kw: a[2]),
+    ):
         result = asyncio.run(question_gen_node(state))
 
     # Should still work — falls back to general questions only
@@ -439,9 +508,10 @@ def test_node_incremental_answer():
     card = _make_card(qa_answers={})
     state = _make_state(card)
 
-    with mock.patch("agents.question_node._fetch_card_doc", return_value=AXIS_AIRTEL_DOC), \
-         mock.patch("agents.question_node._enrich_questions_with_llm",
-                    side_effect=lambda *a, **kw: a[2]):
+    with (
+        mock.patch("agents.question_node._fetch_card_doc", return_value=AXIS_AIRTEL_DOC),
+        mock.patch("agents.question_node._enrich_questions_with_llm", side_effect=lambda *a, **kw: a[2]),
+    ):
         r1 = asyncio.run(question_gen_node(state))
 
     q1 = r1["current_question"]
@@ -456,9 +526,10 @@ def test_node_incremental_answer():
     updated_state["cards"] = r1["cards"]
     updated_state["current_card_idx"] = 0
 
-    with mock.patch("agents.question_node._fetch_card_doc", return_value=AXIS_AIRTEL_DOC), \
-         mock.patch("agents.question_node._enrich_questions_with_llm",
-                    side_effect=lambda *a, **kw: a[2]):
+    with (
+        mock.patch("agents.question_node._fetch_card_doc", return_value=AXIS_AIRTEL_DOC),
+        mock.patch("agents.question_node._enrich_questions_with_llm", side_effect=lambda *a, **kw: a[2]),
+    ):
         r2 = asyncio.run(question_gen_node(updated_state))
 
     if r2["current_question"]:
@@ -479,30 +550,43 @@ def test_node_does_not_touch_other_cards():
     card1["qa_answers"] = {}
 
     state: AnalysisState = {
-        "session_id": "test-multi", "status": "questioning",
-        "cards": [card0, card1], "current_card_idx": 1,
-        "locked_card_idx": None, "locked_pdf_idx": None,
-        "current_question": None, "comparison_result": None,
-        "ui_action": "show_loading", "total_questions_count": 0,
-        "answered_questions_count": 0, "error": None,
+        "session_id": "test-multi",
+        "status": "questioning",
+        "cards": [card0, card1],
+        "current_card_idx": 1,
+        "locked_card_idx": None,
+        "locked_pdf_idx": None,
+        "current_question": None,
+        "comparison_result": None,
+        "ui_action": "show_loading",
+        "total_questions_count": 0,
+        "answered_questions_count": 0,
+        "error": None,
         "created_at": "2024-01-01T00:00:00Z",
     }
 
     hdfc_doc = {
-        "_id": "hdfc-millennia", "name": "HDFC Millennia", "bank": "HDFC Bank",
+        "_id": "hdfc-millennia",
+        "name": "HDFC Millennia",
+        "bank": "HDFC Bank",
         "benefits": [
             {"category": "shopping_online", "rate": 0.05, "merchant_keywords": ["amazon"]},
         ],
         "utilization_questions": [
-            {"id": "q_amazon", "text": "Do you shop on Amazon?",
-             "hint": "5% cashback", "maps_to_category": "shopping_online",
-             "auto_detect_keywords": ["amazon"]},
+            {
+                "id": "q_amazon",
+                "text": "Do you shop on Amazon?",
+                "hint": "5% cashback",
+                "maps_to_category": "shopping_online",
+                "auto_detect_keywords": ["amazon"],
+            },
         ],
     }
 
-    with mock.patch("agents.question_node._fetch_card_doc", return_value=hdfc_doc), \
-         mock.patch("agents.question_node._enrich_questions_with_llm",
-                    side_effect=lambda *a, **kw: a[2]):
+    with (
+        mock.patch("agents.question_node._fetch_card_doc", return_value=hdfc_doc),
+        mock.patch("agents.question_node._enrich_questions_with_llm", side_effect=lambda *a, **kw: a[2]),
+    ):
         result = asyncio.run(question_gen_node(state))
 
     # card0 at idx=0 should be untouched

@@ -8,13 +8,12 @@ Every session endpoint returns a SessionResponse.
 
 from __future__ import annotations
 
-from typing import Any
 from pydantic import BaseModel, Field
-
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Sub-models
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 class QuestionOut(BaseModel):
     id: str
@@ -76,6 +75,7 @@ class ComparisonResultOut(BaseModel):
 # SessionResponse — returned by every session endpoint (Section 6)
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 class SessionResponse(BaseModel):
     session_id: str
     status: str
@@ -102,6 +102,7 @@ class SessionResponse(BaseModel):
 # Request bodies
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 class PasswordRequest(BaseModel):
     password: str = Field(..., min_length=1, max_length=128)
     card_idx: int = Field(0, ge=0)
@@ -122,10 +123,11 @@ class CrawlRequest(BaseModel):
 # Card list / search responses
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 class BenefitOut(BaseModel):
     category: str = "others"
     label: str = ""
-    rate: float = 0.0               # crawler may store None — default to 0
+    rate: float = 0.0  # crawler may store None — default to 0
     max_cashback_per_month: float | None = None
     reward_type: str = "cashback"
     point_value_inr: float | None = None
@@ -139,7 +141,7 @@ class CardDetailOut(BaseModel):
     id: str = Field(alias="_id")
     name: str
     bank: str
-    network: str | None = None      # crawler may not always extract this
+    network: str | None = None  # crawler may not always extract this
     card_type: str = "cashback"
     annual_fee: int = 0
     fee_waiver_spend: int | None = None

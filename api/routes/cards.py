@@ -31,8 +31,7 @@ def _sanitise_card_doc(doc: dict) -> dict:
     Handles documents written by the crawler that may have partial data.
     """
     # Top-level string fields that must not be None
-    for field, default in [("network", "Unknown"), ("card_type", "cashback"),
-                            ("name", ""), ("bank", "")]:
+    for field, default in [("network", "Unknown"), ("card_type", "cashback"), ("name", ""), ("bank", "")]:
         if not doc.get(field):
             doc[field] = default
 
@@ -80,6 +79,7 @@ def _sanitise_card_doc(doc: dict) -> dict:
 # GET /cards
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 @router.get("", response_model=CardListResponse)
 async def list_cards(
     skip: int = Query(0, ge=0),
@@ -93,6 +93,7 @@ async def list_cards(
     """
     try:
         from db.connection import get_db
+
         db = get_db()
 
         query: dict = {}
@@ -110,12 +111,13 @@ async def list_cards(
 
     except Exception as exc:
         logger.error("list_cards error: %s", exc)
-        raise HTTPException(status_code=500, detail="Could not load cards.")
+        raise HTTPException(status_code=500, detail="Could not load cards.") from exc
 
 
 # ─────────────────────────────────────────────────────────────────────────────
 # GET /cards/search?q=
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 @router.get("/search", response_model=CardListResponse)
 async def search_cards(
@@ -127,22 +129,32 @@ async def search_cards(
     """
     try:
         from db.connection import get_db
+
         db = get_db()
 
         # Try Atlas text search first
         try:
-            cursor = db["credit_cards"].find(
-                {"$text": {"$search": q}},
-                {**_EXCLUDE_FIELDS, "score": {"$meta": "textScore"}},
-            ).sort([("score", {"$meta": "textScore"})]).limit(20)
+            cursor = (
+                db["credit_cards"]
+                .find(
+                    {"$text": {"$search": q}},
+                    {**_EXCLUDE_FIELDS, "score": {"$meta": "textScore"}},
+                )
+                .sort([("score", {"$meta": "textScore"})])
+                .limit(20)
+            )
             docs = await cursor.to_list(length=20)
         except Exception:
             # Fallback: regex search on name and bank
             regex = {"$regex": re.escape(q), "$options": "i"}
-            cursor = db["credit_cards"].find(
-                {"$or": [{"name": regex}, {"bank": regex}, {"best_for_tags": regex}]},
-                _EXCLUDE_FIELDS,
-            ).limit(20)
+            cursor = (
+                db["credit_cards"]
+                .find(
+                    {"$or": [{"name": regex}, {"bank": regex}, {"best_for_tags": regex}]},
+                    _EXCLUDE_FIELDS,
+                )
+                .limit(20)
+            )
             docs = await cursor.to_list(length=20)
 
         # Remove the meta score field before parsing
@@ -154,18 +166,20 @@ async def search_cards(
 
     except Exception as exc:
         logger.error("search_cards error: %s", exc)
-        raise HTTPException(status_code=500, detail="Search failed.")
+        raise HTTPException(status_code=500, detail="Search failed.") from exc
 
 
 # ─────────────────────────────────────────────────────────────────────────────
 # GET /cards/{card_id}
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 @router.get("/{card_id}", response_model=CardDetailOut)
 async def get_card(card_id: str):
     """Return a single card by slug ID. Excludes embedding vectors."""
     try:
         from db.connection import get_db
+
         db = get_db()
 
         doc = await db["credit_cards"].find_one({"_id": card_id}, _EXCLUDE_FIELDS)
@@ -180,4 +194,4 @@ async def get_card(card_id: str):
         raise
     except Exception as exc:
         logger.error("get_card error (%s): %s", card_id, exc)
-        raise HTTPException(status_code=500, detail="Could not load cards.")
+        raise HTTPException(status_code=500, detail="Could not load cards.") from exc

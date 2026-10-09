@@ -13,7 +13,7 @@ from __future__ import annotations
 import logging
 import secrets
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, Header, HTTPException
 
@@ -38,6 +38,7 @@ router = APIRouter(prefix="/crawl", tags=["crawl"], dependencies=[Depends(requir
 # POST /crawl
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 @router.post("", response_model=CrawlJobResponse, status_code=202)
 async def trigger_crawl(body: CrawlRequest):
     """
@@ -54,24 +55,28 @@ async def trigger_crawl(body: CrawlRequest):
     # Persist job record to MongoDB
     try:
         from db.connection import get_db
+
         db = get_db()
-        await db["crawl_jobs"].insert_one({
-            "_id": job_id,
-            "status": "pending",
-            "sources": body.sources or [],
-            "direct_urls": body.direct_urls or [],
-            "cards_upserted": 0,
-            "cards_failed": 0,
-            "errors": [],
-            "created_at": datetime.now(timezone.utc).isoformat(),
-            "finished_at": None,
-        })
+        await db["crawl_jobs"].insert_one(
+            {
+                "_id": job_id,
+                "status": "pending",
+                "sources": body.sources or [],
+                "direct_urls": body.direct_urls or [],
+                "cards_upserted": 0,
+                "cards_failed": 0,
+                "errors": [],
+                "created_at": datetime.now(UTC).isoformat(),
+                "finished_at": None,
+            }
+        )
     except Exception as exc:
         logger.warning("Failed to persist crawl job to DB: %s", exc)
 
     # Launch crawl as a background asyncio task (no Celery needed)
     try:
         from crawler.tasks import run_crawl
+
         run_crawl(
             job_id=job_id,
             sources=body.sources,
@@ -91,17 +96,30 @@ async def trigger_crawl(body: CrawlRequest):
 # GET /crawl/jobs
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 @router.get("/jobs", response_model=CrawlJobListResponse)
 async def list_crawl_jobs():
     """Return the last 20 crawl jobs sorted by creation time descending."""
     try:
         from db.connection import get_db
+
         db = get_db()
-        cursor = db["crawl_jobs"].find(
-            {},
-            {"_id": 1, "status": 1, "cards_upserted": 1, "cards_failed": 1,
-             "created_at": 1, "finished_at": 1},
-        ).sort("created_at", -1).limit(20)
+        cursor = (
+            db["crawl_jobs"]
+            .find(
+                {},
+                {
+                    "_id": 1,
+                    "status": 1,
+                    "cards_upserted": 1,
+                    "cards_failed": 1,
+                    "created_at": 1,
+                    "finished_at": 1,
+                },
+            )
+            .sort("created_at", -1)
+            .limit(20)
+        )
 
         docs = await cursor.to_list(length=20)
         jobs = [
@@ -119,4 +137,4 @@ async def list_crawl_jobs():
 
     except Exception as exc:
         logger.error("list_crawl_jobs error: %s", exc)
-        raise HTTPException(status_code=500, detail="Could not load crawl jobs.")
+        raise HTTPException(status_code=500, detail="Could not load crawl jobs.") from exc

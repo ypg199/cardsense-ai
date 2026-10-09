@@ -7,14 +7,14 @@ Creates real in-memory PDFs using PyMuPDF so tests are self-contained.
 import io
 import os
 import sys
+
 import fitz
 
 # Add project root to path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from agents.pdf_node import pdf_check_node, _extract_with_pdfplumber, _extract_with_pymupdf, _decrypt_pdf
+from agents.pdf_node import _decrypt_pdf, _extract_with_pdfplumber, _extract_with_pymupdf, pdf_check_node
 from agents.state import AnalysisState, CardState
-
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Helpers to create real PDFs in-memory
@@ -110,10 +110,12 @@ def _make_state(
 PASS = 0
 FAIL = 0
 
+
 def ok(msg: str):
     global PASS
     PASS += 1
     print(f"  ✅ {msg}")
+
 
 def fail(msg: str):
     global FAIL
@@ -261,18 +263,38 @@ def test_multi_card_correct_idx():
     pdf2 = _make_pdf_bytes("CARD TWO TRANSACTIONS\nAMAZON 1200")
 
     card1: CardState = {
-        "card_id": "axis-airtel", "card_name": "Axis Airtel",
-        "months": ["2024-01"], "pdf_bytes_list": [pdf1], "pdf_passwords": [None],
-        "pdf_encrypted": False, "pdf_text": "", "transactions": [],
-        "total_spend": 0.0, "pending_questions": [], "answered_questions": [],
-        "qa_answers": {}, "cashback_result": None, "utilization_score": 0, "status": "uploading",
+        "card_id": "axis-airtel",
+        "card_name": "Axis Airtel",
+        "months": ["2024-01"],
+        "pdf_bytes_list": [pdf1],
+        "pdf_passwords": [None],
+        "pdf_encrypted": False,
+        "pdf_text": "",
+        "transactions": [],
+        "total_spend": 0.0,
+        "pending_questions": [],
+        "answered_questions": [],
+        "qa_answers": {},
+        "cashback_result": None,
+        "utilization_score": 0,
+        "status": "uploading",
     }
     card2: CardState = {
-        "card_id": "hdfc-millennia", "card_name": "HDFC Millennia",
-        "months": ["2024-01"], "pdf_bytes_list": [pdf2], "pdf_passwords": [None],
-        "pdf_encrypted": False, "pdf_text": "", "transactions": [],
-        "total_spend": 0.0, "pending_questions": [], "answered_questions": [],
-        "qa_answers": {}, "cashback_result": None, "utilization_score": 0, "status": "uploading",
+        "card_id": "hdfc-millennia",
+        "card_name": "HDFC Millennia",
+        "months": ["2024-01"],
+        "pdf_bytes_list": [pdf2],
+        "pdf_passwords": [None],
+        "pdf_encrypted": False,
+        "pdf_text": "",
+        "transactions": [],
+        "total_spend": 0.0,
+        "pending_questions": [],
+        "answered_questions": [],
+        "qa_answers": {},
+        "cashback_result": None,
+        "utilization_score": 0,
+        "status": "uploading",
     }
 
     state: AnalysisState = {
@@ -280,10 +302,14 @@ def test_multi_card_correct_idx():
         "status": "uploading",
         "cards": [card1, card2],
         "current_card_idx": 1,  # Process second card
-        "locked_card_idx": None, "locked_pdf_idx": None,
-        "current_question": None, "comparison_result": None,
-        "ui_action": "show_upload", "total_questions_count": 0,
-        "answered_questions_count": 0, "error": None,
+        "locked_card_idx": None,
+        "locked_pdf_idx": None,
+        "current_question": None,
+        "comparison_result": None,
+        "ui_action": "show_upload",
+        "total_questions_count": 0,
+        "answered_questions_count": 0,
+        "error": None,
         "created_at": "2024-01-01T00:00:00Z",
     }
 

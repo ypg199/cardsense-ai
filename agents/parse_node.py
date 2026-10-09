@@ -40,7 +40,7 @@ from copy import deepcopy
 from typing import Any
 
 from dotenv import load_dotenv
-from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
+from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential
 
 from agents.state import AnalysisState, CardState, Transaction
 
@@ -53,12 +53,26 @@ logger = logging.getLogger(__name__)
 
 PDF_TEXT_CHAR_LIMIT = 10_000  # Truncate before sending to Gemini (spec: 10 000 chars)
 
-VALID_CATEGORIES = frozenset({
-    "airtel_recharge", "utility_bills", "food_delivery", "grocery",
-    "shopping_online", "shopping_offline", "travel_flights", "travel_hotels",
-    "fuel", "entertainment", "emi", "insurance", "healthcare",
-    "education", "rent", "others",
-})
+VALID_CATEGORIES = frozenset(
+    {
+        "airtel_recharge",
+        "utility_bills",
+        "food_delivery",
+        "grocery",
+        "shopping_online",
+        "shopping_offline",
+        "travel_flights",
+        "travel_hotels",
+        "fuel",
+        "entertainment",
+        "emi",
+        "insurance",
+        "healthcare",
+        "education",
+        "rent",
+        "others",
+    }
+)
 
 VALID_TRANSACTION_TYPES = frozenset({"debit", "credit", "refund"})
 
@@ -97,9 +111,11 @@ Statement text (truncated to 10000 chars):
 # Gemini client (lazy-initialised so tests can mock before import)
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 def _get_llm():
     """Return a ChatGoogleGenerativeAI instance for gemini-2.5-flash."""
     from langchain_google_genai import ChatGoogleGenerativeAI
+
     api_key = os.getenv("GEMINI_API_KEY", "")
     return ChatGoogleGenerativeAI(
         model="gemini-2.5-flash",
@@ -111,6 +127,7 @@ def _get_llm():
 # ─────────────────────────────────────────────────────────────────────────────
 # JSON cleaning helpers (Section 14 pitfall)
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 def _clean_gemini_json(raw: str) -> str:
     """
@@ -129,6 +146,7 @@ def _clean_gemini_json(raw: str) -> str:
 # ─────────────────────────────────────────────────────────────────────────────
 # Transaction validation / normalisation
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 def _normalise_transaction(raw: dict, month_fallback: str) -> Transaction | None:
     """
@@ -175,6 +193,7 @@ def _normalise_transaction(raw: dict, month_fallback: str) -> Transaction | None
 # ─────────────────────────────────────────────────────────────────────────────
 # Core LLM call (with retry)
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 @retry(
     stop=stop_after_attempt(3),
@@ -234,6 +253,7 @@ def _parse_transactions_from_text(pdf_text: str, month_fallback: str) -> list[Tr
 # Multi-month text splitter
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 def _split_by_month(pdf_text: str, months: list[str]) -> list[tuple[str, str]]:
     """
     Split concatenated multi-month text (produced by pdf_node) back into
@@ -264,6 +284,7 @@ def _split_by_month(pdf_text: str, months: list[str]) -> list[tuple[str, str]]:
 # ─────────────────────────────────────────────────────────────────────────────
 # Node
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 async def parse_transactions_node(state: AnalysisState) -> dict[str, Any]:
     """
@@ -297,7 +318,9 @@ async def parse_transactions_node(state: AnalysisState) -> dict[str, Any]:
     for month_label, chunk_text in month_chunks:
         logger.info(
             "Parsing month=%s for card_idx=%d (chunk_len=%d)",
-            month_label, card_idx, len(chunk_text),
+            month_label,
+            card_idx,
+            len(chunk_text),
         )
         txns = _parse_transactions_from_text(chunk_text, month_label)
         # Ensure every transaction carries the correct month label
@@ -307,10 +330,7 @@ async def parse_transactions_node(state: AnalysisState) -> dict[str, Any]:
         all_transactions.extend(txns)
 
     # ── Compute total spend (debits only) ─────────────────────────────
-    total_spend = sum(
-        t["amount"] for t in all_transactions
-        if t.get("transaction_type") == "debit"
-    )
+    total_spend = sum(t["amount"] for t in all_transactions if t.get("transaction_type") == "debit")
 
     card["transactions"] = all_transactions
     card["total_spend"] = round(total_spend, 2)
@@ -319,7 +339,9 @@ async def parse_transactions_node(state: AnalysisState) -> dict[str, Any]:
 
     logger.info(
         "parse_transactions_node complete — card_idx=%d txns=%d total_spend=%.2f",
-        card_idx, len(all_transactions), total_spend,
+        card_idx,
+        len(all_transactions),
+        total_spend,
     )
 
     return {

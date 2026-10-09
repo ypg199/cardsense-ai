@@ -28,12 +28,16 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 PASS = 0
 FAIL = 0
 
+
 def ok(msg: str):
-    global PASS; PASS += 1
+    global PASS
+    PASS += 1
     print(f"  ✅ {msg}")
 
+
 def fail(msg: str):
-    global FAIL; FAIL += 1
+    global FAIL
+    FAIL += 1
     print(f"  ❌ {msg}")
 
 
@@ -48,7 +52,7 @@ MOCK_CARDS_DB = [
         "annual_fee": 500,
         "benefits": [
             {"category": "food_delivery", "rate": 0.10, "label": "Zomato"},
-            {"category": "grocery",       "rate": 0.10, "label": "BigBasket"},
+            {"category": "grocery", "rate": 0.10, "label": "BigBasket"},
         ],
         "best_for_tags": ["airtel users"],
         "score": 0.95,
@@ -61,7 +65,7 @@ MOCK_CARDS_DB = [
         "annual_fee": 1000,
         "benefits": [
             {"category": "shopping_online", "rate": 0.05, "label": "Amazon"},
-            {"category": "food_delivery",   "rate": 0.05, "label": "Dining"},
+            {"category": "food_delivery", "rate": 0.05, "label": "Dining"},
         ],
         "best_for_tags": ["amazon"],
         "score": 0.88,
@@ -73,24 +77,26 @@ MOCK_CARDS_DB = [
 # 1. Constants
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 def test_constants():
     print("\n[1] Vector search constants")
 
-    from agents.compare_node import VECTOR_SEARCH_INDEX, EMBEDDING_DIMENSIONS, VECTOR_SEARCH_CANDIDATES
+    from agents.compare_node import EMBEDDING_DIMENSIONS, VECTOR_SEARCH_CANDIDATES, VECTOR_SEARCH_INDEX
 
     assert VECTOR_SEARCH_INDEX == "credit_cards_embedding_index"
-    ok(f"VECTOR_SEARCH_INDEX == 'credit_cards_embedding_index'")
+    ok("VECTOR_SEARCH_INDEX == 'credit_cards_embedding_index'")
 
     assert EMBEDDING_DIMENSIONS == 768
-    ok(f"EMBEDDING_DIMENSIONS == 768")
+    ok("EMBEDDING_DIMENSIONS == 768")
 
     assert VECTOR_SEARCH_CANDIDATES == 10
-    ok(f"VECTOR_SEARCH_CANDIDATES == 10")
+    ok("VECTOR_SEARCH_CANDIDATES == 10")
 
 
 # ─────────────────────────────────────────────────────────────────────────────
 # 2. $vectorSearch pipeline structure
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 def test_vector_search_pipeline_structure():
     print("\n[2] $vectorSearch pipeline structure")
@@ -105,9 +111,11 @@ def test_vector_search_pipeline_structure():
         mock_cursor.to_list = mock.AsyncMock(return_value=MOCK_CARDS_DB)
 
         mock_col = mock.MagicMock()
+
         def _capture_aggregate(pipeline, *args, **kwargs):
             captured_pipeline.extend(pipeline)
             return mock_cursor
+
         mock_col.aggregate = _capture_aggregate
 
         mock_db = mock.MagicMock()
@@ -115,6 +123,7 @@ def test_vector_search_pipeline_structure():
 
         with mock.patch("db.connection.get_db", return_value=mock_db):
             from agents.compare_node import _vector_search_async
+
             results = await _vector_search_async(dummy_vector, ["food_delivery"])
 
         return results
@@ -157,6 +166,7 @@ def test_vector_search_pipeline_structure():
 # 3. Category-filter fallback when vector search raises
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 def test_fallback_on_vector_search_error():
     print("\n[3] Fallback to category filter when $vectorSearch raises")
 
@@ -170,7 +180,9 @@ def test_fallback_on_vector_search_error():
 
         def _aggregate_raises(pipeline, *args, **kwargs):
             # Simulate vector search index not existing
-            raise Exception("PlanExecutor error during aggregation :: caused by :: $vectorSearch index not found")
+            raise Exception(
+                "PlanExecutor error during aggregation :: caused by :: $vectorSearch index not found"
+            )
 
         def _find_fallback(query, projection=None):
             call_log.append("category_filter")
@@ -186,6 +198,7 @@ def test_fallback_on_vector_search_error():
 
         with mock.patch("db.connection.get_db", return_value=mock_db):
             from agents.compare_node import _vector_search_async
+
             results = await _vector_search_async([0.0] * 768, ["food_delivery", "grocery"])
 
         return results, call_log
@@ -204,7 +217,7 @@ def test_fallback_on_empty_results():
 
     async def _run():
         mock_cursor_empty = mock.MagicMock()
-        mock_cursor_empty.to_list = mock.AsyncMock(return_value=[])   # Empty!
+        mock_cursor_empty.to_list = mock.AsyncMock(return_value=[])  # Empty!
 
         mock_cursor_fallback = mock.MagicMock()
         mock_cursor_fallback.to_list = mock.AsyncMock(return_value=MOCK_CARDS_DB)
@@ -227,6 +240,7 @@ def test_fallback_on_empty_results():
 
         with mock.patch("db.connection.get_db", return_value=mock_db):
             from agents.compare_node import _vector_search_async
+
             results = await _vector_search_async([0.0] * 768, ["food_delivery"])
 
         return results, call_log
@@ -243,6 +257,7 @@ def test_fallback_on_empty_results():
 # ─────────────────────────────────────────────────────────────────────────────
 # 4. Category-filter fallback directly
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 def test_category_filter_fallback_directly():
     print("\n[5] _fetch_cards_by_categories_async directly")
@@ -266,9 +281,8 @@ def test_category_filter_fallback_directly():
 
         with mock.patch("db.connection.get_db", return_value=mock_db):
             from agents.compare_node import _fetch_cards_by_categories_async
-            results = await _fetch_cards_by_categories_async(
-                ["food_delivery", "grocery", "shopping_online"]
-            )
+
+            results = await _fetch_cards_by_categories_async(["food_delivery", "grocery", "shopping_online"])
 
         return results, captured_query
 
@@ -292,6 +306,7 @@ def test_category_filter_fallback_directly():
 # 5. Embedding generation
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 def test_get_embedding_success():
     print("\n[6] _get_embedding — success path")
 
@@ -301,12 +316,17 @@ def test_get_embedding_success():
     mock_embed_instance.embed_query.return_value = mock_vector
     MockEmbed = mock.MagicMock(return_value=mock_embed_instance)
 
-    with mock.patch.dict("sys.modules", {
-        "langchain_google_genai": mock.MagicMock(GoogleGenerativeAIEmbeddings=MockEmbed)
-    }), mock.patch.dict("os.environ", {"GEMINI_API_KEY": "fake-key"}):
+    with (
+        mock.patch.dict(
+            "sys.modules", {"langchain_google_genai": mock.MagicMock(GoogleGenerativeAIEmbeddings=MockEmbed)}
+        ),
+        mock.patch.dict("os.environ", {"GEMINI_API_KEY": "fake-key"}),
+    ):
         # Force reimport to pick up patched module
         import importlib
+
         import agents.compare_node as cm
+
         importlib.reload(cm)
         vec = cm._get_embedding("Indian credit card user spending on food and groceries")
 
@@ -323,10 +343,14 @@ def test_get_embedding_failure_returns_zeros():
     mock_embed_mod = mock.MagicMock()
     mock_embed_mod.GoogleGenerativeAIEmbeddings.side_effect = Exception("API unavailable")
 
-    with mock.patch.dict("sys.modules", {"langchain_google_genai": mock_embed_mod}), \
-         mock.patch.dict("os.environ", {"GEMINI_API_KEY": "fake-key"}):
+    with (
+        mock.patch.dict("sys.modules", {"langchain_google_genai": mock_embed_mod}),
+        mock.patch.dict("os.environ", {"GEMINI_API_KEY": "fake-key"}),
+    ):
         import importlib
+
         import agents.compare_node as cm
+
         importlib.reload(cm)
         vec = cm._get_embedding("some text")
 
@@ -340,6 +364,7 @@ def test_get_embedding_failure_returns_zeros():
 # ─────────────────────────────────────────────────────────────────────────────
 # 6. Index documentation in setup_indexes.py
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 def test_setup_indexes_documents_vector_search():
     print("\n[8] setup_indexes.py — vector search index documented")
@@ -386,23 +411,41 @@ def test_schemas_documents_vector_search():
 # 7. Full compare_node uses vector search
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 def test_compare_node_calls_vector_search():
     print("\n[10] compare_node — calls _vector_search_async (not just category filter)")
 
-    from agents.state import CardState, CashbackResult, MonthlyBreakdown
+    from agents.state import CashbackResult, MonthlyBreakdown
 
     card = {
-        "card_id": "axis-airtel", "card_name": "Axis Airtel",
-        "months": ["2024-01"], "pdf_bytes_list": [], "pdf_passwords": [],
-        "pdf_encrypted": False, "pdf_text": "",
+        "card_id": "axis-airtel",
+        "card_name": "Axis Airtel",
+        "months": ["2024-01"],
+        "pdf_bytes_list": [],
+        "pdf_passwords": [],
+        "pdf_encrypted": False,
+        "pdf_text": "",
         "transactions": [
-            {"date": "2024-01-10", "merchant": "Zomato", "amount": 900.0,
-             "transaction_type": "debit", "category": "food_delivery", "month": "2024-01"},
-            {"date": "2024-01-15", "merchant": "BigBasket", "amount": 600.0,
-             "transaction_type": "debit", "category": "grocery", "month": "2024-01"},
+            {
+                "date": "2024-01-10",
+                "merchant": "Zomato",
+                "amount": 900.0,
+                "transaction_type": "debit",
+                "category": "food_delivery",
+                "month": "2024-01",
+            },
+            {
+                "date": "2024-01-15",
+                "merchant": "BigBasket",
+                "amount": 600.0,
+                "transaction_type": "debit",
+                "category": "grocery",
+                "month": "2024-01",
+            },
         ],
         "total_spend": 1500.0,
-        "pending_questions": [], "answered_questions": [],
+        "pending_questions": [],
+        "answered_questions": [],
         "qa_answers": {"q_zomato": True},
         "cashback_result": CashbackResult(
             earned_breakdown={"food_delivery": 90.0},
@@ -416,12 +459,18 @@ def test_compare_node_calls_vector_search():
     }
 
     state = {
-        "session_id": "test-vs", "status": "comparing",
-        "cards": [card], "current_card_idx": 0,
-        "locked_card_idx": None, "locked_pdf_idx": None,
-        "current_question": None, "comparison_result": None,
-        "ui_action": "show_loading", "total_questions_count": 0,
-        "answered_questions_count": 0, "error": None,
+        "session_id": "test-vs",
+        "status": "comparing",
+        "cards": [card],
+        "current_card_idx": 0,
+        "locked_card_idx": None,
+        "locked_pdf_idx": None,
+        "current_question": None,
+        "comparison_result": None,
+        "ui_action": "show_loading",
+        "total_questions_count": 0,
+        "answered_questions_count": 0,
+        "error": None,
         "created_at": "2024-01-01T00:00:00Z",
     }
 
@@ -440,10 +489,13 @@ def test_compare_node_calls_vector_search():
         "tips": ["Use Axis Airtel for all Zomato orders."]
     }"""
 
-    with mock.patch("agents.compare_node._get_embedding", return_value=[0.01] * 768), \
-         mock.patch("agents.compare_node._vector_search_async", side_effect=_mock_vector_search), \
-         mock.patch.dict("os.environ", {"GEMINI_API_KEY": ""}):
+    with (
+        mock.patch("agents.compare_node._get_embedding", return_value=[0.01] * 768),
+        mock.patch("agents.compare_node._vector_search_async", side_effect=_mock_vector_search),
+        mock.patch.dict("os.environ", {"GEMINI_API_KEY": ""}),
+    ):
         from agents.compare_node import compare_node
+
         result = asyncio.run(compare_node(state))
 
     assert result["status"] == "done"
@@ -461,27 +513,58 @@ def test_compare_node_embedding_text_format():
 
     from agents.compare_node import _build_spend_profile_text
 
-    from agents.state import CardState, Transaction
-
-    cards = [{
-        "card_id": "test", "card_name": "Test",
-        "months": ["2024-01"], "pdf_bytes_list": [], "pdf_passwords": [],
-        "pdf_encrypted": False, "pdf_text": "",
-        "transactions": [
-            {"date": "2024-01-01", "merchant": "Zomato", "amount": 1500.0,
-             "transaction_type": "debit", "category": "food_delivery", "month": "2024-01"},
-            {"date": "2024-01-02", "merchant": "BigBasket", "amount": 800.0,
-             "transaction_type": "debit", "category": "grocery", "month": "2024-01"},
-            {"date": "2024-01-03", "merchant": "Amazon", "amount": 2000.0,
-             "transaction_type": "debit", "category": "shopping_online", "month": "2024-01"},
-            {"date": "2024-01-04", "merchant": "Random", "amount": 200.0,
-             "transaction_type": "debit", "category": "others", "month": "2024-01"},
-        ],
-        "total_spend": 4500.0,
-        "pending_questions": [], "answered_questions": [],
-        "qa_answers": {}, "cashback_result": None,
-        "utilization_score": 0, "status": "comparing",
-    }]
+    cards = [
+        {
+            "card_id": "test",
+            "card_name": "Test",
+            "months": ["2024-01"],
+            "pdf_bytes_list": [],
+            "pdf_passwords": [],
+            "pdf_encrypted": False,
+            "pdf_text": "",
+            "transactions": [
+                {
+                    "date": "2024-01-01",
+                    "merchant": "Zomato",
+                    "amount": 1500.0,
+                    "transaction_type": "debit",
+                    "category": "food_delivery",
+                    "month": "2024-01",
+                },
+                {
+                    "date": "2024-01-02",
+                    "merchant": "BigBasket",
+                    "amount": 800.0,
+                    "transaction_type": "debit",
+                    "category": "grocery",
+                    "month": "2024-01",
+                },
+                {
+                    "date": "2024-01-03",
+                    "merchant": "Amazon",
+                    "amount": 2000.0,
+                    "transaction_type": "debit",
+                    "category": "shopping_online",
+                    "month": "2024-01",
+                },
+                {
+                    "date": "2024-01-04",
+                    "merchant": "Random",
+                    "amount": 200.0,
+                    "transaction_type": "debit",
+                    "category": "others",
+                    "month": "2024-01",
+                },
+            ],
+            "total_spend": 4500.0,
+            "pending_questions": [],
+            "answered_questions": [],
+            "qa_answers": {},
+            "cashback_result": None,
+            "utilization_score": 0,
+            "status": "comparing",
+        }
+    ]
 
     top_cats = ["shopping_online", "food_delivery", "grocery"]
     text = _build_spend_profile_text(cards, top_cats)
@@ -500,14 +583,17 @@ def test_compare_node_embedding_text_format():
 # 8. verify_vector_search.py exists and is importable
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 def test_verify_script_exists():
     print("\n[12] db/verify_vector_search.py exists")
 
     import os
+
     assert os.path.exists("db/verify_vector_search.py")
     ok("verify_vector_search.py exists")
 
     import ast
+
     with open("db/verify_vector_search.py") as f:
         src = f.read()
     ast.parse(src)

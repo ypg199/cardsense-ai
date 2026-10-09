@@ -1,0 +1,17 @@
+target-version = "py312"
+line-length = 110
+extend-exclude = ["frontend", ".venv"]
+
+[lint]
+select = ["E", "F", "W", "I", "B", "UP", "S", "ASYNC"]
+ignore = [
+    "E501",   # long lines: handled by the formatter where it can be
+    "S101",   # assert is fine in tests
+    "S110",   # best-effort cleanup (closing browsers, status updates) may swallow errors
+    "S112",
+]
+
+[lint.per-file-ignores]
+"tests/*" = ["S", "B", "E402", "E702", "E712", "E741", "F841"]
+"crawler/*" = ["S311"]  # random user agents and jitter, not cryptography
+"db/verify_vector_search.py" = ["E702", "ASYNC230"]  # manual diagnostic script

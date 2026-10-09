@@ -58,9 +58,7 @@ from collections import defaultdict
 from copy import deepcopy
 from typing import Any
 
-from agents.state import (
-    AnalysisState, CardState, CashbackResult, MonthlyBreakdown, Transaction
-)
+from agents.state import AnalysisState, CardState, CashbackResult, MonthlyBreakdown, Transaction
 
 logger = logging.getLogger(__name__)
 
@@ -73,7 +71,7 @@ SCORE_LABELS = [
     (70, "Good — Minor optimizations possible"),
     (50, "Average — Several opportunities missed"),
     (30, "Below average — Consider using this card differently"),
-    (0,  "Poor — This card may not suit your spending pattern"),
+    (0, "Poor — This card may not suit your spending pattern"),
 ]
 
 
@@ -88,10 +86,12 @@ def get_score_label(score: int) -> str:
 # DB helper (reuses pattern from question_node)
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 async def _fetch_card_doc(card_id: str) -> dict | None:
     """Fetch a credit_cards document from MongoDB (async)."""
     try:
         from db.connection import get_db
+
         db = get_db()
         return await db["credit_cards"].find_one({"_id": card_id})
     except Exception as exc:
@@ -102,6 +102,7 @@ async def _fetch_card_doc(card_id: str) -> dict | None:
 # ─────────────────────────────────────────────────────────────────────────────
 # Benefit index builder
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 def _build_benefit_index(card_doc: dict) -> dict[str, dict]:
     """
@@ -122,6 +123,7 @@ def _build_benefit_index(card_doc: dict) -> dict[str, dict]:
 # ─────────────────────────────────────────────────────────────────────────────
 # Per-transaction cashback calculation
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 def _calc_transaction_cashback(
     txn: Transaction,
@@ -152,6 +154,7 @@ def _calc_transaction_cashback(
 # ─────────────────────────────────────────────────────────────────────────────
 # Core calculation
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 def calculate_cashback(
     transactions: list[Transaction],
@@ -254,17 +257,16 @@ def calculate_cashback(
         month_earned_total = round(sum(month_earned.values()), 2)
         month_missed_total = round(sum(month_missed.values()), 2)
         month_max = month_earned_total + month_missed_total
-        month_score = (
-            round((month_earned_total / month_max) * 100)
-            if month_max > 0 else 0
-        )
+        month_score = round((month_earned_total / month_max) * 100) if month_max > 0 else 0
 
-        monthly_breakdowns.append(MonthlyBreakdown(
-            month=month,
-            earned=month_earned_total,
-            missed=month_missed_total,
-            score=month_score,
-        ))
+        monthly_breakdowns.append(
+            MonthlyBreakdown(
+                month=month,
+                earned=month_earned_total,
+                missed=month_missed_total,
+                score=month_score,
+            )
+        )
 
     # ── Utilization Score (Section 10 formula) ────────────────────────
     theoretical_max = sum(theoretical_by_category.values())
@@ -296,6 +298,7 @@ def calculate_cashback(
 # Trend helper
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 def _compute_trend(scores: list[int]) -> str:
     """
     Compute trend direction from a list of monthly utilization scores.
@@ -322,6 +325,7 @@ def _compute_trend(scores: list[int]) -> str:
 # ─────────────────────────────────────────────────────────────────────────────
 # Node
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 async def cashback_calc_node(state: AnalysisState) -> dict[str, Any]:
     """

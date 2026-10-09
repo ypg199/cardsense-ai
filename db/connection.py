@@ -6,10 +6,11 @@ Usage:
     db = await get_db()
 """
 
-import os
 import logging
-from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase
+import os
+
 from dotenv import load_dotenv
+from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase
 
 load_dotenv()
 

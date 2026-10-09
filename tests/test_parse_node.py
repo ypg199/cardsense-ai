@@ -16,32 +16,61 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # ── patch Gemini before any import of parse_node ─────────────────────────────
 MOCK_TRANSACTIONS = [
-    {"date": "2024-01-01", "merchant": "Zomato", "amount": 450.0,
-     "transaction_type": "debit", "category": "food_delivery"},
-    {"date": "2024-01-05", "merchant": "Airtel Recharge", "amount": 299.0,
-     "transaction_type": "debit", "category": "airtel_recharge"},
-    {"date": "2024-01-10", "merchant": "Amazon", "amount": 1200.0,
-     "transaction_type": "debit", "category": "shopping_online"},
-    {"date": "2024-01-15", "merchant": "BigBasket", "amount": 850.0,
-     "transaction_type": "debit", "category": "grocery"},
-    {"date": "2024-01-20", "merchant": "BESCOM", "amount": 1500.0,
-     "transaction_type": "debit", "category": "utility_bills"},
-    {"date": "2024-01-25", "merchant": "Cashback Credit", "amount": 100.0,
-     "transaction_type": "credit", "category": "others"},
+    {
+        "date": "2024-01-01",
+        "merchant": "Zomato",
+        "amount": 450.0,
+        "transaction_type": "debit",
+        "category": "food_delivery",
+    },
+    {
+        "date": "2024-01-05",
+        "merchant": "Airtel Recharge",
+        "amount": 299.0,
+        "transaction_type": "debit",
+        "category": "airtel_recharge",
+    },
+    {
+        "date": "2024-01-10",
+        "merchant": "Amazon",
+        "amount": 1200.0,
+        "transaction_type": "debit",
+        "category": "shopping_online",
+    },
+    {
+        "date": "2024-01-15",
+        "merchant": "BigBasket",
+        "amount": 850.0,
+        "transaction_type": "debit",
+        "category": "grocery",
+    },
+    {
+        "date": "2024-01-20",
+        "merchant": "BESCOM",
+        "amount": 1500.0,
+        "transaction_type": "debit",
+        "category": "utility_bills",
+    },
+    {
+        "date": "2024-01-25",
+        "merchant": "Cashback Credit",
+        "amount": 100.0,
+        "transaction_type": "credit",
+        "category": "others",
+    },
 ]
 
 from agents.parse_node import (
-    _clean_gemini_json,
-    _normalise_transaction,
-    _split_by_month,
-    _parse_transactions_from_text,
-    parse_transactions_node,
+    PDF_TEXT_CHAR_LIMIT,
     TRANSACTION_PARSE_PROMPT,
     VALID_CATEGORIES,
-    PDF_TEXT_CHAR_LIMIT,
+    _clean_gemini_json,
+    _normalise_transaction,
+    _parse_transactions_from_text,
+    _split_by_month,
+    parse_transactions_node,
 )
 from agents.state import AnalysisState, CardState
-
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Test scaffolding
@@ -50,36 +79,53 @@ from agents.state import AnalysisState, CardState
 PASS = 0
 FAIL = 0
 
+
 def ok(msg: str):
-    global PASS; PASS += 1
+    global PASS
+    PASS += 1
     print(f"  ✅ {msg}")
 
+
 def fail(msg: str):
-    global FAIL; FAIL += 1
+    global FAIL
+    FAIL += 1
     print(f"  ❌ {msg}")
 
 
 def _make_card(pdf_text: str = "", months: list[str] | None = None) -> CardState:
     return {
-        "card_id": "axis-airtel", "card_name": "Axis Airtel",
+        "card_id": "axis-airtel",
+        "card_name": "Axis Airtel",
         "months": months or ["2024-01"],
-        "pdf_bytes_list": [], "pdf_passwords": [],
-        "pdf_encrypted": False, "pdf_text": pdf_text,
-        "transactions": [], "total_spend": 0.0,
-        "pending_questions": [], "answered_questions": [],
-        "qa_answers": {}, "cashback_result": None,
-        "utilization_score": 0, "status": "parsing",
+        "pdf_bytes_list": [],
+        "pdf_passwords": [],
+        "pdf_encrypted": False,
+        "pdf_text": pdf_text,
+        "transactions": [],
+        "total_spend": 0.0,
+        "pending_questions": [],
+        "answered_questions": [],
+        "qa_answers": {},
+        "cashback_result": None,
+        "utilization_score": 0,
+        "status": "parsing",
     }
 
 
 def _make_state(card: CardState, card_idx: int = 0) -> AnalysisState:
     return {
-        "session_id": "test-parse-001", "status": "parsing",
-        "cards": [card], "current_card_idx": card_idx,
-        "locked_card_idx": None, "locked_pdf_idx": None,
-        "current_question": None, "comparison_result": None,
-        "ui_action": "show_loading", "total_questions_count": 0,
-        "answered_questions_count": 0, "error": None,
+        "session_id": "test-parse-001",
+        "status": "parsing",
+        "cards": [card],
+        "current_card_idx": card_idx,
+        "locked_card_idx": None,
+        "locked_pdf_idx": None,
+        "current_question": None,
+        "comparison_result": None,
+        "ui_action": "show_loading",
+        "total_questions_count": 0,
+        "answered_questions_count": 0,
+        "error": None,
         "created_at": "2024-01-01T00:00:00Z",
     }
 
@@ -87,6 +133,7 @@ def _make_state(card: CardState, card_idx: int = 0) -> AnalysisState:
 # ─────────────────────────────────────────────────────────────────────────────
 # 1. Prompt constant checks
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 def test_prompt_constants():
     print("\n[1] Prompt and constant checks")
@@ -109,7 +156,7 @@ def test_prompt_constants():
     ok("PDF_TEXT_CHAR_LIMIT == 10 000 (spec requirement)")
 
     assert len(VALID_CATEGORIES) == 16
-    ok(f"VALID_CATEGORIES has all 16 categories")
+    ok("VALID_CATEGORIES has all 16 categories")
 
     for cat in ["airtel_recharge", "food_delivery", "emi", "fuel", "others"]:
         assert cat in VALID_CATEGORIES
@@ -120,14 +167,15 @@ def test_prompt_constants():
 # 2. JSON cleaner
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 def test_clean_gemini_json():
     print("\n[2] _clean_gemini_json — markdown fence stripping")
 
     cases = [
         # (input, should_contain)
-        ('```json\n[{"a":1}]\n```',        '[{"a":1}]'),
-        ('```\n[{"a":1}]\n```',            '[{"a":1}]'),
-        ('[{"a":1}]',                      '[{"a":1}]'),
+        ('```json\n[{"a":1}]\n```', '[{"a":1}]'),
+        ('```\n[{"a":1}]\n```', '[{"a":1}]'),
+        ('[{"a":1}]', '[{"a":1}]'),
         ('Here is the result:\n[{"a":1}]\nDone.', '[{"a":1}]'),
     ]
     for raw, expected_fragment in cases:
@@ -143,14 +191,20 @@ def test_clean_gemini_json():
 # 3. Transaction normalisation
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 def test_normalise_transaction():
     print("\n[3] _normalise_transaction — coercion and validation")
 
     # Happy path
     t = _normalise_transaction(
-        {"date": "2024-01-05", "merchant": "Zomato", "amount": 450.0,
-         "transaction_type": "debit", "category": "food_delivery"},
-        "2024-01"
+        {
+            "date": "2024-01-05",
+            "merchant": "Zomato",
+            "amount": 450.0,
+            "transaction_type": "debit",
+            "category": "food_delivery",
+        },
+        "2024-01",
     )
     assert t is not None
     assert t["date"] == "2024-01-05"
@@ -163,54 +217,77 @@ def test_normalise_transaction():
 
     # Unknown category → 'others'
     t2 = _normalise_transaction(
-        {"date": "2024-01-01", "merchant": "X", "amount": 100.0,
-         "transaction_type": "debit", "category": "INVALID_CAT"},
-        "2024-01"
+        {
+            "date": "2024-01-01",
+            "merchant": "X",
+            "amount": 100.0,
+            "transaction_type": "debit",
+            "category": "INVALID_CAT",
+        },
+        "2024-01",
     )
     assert t2["category"] == "others"
     ok("Unknown category coerced to 'others'")
 
     # Unknown transaction_type → 'debit'
     t3 = _normalise_transaction(
-        {"date": "2024-01-01", "merchant": "Y", "amount": 50.0,
-         "transaction_type": "purchase", "category": "grocery"},
-        "2024-01"
+        {
+            "date": "2024-01-01",
+            "merchant": "Y",
+            "amount": 50.0,
+            "transaction_type": "purchase",
+            "category": "grocery",
+        },
+        "2024-01",
     )
     assert t3["transaction_type"] == "debit"
     ok("Unknown transaction_type coerced to 'debit'")
 
     # Negative amount → made positive
     t4 = _normalise_transaction(
-        {"date": "2024-01-10", "merchant": "Z", "amount": -300.0,
-         "transaction_type": "debit", "category": "fuel"},
-        "2024-01"
+        {
+            "date": "2024-01-10",
+            "merchant": "Z",
+            "amount": -300.0,
+            "transaction_type": "debit",
+            "category": "fuel",
+        },
+        "2024-01",
     )
     assert t4["amount"] == 300.0
     ok("Negative amount made positive (abs)")
 
     # Bad date format — doesn't crash, gets placeholder date
     t5 = _normalise_transaction(
-        {"date": "01/05/2024", "merchant": "W", "amount": 200.0,
-         "transaction_type": "debit", "category": "others"},
-        "2024-01"
+        {
+            "date": "01/05/2024",
+            "merchant": "W",
+            "amount": 200.0,
+            "transaction_type": "debit",
+            "category": "others",
+        },
+        "2024-01",
     )
     assert t5 is not None
     ok("Bad date format doesn't crash (returns placeholder)")
 
     # Month inferred from date
     t6 = _normalise_transaction(
-        {"date": "2024-03-15", "merchant": "Amazon", "amount": 500.0,
-         "transaction_type": "debit", "category": "shopping_online"},
-        "2024-01"
+        {
+            "date": "2024-03-15",
+            "merchant": "Amazon",
+            "amount": 500.0,
+            "transaction_type": "debit",
+            "category": "shopping_online",
+        },
+        "2024-01",
     )
     assert t6["month"] == "2024-03"  # from date, not from fallback
     ok("Month inferred from date field when valid")
 
     # Missing merchant → 'Unknown'
     t7 = _normalise_transaction(
-        {"date": "2024-01-01", "amount": 100.0,
-         "transaction_type": "debit", "category": "others"},
-        "2024-01"
+        {"date": "2024-01-01", "amount": 100.0, "transaction_type": "debit", "category": "others"}, "2024-01"
     )
     assert t7["merchant"] == "Unknown"
     ok("Missing merchant defaulted to 'Unknown'")
@@ -219,6 +296,7 @@ def test_normalise_transaction():
 # ─────────────────────────────────────────────────────────────────────────────
 # 4. Month splitter
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 def test_split_by_month():
     print("\n[4] _split_by_month — multi-month text splitting")
@@ -254,6 +332,7 @@ def test_split_by_month():
 # ─────────────────────────────────────────────────────────────────────────────
 # 5. _parse_transactions_from_text with mocked Gemini
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 def test_parse_transactions_from_text_success():
     print("\n[5] _parse_transactions_from_text — mocked Gemini success")
@@ -326,11 +405,21 @@ def test_parse_transactions_partial_bad_rows():
     print("\n[10] _parse_transactions_from_text — some rows malformed")
 
     mixed = [
-        {"date": "2024-01-01", "merchant": "Good", "amount": 100.0,
-         "transaction_type": "debit", "category": "grocery"},
+        {
+            "date": "2024-01-01",
+            "merchant": "Good",
+            "amount": 100.0,
+            "transaction_type": "debit",
+            "category": "grocery",
+        },
         "this is not a dict",
-        {"date": "2024-01-02", "merchant": "Also Good", "amount": 200.0,
-         "transaction_type": "debit", "category": "fuel"},
+        {
+            "date": "2024-01-02",
+            "merchant": "Also Good",
+            "amount": 200.0,
+            "transaction_type": "debit",
+            "category": "fuel",
+        },
     ]
     with mock.patch("agents.parse_node._call_gemini", return_value=json.dumps(mixed)):
         txns = _parse_transactions_from_text("text", "2024-01")
@@ -344,6 +433,7 @@ def test_parse_transactions_partial_bad_rows():
 # 6. Full node tests
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 def test_node_happy_path():
     print("\n[11] parse_transactions_node — full node, mocked Gemini")
 
@@ -351,12 +441,24 @@ def test_node_happy_path():
     card = _make_card(pdf_text=pdf_text, months=["2024-01"])
     state = _make_state(card)
 
-    mock_response = json.dumps([
-        {"date": "2024-01-01", "merchant": "Zomato", "amount": 450.0,
-         "transaction_type": "debit", "category": "food_delivery"},
-        {"date": "2024-01-05", "merchant": "Airtel Recharge", "amount": 299.0,
-         "transaction_type": "debit", "category": "airtel_recharge"},
-    ])
+    mock_response = json.dumps(
+        [
+            {
+                "date": "2024-01-01",
+                "merchant": "Zomato",
+                "amount": 450.0,
+                "transaction_type": "debit",
+                "category": "food_delivery",
+            },
+            {
+                "date": "2024-01-05",
+                "merchant": "Airtel Recharge",
+                "amount": 299.0,
+                "transaction_type": "debit",
+                "category": "airtel_recharge",
+            },
+        ]
+    )
 
     with mock.patch("agents.parse_node._call_gemini", return_value=mock_response):
         result = asyncio.run(parse_transactions_node(state))
@@ -375,28 +477,43 @@ def test_node_happy_path():
     ok("card.status == 'questioning'")
 
     assert len(card_out["transactions"]) == 2
-    ok(f"2 transactions stored in card state")
+    ok("2 transactions stored in card state")
 
     assert card_out["total_spend"] == 749.0
-    ok(f"total_spend == 749.0 (sum of debits)")
+    ok("total_spend == 749.0 (sum of debits)")
 
 
 def test_node_multi_month():
     print("\n[12] parse_transactions_node — multi-month (two Gemini calls)")
 
-    pdf_text = (
-        "=== STATEMENT: 2024-01 ===\nZomato 450\n\n"
-        "=== STATEMENT: 2024-02 ===\nAmazon 1200\n"
-    )
+    pdf_text = "=== STATEMENT: 2024-01 ===\nZomato 450\n\n=== STATEMENT: 2024-02 ===\nAmazon 1200\n"
     card = _make_card(pdf_text=pdf_text, months=["2024-01", "2024-02"])
     state = _make_state(card)
 
     call_count = {"n": 0}
     responses = [
-        json.dumps([{"date": "2024-01-01", "merchant": "Zomato", "amount": 450.0,
-                     "transaction_type": "debit", "category": "food_delivery"}]),
-        json.dumps([{"date": "2024-02-10", "merchant": "Amazon", "amount": 1200.0,
-                     "transaction_type": "debit", "category": "shopping_online"}]),
+        json.dumps(
+            [
+                {
+                    "date": "2024-01-01",
+                    "merchant": "Zomato",
+                    "amount": 450.0,
+                    "transaction_type": "debit",
+                    "category": "food_delivery",
+                }
+            ]
+        ),
+        json.dumps(
+            [
+                {
+                    "date": "2024-02-10",
+                    "merchant": "Amazon",
+                    "amount": 1200.0,
+                    "transaction_type": "debit",
+                    "category": "shopping_online",
+                }
+            ]
+        ),
     ]
 
     def mock_gemini(text):
@@ -420,7 +537,7 @@ def test_node_multi_month():
 
     total = result["cards"][0]["total_spend"]
     assert total == 1650.0
-    ok(f"total_spend == 1650.0 (sum across both months)")
+    ok("total_spend == 1650.0 (sum across both months)")
 
 
 def test_node_empty_pdf_text():
@@ -449,14 +566,31 @@ def test_node_credits_excluded_from_total():
     card = _make_card(pdf_text="some text", months=["2024-01"])
     state = _make_state(card)
 
-    mixed = json.dumps([
-        {"date": "2024-01-01", "merchant": "Purchase", "amount": 1000.0,
-         "transaction_type": "debit", "category": "shopping_online"},
-        {"date": "2024-01-02", "merchant": "Cashback", "amount": 50.0,
-         "transaction_type": "credit", "category": "others"},
-        {"date": "2024-01-03", "merchant": "Refund", "amount": 200.0,
-         "transaction_type": "refund", "category": "others"},
-    ])
+    mixed = json.dumps(
+        [
+            {
+                "date": "2024-01-01",
+                "merchant": "Purchase",
+                "amount": 1000.0,
+                "transaction_type": "debit",
+                "category": "shopping_online",
+            },
+            {
+                "date": "2024-01-02",
+                "merchant": "Cashback",
+                "amount": 50.0,
+                "transaction_type": "credit",
+                "category": "others",
+            },
+            {
+                "date": "2024-01-03",
+                "merchant": "Refund",
+                "amount": 200.0,
+                "transaction_type": "refund",
+                "category": "others",
+            },
+        ]
+    )
 
     with mock.patch("agents.parse_node._call_gemini", return_value=mixed):
         result = asyncio.run(parse_transactions_node(state))
@@ -476,19 +610,32 @@ def test_node_does_not_touch_other_cards():
     card1["card_id"] = "hdfc-millennia"
 
     state: AnalysisState = {
-        "session_id": "test-multi", "status": "parsing",
-        "cards": [card0, card1], "current_card_idx": 1,
-        "locked_card_idx": None, "locked_pdf_idx": None,
-        "current_question": None, "comparison_result": None,
-        "ui_action": "show_loading", "total_questions_count": 0,
-        "answered_questions_count": 0, "error": None,
+        "session_id": "test-multi",
+        "status": "parsing",
+        "cards": [card0, card1],
+        "current_card_idx": 1,
+        "locked_card_idx": None,
+        "locked_pdf_idx": None,
+        "current_question": None,
+        "comparison_result": None,
+        "ui_action": "show_loading",
+        "total_questions_count": 0,
+        "answered_questions_count": 0,
+        "error": None,
         "created_at": "2024-01-01T00:00:00Z",
     }
 
-    mock_response = json.dumps([
-        {"date": "2024-01-01", "merchant": "Swiggy", "amount": 350.0,
-         "transaction_type": "debit", "category": "food_delivery"},
-    ])
+    mock_response = json.dumps(
+        [
+            {
+                "date": "2024-01-01",
+                "merchant": "Swiggy",
+                "amount": 350.0,
+                "transaction_type": "debit",
+                "category": "food_delivery",
+            },
+        ]
+    )
 
     with mock.patch("agents.parse_node._call_gemini", return_value=mock_response):
         result = asyncio.run(parse_transactions_node(state))
