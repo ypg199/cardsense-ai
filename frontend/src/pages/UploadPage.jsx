@@ -5,7 +5,8 @@ import PdfDropZone from '../components/PdfDropZone.jsx'
 import PasswordModal from '../components/PasswordModal.jsx'
 import Tabs from '../components/Tabs.jsx'
 import FullScreenLoader, { PARSE_STEPS } from '../components/FullScreenLoader.jsx'
-import { startSession, submitPassword } from '../api.js'
+import { startSample, startSession, submitPassword } from '../api.js'
+import SampleBanner from '../components/SampleBanner.jsx'
 import { Logo } from '../components/Brand.jsx'
 import { AlertIcon, ArrowRightIcon } from '../components/Icons.jsx'
 
@@ -189,6 +190,7 @@ export default function UploadPage() {
   const navigate = useNavigate()
   const [selected, setSelected] = useState([])   // card objects
   const [fileMap, setFileMap] = useState({})       // card._id → [{file, month}]
+  const [sampleLoading, setSampleLoading] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   const [passwordState, setPasswordState] = useState(null) // { sessionId, cardIdx, cardName, month, error }
@@ -240,6 +242,18 @@ export default function UploadPage() {
     } catch (err) {
       setError(err.message || 'Failed to start analysis. Is the API running?')
       setLoading(false)
+    }
+  }
+
+  async function handleSample() {
+    setError(null)
+    setSampleLoading(true)
+    try {
+      handleResponse(await startSample('full'))
+    } catch (err) {
+      setError(err.message || 'Could not load the sample statements.')
+    } finally {
+      setSampleLoading(false)
     }
   }
 
@@ -320,6 +334,7 @@ export default function UploadPage() {
             Upload your statements. We'll score your benefit utilization and show you what you're missing.
           </p>
           <ModeSwitch active="card" />
+          <SampleBanner onTry={handleSample} disabled={loading || sampleLoading} />
         </div>
 
         {/* Step 1: Card Selection */}
@@ -372,6 +387,9 @@ export default function UploadPage() {
           </div>
         )}
 
+        {sampleLoading && (
+          <FullScreenLoader title="Loading the sample statements" steps={['Reading four months of sample spending', 'Preparing your quiz']} stepEvery={3} />
+        )}
         {(loading || pwLoading) && (
           <FullScreenLoader title="Analysing your statements" steps={PARSE_STEPS} stepEvery={8} showTime />
         )}

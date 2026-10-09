@@ -3,7 +3,7 @@
 [![CI](https://github.com/ypg199/cardsense-ai/actions/workflows/ci.yml/badge.svg)](https://github.com/ypg199/cardsense-ai/actions/workflows/ci.yml)
 ![Python](https://img.shields.io/badge/python-3.12-blue)
 ![React](https://img.shields.io/badge/react-18-61dafb)
-![Tests](https://img.shields.io/badge/tests-217%20passing-brightgreen)
+![Tests](https://img.shields.io/badge/tests-222%20passing-brightgreen)
 [![Extraction accuracy](https://img.shields.io/badge/transactions%20found-100%25-brightgreen)](eval/RESULTS.md)
 [![Category accuracy](https://img.shields.io/badge/category%20accuracy-99.3%25-brightgreen)](eval/RESULTS.md)
 
@@ -45,6 +45,7 @@ The benchmark has already paid for itself: it caught long statements silently lo
 - **Adaptive quiz.** Questions are generated from the card's reward rules and your detected spend. Anything already visible in the statement is confirmed automatically, so you only answer what the data can't tell.
 - **Utilization score.** A 0–100 score with a per-category breakdown of cashback earned versus missed.
 - **Card recommendations.** MongoDB Atlas Vector Search finds similar cards, a rule filter removes poor fits, and Gemini ranks the rest with a plain-language explanation and routing advice.
+- **Try it with sample data.** One click runs the whole flow on four months of a made-up HDFC Millennia statement, with no upload needed. The same statements can be downloaded as PDFs to try the real upload path. Sample sessions are clearly marked.
 - **Card data crawler.** A Playwright crawler discovers card pages on Axis, HDFC, ICICI and SBI sites, extracts reward terms with Gemini, validates them against the categories the statement parser uses, and stores them with embeddings. Unchanged pages are skipped.
 
 ## Screenshots
@@ -208,6 +209,7 @@ cd frontend && npm install && npm run dev
 | Method | Path | Description |
 |---|---|---|
 | `POST` | `/session/start` | Upload PDFs for one or more cards and start the analysis (`mode=spend` stops after parsing, for the standalone Spend Analyser) |
+| `POST` | `/session/sample` | Start a session on the built-in sample statements (`{"mode": "full"}` or `"spend"`), no upload needed |
 | `POST` | `/session/{id}/password` | Unlock an encrypted statement |
 | `POST` | `/session/{id}/answer` | Answer a quiz question |
 | `GET` | `/session/{id}/status` | Current state, next question or results |
@@ -222,7 +224,7 @@ cd frontend && npm install && npm run dev
 
 ## Testing and CI
 
-All 217 tests run offline. Gemini, MongoDB and Playwright are mocked, so no keys or services are needed.
+All 222 tests run offline. Gemini, MongoDB and Playwright are mocked, so no keys or services are needed.
 
 ```bash
 pytest                                  # full suite with coverage config

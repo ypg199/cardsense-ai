@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import PdfDropZone from '../components/PdfDropZone.jsx'
 import PasswordModal from '../components/PasswordModal.jsx'
 import FullScreenLoader, { PARSE_STEPS } from '../components/FullScreenLoader.jsx'
-import { startSession, submitPassword } from '../api.js'
+import { startSample, startSession, submitPassword } from '../api.js'
+import SampleBanner from '../components/SampleBanner.jsx'
 import { ModeSwitch, uploadCss } from './UploadPage.jsx'
 import { Logo } from '../components/Brand.jsx'
 import { AlertIcon, ArrowRightIcon } from '../components/Icons.jsx'
@@ -43,6 +44,17 @@ export default function SpendUploadPage() {
       handleResponse(await startSession(fd))
     } catch (err) {
       setError(err.message || 'Could not read your statements. Is the API running?')
+      setLoading(false)
+    }
+  }
+
+  async function handleSample() {
+    setError(null)
+    setLoading(true)
+    try {
+      handleResponse(await startSample('spend'))
+    } catch (err) {
+      setError(err.message || 'Could not load the sample statements.')
       setLoading(false)
     }
   }
@@ -114,6 +126,7 @@ export default function SpendUploadPage() {
             Drop in statements from any card. You'll get monthly trends, month-by-month comparisons and your top merchants.
           </p>
           <ModeSwitch active="spend" />
+          <SampleBanner onTry={handleSample} disabled={loading} label="See sample spending" />
         </div>
 
         <div className="section" style={{ animationDelay: '50ms' }}>

@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useParams, useLocation, useNavigate } from 'react-router-dom'
 import QuestionCard from '../components/QuestionCard.jsx'
-import { Logo, LoadFailed } from '../components/Brand.jsx'
+import { Logo, LoadFailed, SampleBadge } from '../components/Brand.jsx'
 import { AlertIcon, CheckIcon } from '../components/Icons.jsx'
 import { money, monthLabel } from '../format.js'
 import { submitAnswer, getSessionStatus } from '../api.js'
@@ -282,7 +282,7 @@ export default function UtilizationPage() {
       )}
       <div className="util-page">
         <div className="util-header">
-          <Logo />
+          <div><Logo />{session.sample && <SampleBadge />}</div>
           <div className="util-progress-wrap">
             <span className="mono" style={{ fontSize: 12 }}>{questions_answered}/{questions_total}</span>
             <div className="progress-track" role="progressbar" aria-label="Quiz progress" aria-valuemin={0} aria-valuemax={questions_total} aria-valuenow={questions_answered}>

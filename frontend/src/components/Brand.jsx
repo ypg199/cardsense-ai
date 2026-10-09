@@ -3,7 +3,7 @@
  * for a missing session, an unknown URL or an API failure.
  */
 import { Link } from 'react-router-dom'
-import { AlertIcon, ArrowLeftIcon, CardIcon } from './Icons.jsx'
+import { AlertIcon, ArrowLeftIcon, CardIcon, InfoIcon } from './Icons.jsx'
 
 const css = `
 .brand {
@@ -17,6 +17,11 @@ const css = `
   border-radius: 20px; padding: 7px 18px;
 }
 .brand-pill:hover { background: rgba(245,158,11,0.12); }
+.sample-badge {
+  display: inline-flex; align-items: center; gap: 6px; margin-left: 10px; vertical-align: middle;
+  font-size: 11px; font-weight: 600; letter-spacing: 0.04em; color: var(--blue-400);
+  background: rgba(96,165,250,0.1); border: 1px solid rgba(96,165,250,0.3); border-radius: 20px; padding: 3px 10px;
+}
 
 .state-page {
   min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center;
@@ -51,6 +56,15 @@ export function Logo({ pill = false }) {
         <CardIcon size={16} /> CardSense AI
       </Link>
     </>
+  )
+}
+
+/** Marks pages built from the made-up sample statements. */
+export function SampleBadge() {
+  return (
+    <span className="sample-badge" title="These results use made-up sample statements, not real data">
+      <InfoIcon size={12} /> Sample data
+    </span>
   )
 }
 

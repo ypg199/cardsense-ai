@@ -1,0 +1,666 @@
+{
+ "card_id": "hdfc-millennia",
+ "note": "Fictitious sample data",
+ "months": [
+  {
+   "month": "2026-01",
+   "transactions": [
+    {
+     "date": "2026-01-04",
+     "merchant": "FLIPKART INTERNET PVT LTD BANGALORE",
+     "amount": 2617.98,
+     "transaction_type": "debit",
+     "category": "shopping_online",
+     "month": "2026-01"
+    },
+    {
+     "date": "2026-01-05",
+     "merchant": "SWIGGY INSTAMART",
+     "amount": 1674.0,
+     "transaction_type": "debit",
+     "category": "grocery",
+     "month": "2026-01"
+    },
+    {
+     "date": "2026-01-06",
+     "merchant": "MYNTRA DESIGNS PVT LTD",
+     "amount": 3211.0,
+     "transaction_type": "debit",
+     "category": "shopping_online",
+     "month": "2026-01"
+    },
+    {
+     "date": "2026-01-07",
+     "merchant": "PYU*SWIGGY FOOD BANGALORE",
+     "amount": 1389.71,
+     "transaction_type": "debit",
+     "category": "food_delivery",
+     "month": "2026-01"
+    },
+    {
+     "date": "2026-01-08",
+     "merchant": "IRCTC E-TICKETING NEW DELHI",
+     "amount": 6522.43,
+     "transaction_type": "debit",
+     "category": "travel_flights",
+     "month": "2026-01"
+    },
+    {
+     "date": "2026-01-10",
+     "merchant": "APOLLO PHARMACIES LTD",
+     "amount": 3458.0,
+     "transaction_type": "debit",
+     "category": "healthcare",
+     "month": "2026-01"
+    },
+    {
+     "date": "2026-01-13",
+     "merchant": "PAYTM*BLINKIT COMMERCE",
+     "amount": 2010.59,
+     "transaction_type": "debit",
+     "category": "grocery",
+     "month": "2026-01"
+    },
+    {
+     "date": "2026-01-13",
+     "merchant": "PRACTO HEALTH CONSULT",
+     "amount": 358.0,
+     "transaction_type": "debit",
+     "category": "healthcare",
+     "month": "2026-01"
+    },
+    {
+     "date": "2026-01-17",
+     "merchant": "MSEDCL ONLINE PAYMENT",
+     "amount": 1423.84,
+     "transaction_type": "debit",
+     "category": "utility_bills",
+     "month": "2026-01"
+    },
+    {
+     "date": "2026-01-20",
+     "merchant": "NETFLIX.COM MUMBAI",
+     "amount": 644.0,
+     "transaction_type": "debit",
+     "category": "entertainment",
+     "month": "2026-01"
+    },
+    {
+     "date": "2026-01-20",
+     "merchant": "BBNOW BANGALORE",
+     "amount": 2685.0,
+     "transaction_type": "debit",
+     "category": "grocery",
+     "month": "2026-01"
+    },
+    {
+     "date": "2026-01-20",
+     "merchant": "PAYMENT RECEIVED - THANK YOU",
+     "amount": 16000.0,
+     "transaction_type": "credit",
+     "category": "others",
+     "month": "2026-01"
+    },
+    {
+     "date": "2026-01-21",
+     "merchant": "SPOTIFY INDIA",
+     "amount": 995.99,
+     "transaction_type": "debit",
+     "category": "entertainment",
+     "month": "2026-01"
+    },
+    {
+     "date": "2026-01-22",
+     "merchant": "TATA POWER MUMBAI",
+     "amount": 2872.99,
+     "transaction_type": "debit",
+     "category": "utility_bills",
+     "month": "2026-01"
+    },
+    {
+     "date": "2026-01-24",
+     "merchant": "RAZ*EATSURE ONLINE",
+     "amount": 1602.0,
+     "transaction_type": "debit",
+     "category": "food_delivery",
+     "month": "2026-01"
+    },
+    {
+     "date": "2026-01-26",
+     "merchant": "TATA POWER MUMBAI",
+     "amount": 2813.56,
+     "transaction_type": "debit",
+     "category": "utility_bills",
+     "month": "2026-01"
+    },
+    {
+     "date": "2026-01-28",
+     "merchant": "BBPS BESCOM BILLPAY",
+     "amount": 2132.0,
+     "transaction_type": "debit",
+     "category": "utility_bills",
+     "month": "2026-01"
+    },
+    {
+     "date": "2026-01-28",
+     "merchant": "CASHBACK CREDITED",
+     "amount": 230.0,
+     "transaction_type": "credit",
+     "category": "others",
+     "month": "2026-01"
+    }
+   ]
+  },
+  {
+   "month": "2026-02",
+   "transactions": [
+    {
+     "date": "2026-02-02",
+     "merchant": "MAHANAGAR GAS LTD",
+     "amount": 1808.0,
+     "transaction_type": "debit",
+     "category": "utility_bills",
+     "month": "2026-02"
+    },
+    {
+     "date": "2026-02-03",
+     "merchant": "ZOMATO LTD GURGAON",
+     "amount": 798.0,
+     "transaction_type": "debit",
+     "category": "food_delivery",
+     "month": "2026-02"
+    },
+    {
+     "date": "2026-02-03",
+     "merchant": "BOOKMYSHOW*PVR",
+     "amount": 1717.0,
+     "transaction_type": "debit",
+     "category": "entertainment",
+     "month": "2026-02"
+    },
+    {
+     "date": "2026-02-08",
+     "merchant": "TATA POWER MUMBAI",
+     "amount": 2498.87,
+     "transaction_type": "debit",
+     "category": "utility_bills",
+     "month": "2026-02"
+    },
+    {
+     "date": "2026-02-14",
+     "merchant": "MYNTRA DESIGNS PVT LTD",
+     "amount": 1080.0,
+     "transaction_type": "debit",
+     "category": "shopping_online",
+     "month": "2026-02"
+    },
+    {
+     "date": "2026-02-16",
+     "merchant": "AIR INDIA WEB",
+     "amount": 7589.58,
+     "transaction_type": "debit",
+     "category": "travel_flights",
+     "month": "2026-02"
+    },
+    {
+     "date": "2026-02-16",
+     "merchant": "BBNOW BANGALORE",
+     "amount": 1193.0,
+     "transaction_type": "debit",
+     "category": "grocery",
+     "month": "2026-02"
+    },
+    {
+     "date": "2026-02-18",
+     "merchant": "IND*FLIPKART PAYMENTS",
+     "amount": 1307.0,
+     "transaction_type": "debit",
+     "category": "shopping_online",
+     "month": "2026-02"
+    },
+    {
+     "date": "2026-02-19",
+     "merchant": "ZOMATO LTD GURGAON",
+     "amount": 3193.07,
+     "transaction_type": "debit",
+     "category": "food_delivery",
+     "month": "2026-02"
+    },
+    {
+     "date": "2026-02-19",
+     "merchant": "PYU*SWIGGY FOOD BANGALORE",
+     "amount": 1939.53,
+     "transaction_type": "debit",
+     "category": "food_delivery",
+     "month": "2026-02"
+    },
+    {
+     "date": "2026-02-19",
+     "merchant": "PAYMENT RECEIVED - THANK YOU",
+     "amount": 22000.0,
+     "transaction_type": "credit",
+     "category": "others",
+     "month": "2026-02"
+    },
+    {
+     "date": "2026-02-21",
+     "merchant": "INDIAN OIL FUEL STATION",
+     "amount": 2200.37,
+     "transaction_type": "debit",
+     "category": "fuel",
+     "month": "2026-02"
+    },
+    {
+     "date": "2026-02-22",
+     "merchant": "MMT*MAKEMYTRIP FLIGHTS",
+     "amount": 7882.81,
+     "transaction_type": "debit",
+     "category": "travel_flights",
+     "month": "2026-02"
+    },
+    {
+     "date": "2026-02-22",
+     "merchant": "FLIPKART INTERNET PVT LTD BANGALORE",
+     "amount": 3345.0,
+     "transaction_type": "debit",
+     "category": "shopping_online",
+     "month": "2026-02"
+    },
+    {
+     "date": "2026-02-22",
+     "merchant": "MMT*MAKEMYTRIP FLIGHTS",
+     "amount": 6464.16,
+     "transaction_type": "debit",
+     "category": "travel_flights",
+     "month": "2026-02"
+    },
+    {
+     "date": "2026-02-22",
+     "merchant": "NYKAA E RETAIL PVT LTD MUMBAI",
+     "amount": 3247.0,
+     "transaction_type": "debit",
+     "category": "shopping_online",
+     "month": "2026-02"
+    },
+    {
+     "date": "2026-02-23",
+     "merchant": "PYU*SWIGGY FOOD BANGALORE",
+     "amount": 182.0,
+     "transaction_type": "debit",
+     "category": "food_delivery",
+     "month": "2026-02"
+    },
+    {
+     "date": "2026-02-24",
+     "merchant": "TATA POWER MUMBAI",
+     "amount": 1604.25,
+     "transaction_type": "debit",
+     "category": "utility_bills",
+     "month": "2026-02"
+    },
+    {
+     "date": "2026-02-25",
+     "merchant": "RAZ*ZEPTO MARKETPLACE",
+     "amount": 1377.83,
+     "transaction_type": "debit",
+     "category": "grocery",
+     "month": "2026-02"
+    },
+    {
+     "date": "2026-02-26",
+     "merchant": "SPOTIFY INDIA",
+     "amount": 918.0,
+     "transaction_type": "debit",
+     "category": "entertainment",
+     "month": "2026-02"
+    },
+    {
+     "date": "2026-02-28",
+     "merchant": "CASHBACK CREDITED",
+     "amount": 222.0,
+     "transaction_type": "credit",
+     "category": "others",
+     "month": "2026-02"
+    }
+   ]
+  },
+  {
+   "month": "2026-03",
+   "transactions": [
+    {
+     "date": "2026-03-05",
+     "merchant": "TATA POWER MUMBAI",
+     "amount": 2078.0,
+     "transaction_type": "debit",
+     "category": "utility_bills",
+     "month": "2026-03"
+    },
+    {
+     "date": "2026-03-05",
+     "merchant": "APOLLO PHARMACIES LTD",
+     "amount": 709.0,
+     "transaction_type": "debit",
+     "category": "healthcare",
+     "month": "2026-03"
+    },
+    {
+     "date": "2026-03-07",
+     "merchant": "SWIGGY INSTAMART",
+     "amount": 1581.82,
+     "transaction_type": "debit",
+     "category": "grocery",
+     "month": "2026-03"
+    },
+    {
+     "date": "2026-03-09",
+     "merchant": "NETFLIX.COM MUMBAI",
+     "amount": 2443.0,
+     "transaction_type": "debit",
+     "category": "entertainment",
+     "month": "2026-03"
+    },
+    {
+     "date": "2026-03-13",
+     "merchant": "RAZ*EATSURE ONLINE",
+     "amount": 2219.0,
+     "transaction_type": "debit",
+     "category": "food_delivery",
+     "month": "2026-03"
+    },
+    {
+     "date": "2026-03-13",
+     "merchant": "RAZ*EATSURE ONLINE",
+     "amount": 2639.0,
+     "transaction_type": "debit",
+     "category": "food_delivery",
+     "month": "2026-03"
+    },
+    {
+     "date": "2026-03-15",
+     "merchant": "PYU*SWIGGY FOOD BANGALORE",
+     "amount": 1859.0,
+     "transaction_type": "debit",
+     "category": "food_delivery",
+     "month": "2026-03"
+    },
+    {
+     "date": "2026-03-16",
+     "merchant": "NYKAA E RETAIL PVT LTD MUMBAI",
+     "amount": 1179.58,
+     "transaction_type": "debit",
+     "category": "shopping_online",
+     "month": "2026-03"
+    },
+    {
+     "date": "2026-03-16",
+     "merchant": "PAYMENT RECEIVED - THANK YOU",
+     "amount": 22000.0,
+     "transaction_type": "credit",
+     "category": "others",
+     "month": "2026-03"
+    },
+    {
+     "date": "2026-03-17",
+     "merchant": "SWIGGY INSTAMART",
+     "amount": 2226.0,
+     "transaction_type": "debit",
+     "category": "grocery",
+     "month": "2026-03"
+    },
+    {
+     "date": "2026-03-18",
+     "merchant": "INDIAN OIL FUEL STATION",
+     "amount": 1601.46,
+     "transaction_type": "debit",
+     "category": "fuel",
+     "month": "2026-03"
+    },
+    {
+     "date": "2026-03-19",
+     "merchant": "PYU*SWIGGY FOOD BANGALORE",
+     "amount": 2265.18,
+     "transaction_type": "debit",
+     "category": "food_delivery",
+     "month": "2026-03"
+    },
+    {
+     "date": "2026-03-20",
+     "merchant": "NETFLIX.COM MUMBAI",
+     "amount": 2261.0,
+     "transaction_type": "debit",
+     "category": "entertainment",
+     "month": "2026-03"
+    },
+    {
+     "date": "2026-03-20",
+     "merchant": "NYKAA E RETAIL PVT LTD MUMBAI",
+     "amount": 2925.43,
+     "transaction_type": "debit",
+     "category": "shopping_online",
+     "month": "2026-03"
+    },
+    {
+     "date": "2026-03-21",
+     "merchant": "MMT*MAKEMYTRIP FLIGHTS",
+     "amount": 5555.87,
+     "transaction_type": "debit",
+     "category": "travel_flights",
+     "month": "2026-03"
+    },
+    {
+     "date": "2026-03-23",
+     "merchant": "PYU*AJIO RELIANCE RETAIL",
+     "amount": 2191.21,
+     "transaction_type": "debit",
+     "category": "shopping_online",
+     "month": "2026-03"
+    },
+    {
+     "date": "2026-03-27",
+     "merchant": "ZOMATO LTD GURGAON",
+     "amount": 2543.0,
+     "transaction_type": "debit",
+     "category": "food_delivery",
+     "month": "2026-03"
+    },
+    {
+     "date": "2026-03-27",
+     "merchant": "PYU*SWIGGY FOOD BANGALORE",
+     "amount": 1917.62,
+     "transaction_type": "debit",
+     "category": "food_delivery",
+     "month": "2026-03"
+    },
+    {
+     "date": "2026-03-28",
+     "merchant": "CASHBACK CREDITED",
+     "amount": 275.0,
+     "transaction_type": "credit",
+     "category": "others",
+     "month": "2026-03"
+    }
+   ]
+  },
+  {
+   "month": "2026-04",
+   "transactions": [
+    {
+     "date": "2026-04-07",
+     "merchant": "AIR INDIA WEB",
+     "amount": 5903.0,
+     "transaction_type": "debit",
+     "category": "travel_flights",
+     "month": "2026-04"
+    },
+    {
+     "date": "2026-04-08",
+     "merchant": "HPCL-COCO KORAMANGALA",
+     "amount": 2570.0,
+     "transaction_type": "debit",
+     "category": "fuel",
+     "month": "2026-04"
+    },
+    {
+     "date": "2026-04-08",
+     "merchant": "WWW AMAZON IN BANGALORE IN",
+     "amount": 2466.38,
+     "transaction_type": "debit",
+     "category": "shopping_online",
+     "month": "2026-04"
+    },
+    {
+     "date": "2026-04-10",
+     "merchant": "MYNTRA DESIGNS PVT LTD",
+     "amount": 1992.29,
+     "transaction_type": "debit",
+     "category": "shopping_online",
+     "month": "2026-04"
+    },
+    {
+     "date": "2026-04-11",
+     "merchant": "TATA POWER MUMBAI",
+     "amount": 885.0,
+     "transaction_type": "debit",
+     "category": "utility_bills",
+     "month": "2026-04"
+    },
+    {
+     "date": "2026-04-11",
+     "merchant": "RAZ*EATSURE ONLINE",
+     "amount": 2445.0,
+     "transaction_type": "debit",
+     "category": "food_delivery",
+     "month": "2026-04"
+    },
+    {
+     "date": "2026-04-12",
+     "merchant": "ZOMATO LTD GURGAON",
+     "amount": 2094.12,
+     "transaction_type": "debit",
+     "category": "food_delivery",
+     "month": "2026-04"
+    },
+    {
+     "date": "2026-04-12",
+     "merchant": "PAYMENT RECEIVED - THANK YOU",
+     "amount": 22000.0,
+     "transaction_type": "credit",
+     "category": "others",
+     "month": "2026-04"
+    },
+    {
+     "date": "2026-04-13",
+     "merchant": "FLIPKART INTERNET PVT LTD BANGALORE",
+     "amount": 2088.04,
+     "transaction_type": "debit",
+     "category": "shopping_online",
+     "month": "2026-04"
+    },
+    {
+     "date": "2026-04-15",
+     "merchant": "APOLLO PHARMACIES LTD",
+     "amount": 298.86,
+     "transaction_type": "debit",
+     "category": "healthcare",
+     "month": "2026-04"
+    },
+    {
+     "date": "2026-04-16",
+     "merchant": "ZOMATO LTD GURGAON",
+     "amount": 474.0,
+     "transaction_type": "debit",
+     "category": "food_delivery",
+     "month": "2026-04"
+    },
+    {
+     "date": "2026-04-16",
+     "merchant": "MSEDCL ONLINE PAYMENT",
+     "amount": 2990.0,
+     "transaction_type": "debit",
+     "category": "utility_bills",
+     "month": "2026-04"
+    },
+    {
+     "date": "2026-04-16",
+     "merchant": "BIGBASKET SUPERMARKET GROCERY",
+     "amount": 1258.0,
+     "transaction_type": "debit",
+     "category": "grocery",
+     "month": "2026-04"
+    },
+    {
+     "date": "2026-04-18",
+     "merchant": "PYU*SWIGGY FOOD BANGALORE",
+     "amount": 2044.0,
+     "transaction_type": "debit",
+     "category": "food_delivery",
+     "month": "2026-04"
+    },
+    {
+     "date": "2026-04-20",
+     "merchant": "AIR INDIA WEB",
+     "amount": 3292.48,
+     "transaction_type": "debit",
+     "category": "travel_flights",
+     "month": "2026-04"
+    },
+    {
+     "date": "2026-04-23",
+     "merchant": "BIGBASKET SUPERMARKET GROCERY",
+     "amount": 3280.0,
+     "transaction_type": "debit",
+     "category": "grocery",
+     "month": "2026-04"
+    },
+    {
+     "date": "2026-04-23",
+     "merchant": "RAZ*EATSURE ONLINE",
+     "amount": 3187.62,
+     "transaction_type": "debit",
+     "category": "food_delivery",
+     "month": "2026-04"
+    },
+    {
+     "date": "2026-04-24",
+     "merchant": "NETFLIX.COM MUMBAI",
+     "amount": 3034.14,
+     "transaction_type": "debit",
+     "category": "entertainment",
+     "month": "2026-04"
+    },
+    {
+     "date": "2026-04-26",
+     "merchant": "BBPS BESCOM BILLPAY",
+     "amount": 1974.0,
+     "transaction_type": "debit",
+     "category": "utility_bills",
+     "month": "2026-04"
+    },
+    {
+     "date": "2026-04-27",
+     "merchant": "FLIPKART INTERNET PVT LTD BANGALORE",
+     "amount": 589.4,
+     "transaction_type": "debit",
+     "category": "shopping_online",
+     "month": "2026-04"
+    },
+    {
+     "date": "2026-04-27",
+     "merchant": "MMT*MAKEMYTRIP FLIGHTS",
+     "amount": 5387.0,
+     "transaction_type": "debit",
+     "category": "travel_flights",
+     "month": "2026-04"
+    },
+    {
+     "date": "2026-04-28",
+     "merchant": "CASHBACK CREDITED",
+     "amount": 396.0,
+     "transaction_type": "credit",
+     "category": "others",
+     "month": "2026-04"
+    }
+   ]
+  }
+ ]
+}
