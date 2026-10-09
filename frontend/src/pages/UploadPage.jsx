@@ -388,10 +388,10 @@ export default function UploadPage() {
         )}
 
         {sampleLoading && (
-          <FullScreenLoader title="Loading the sample statements" steps={['Reading four months of sample spending', 'Preparing your quiz']} stepEvery={3} />
+          <FullScreenLoader title="Loading the sample statements" steps={['Reading four months of sample spending', 'Preparing your quiz']} stepEvery={3} trivia />
         )}
         {(loading || pwLoading) && (
-          <FullScreenLoader title="Analysing your statements" steps={PARSE_STEPS} stepEvery={8} showTime />
+          <FullScreenLoader title="Analysing your statements" steps={PARSE_STEPS} stepEvery={8} showTime trivia />
         )}
         <button className="submit-btn" disabled={!canSubmit || loading} onClick={handleSubmit}>
           Analyse my card{selected.length > 1 ? 's' : ''} <ArrowRightIcon size={18} />

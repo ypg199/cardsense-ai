@@ -273,11 +273,11 @@ export default function UtilizationPage() {
     <>
       <style>{css}</style>
       {session.ui_action === 'show_loading' && (
-        <FullScreenLoader title="Working out your results" steps={RESULT_STEPS} stepEvery={10} showTime />
+        <FullScreenLoader title="Working out your results" steps={RESULT_STEPS} stepEvery={10} showTime trivia />
       )}
       {answerLoading && session.ui_action !== 'show_loading' && (
         lastQuestion
-          ? <FullScreenLoader title="Working out your results" steps={RESULT_STEPS} stepEvery={10} showTime />
+          ? <FullScreenLoader title="Working out your results" steps={RESULT_STEPS} stepEvery={10} showTime trivia />
           : <FullScreenLoader title="Saving your answer" steps={['Updating your quiz']} delay={500} />
       )}
       <div className="util-page">

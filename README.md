@@ -47,6 +47,7 @@ The benchmark has already paid for itself: it caught long statements silently lo
 - **Smart insights.** Plain-language notes on what stands out, such as the biggest month-on-month changes by category, payments that repeat every month, spending streaks and unusually large purchases. They are rule-based, so every sentence is backed by the same numbers as the charts.
 - **PDF report.** One click downloads the verdict, the card comparison, cashback by category and the spending charts as a two-page PDF to keep or share.
 - **Dark and light mode.** Follows the system setting on the first visit, with a toggle next to the logo that remembers the choice.
+- **Something to read while you wait.** The slower loading screens rotate short credit card facts and the odd pun.
 - **Side-by-side card comparison.** Your card next to the top alternatives, each priced with the same cashback calculator on your actual monthly spending, category by category, with annual fees and net value per year.
 - **Card recommendations.** MongoDB Atlas Vector Search finds similar cards, a rule filter removes poor fits, and Gemini ranks the rest with a plain-language explanation and routing advice.
 - **Try it with sample data.** One click runs the whole flow on four months of a made-up HDFC Millennia statement, with no upload needed. The same statements can be downloaded as PDFs to try the real upload path. Sample sessions are clearly marked.
