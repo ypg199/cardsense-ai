@@ -79,3 +79,12 @@ export const ArrowRightIcon = make(<><path d="M5 12h14" /><path d="m13 6 6 6-6 6
 export const TargetIcon = make(<>
   <circle cx="12" cy="12" r="9" /><circle cx="12" cy="12" r="5" /><circle cx="12" cy="12" r="1" />
 </>)
+export const TrendUpIcon = make(<><path d="m3 17 6-6 4 4 8-8" /><path d="M15 7h6v6" /></>)
+export const TrendDownIcon = make(<><path d="m3 7 6 6 4-4 8 8" /><path d="M15 17h6v-6" /></>)
+export const RepeatIcon = make(<>
+  <path d="m17 2 4 4-4 4" /><path d="M3 11v-1a4 4 0 0 1 4-4h14" /><path d="m7 22-4-4 4-4" /><path d="M21 13v1a4 4 0 0 1-4 4H3" />
+</>)
+export const SparkIcon = make(<>
+  <path d="M12 3v4" /><path d="M12 17v4" /><path d="M3 12h4" /><path d="M17 12h4" />
+  <path d="m6 6 2.5 2.5" /><path d="m15.5 15.5 2.5 2.5" /><path d="m6 18 2.5-2.5" /><path d="m15.5 8.5 2.5-2.5" />
+</>)

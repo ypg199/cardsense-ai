@@ -163,6 +163,13 @@ class SpendTransactionOut(BaseModel):
     card_name: str
 
 
+class InsightOut(BaseModel):
+    kind: str
+    tone: str  # "up" | "down" | "info"
+    title: str
+    detail: str
+
+
 class SpendSummaryResponse(BaseModel):
     session_id: str
     card_id: str | None = None
@@ -176,6 +183,7 @@ class SpendSummaryResponse(BaseModel):
     categories: list[SpendCategoryOut]
     merchants: list[SpendMerchantOut]
     largest: list[SpendTransactionOut]
+    insights: list[InsightOut] = []
 
 
 # ─────────────────────────────────────────────────────────────────────────────

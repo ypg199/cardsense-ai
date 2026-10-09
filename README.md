@@ -3,7 +3,7 @@
 [![CI](https://github.com/ypg199/cardsense-ai/actions/workflows/ci.yml/badge.svg)](https://github.com/ypg199/cardsense-ai/actions/workflows/ci.yml)
 ![Python](https://img.shields.io/badge/python-3.12-blue)
 ![React](https://img.shields.io/badge/react-18-61dafb)
-![Tests](https://img.shields.io/badge/tests-230%20passing-brightgreen)
+![Tests](https://img.shields.io/badge/tests-237%20passing-brightgreen)
 [![Extraction accuracy](https://img.shields.io/badge/transactions%20found-100%25-brightgreen)](eval/RESULTS.md)
 [![Category accuracy](https://img.shields.io/badge/category%20accuracy-99.3%25-brightgreen)](eval/RESULTS.md)
 
@@ -44,6 +44,7 @@ The benchmark has already paid for itself: it caught long statements silently lo
 - **Multi-month and multi-card analysis.** Upload several months per card, or several cards in one session. Each card is analysed in turn, with a month-by-month trend.
 - **Adaptive quiz.** Questions are generated from the card's reward rules and your detected spend. Anything already visible in the statement is confirmed automatically, so you only answer what the data can't tell.
 - **Utilization score.** A 0–100 score with a per-category breakdown of cashback earned versus missed.
+- **Smart insights.** Plain-language notes on what stands out, such as the biggest month-on-month changes by category, payments that repeat every month, spending streaks and unusually large purchases. They are rule-based, so every sentence is backed by the same numbers as the charts.
 - **Side-by-side card comparison.** Your card next to the top alternatives, each priced with the same cashback calculator on your actual monthly spending, category by category, with annual fees and net value per year.
 - **Card recommendations.** MongoDB Atlas Vector Search finds similar cards, a rule filter removes poor fits, and Gemini ranks the rest with a plain-language explanation and routing advice.
 - **Try it with sample data.** One click runs the whole flow on four months of a made-up HDFC Millennia statement, with no upload needed. The same statements can be downloaded as PDFs to try the real upload path. Sample sessions are clearly marked.
@@ -225,7 +226,7 @@ cd frontend && npm install && npm run dev
 
 ## Testing and CI
 
-All 230 tests run offline. Gemini, MongoDB and Playwright are mocked, so no keys or services are needed.
+All 237 tests run offline. Gemini, MongoDB and Playwright are mocked, so no keys or services are needed.
 
 ```bash
 pytest                                  # full suite with coverage config
