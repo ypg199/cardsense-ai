@@ -5,12 +5,12 @@ import CardComparison from '../components/CardComparison.jsx'
 import CardCompareTable from '../components/CardCompareTable.jsx'
 import Insights from '../components/Insights.jsx'
 import UtilizationMeter from '../components/UtilizationMeter.jsx'
-import { getSessionStatus, getSpendSummary } from '../api.js'
+import { getSessionStatus, getSpendSummary, reportUrl } from '../api.js'
 import FullScreenLoader, { RESULT_STEPS } from '../components/FullScreenLoader.jsx'
 import { SpendAnalyser } from './SpendAnalyserPage.jsx'
 import Tabs, { AnalyseIcon, ResultsIcon } from '../components/Tabs.jsx'
 import { Logo, LoadFailed, SampleBadge } from '../components/Brand.jsx'
-import { ArrowLeftIcon, BulbIcon, CardIcon, ChartIcon, CheckCircleIcon, CoinsIcon, SparkIcon, SwapIcon, TargetIcon } from '../components/Icons.jsx'
+import { ArrowLeftIcon, BulbIcon, DownloadIcon, CardIcon, ChartIcon, CheckCircleIcon, CoinsIcon, SparkIcon, SwapIcon, TargetIcon } from '../components/Icons.jsx'
 import { money } from '../format.js'
 
 const css = `
@@ -42,7 +42,8 @@ const css = `
   transition: all var(--transition);
 }
 .results-header { gap: 12px; }
-.new-analysis-btn { white-space: nowrap; }
+.new-analysis-btn { white-space: nowrap; text-decoration: none; }
+.results-actions { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
 .new-analysis-btn:focus-visible { outline: 2px solid var(--amber-400); outline-offset: 2px; }
 .new-analysis-btn:hover { border-color: var(--amber-500); color: var(--amber-400); }
 .results-tabs { margin-bottom: 24px; animation: fadeUp 300ms ease; }
@@ -250,9 +251,14 @@ export default function ResultsPage() {
       <div className="results-page">
         <div className="results-header">
           <div><Logo />{session.sample && <SampleBadge />}</div>
-          <button className="new-analysis-btn" onClick={() => navigate('/')}>
-            <ArrowLeftIcon size={15} /> New analysis
-          </button>
+          <div className="results-actions">
+            <a className="new-analysis-btn" href={reportUrl(sessionId)} download>
+              <DownloadIcon size={15} /> PDF report
+            </a>
+            <button className="new-analysis-btn" onClick={() => navigate('/')}>
+              <ArrowLeftIcon size={15} /> New analysis
+            </button>
+          </div>
         </div>
 
         <div className="results-tabs">

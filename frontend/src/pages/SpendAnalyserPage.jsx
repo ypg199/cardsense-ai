@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { getSpendSummary } from '../api.js'
+import { getSpendSummary, reportUrl } from '../api.js'
 import FullScreenLoader from '../components/FullScreenLoader.jsx'
 import Insights from '../components/Insights.jsx'
 import { Logo, SampleBadge } from '../components/Brand.jsx'
-import { AlertIcon } from '../components/Icons.jsx'
+import { AlertIcon, DownloadIcon } from '../components/Icons.jsx'
 import { dayLabel } from '../format.js'
 import {
   BarList, CompareChart, Legend, MonthlyChart, TipRows,
@@ -151,6 +151,7 @@ export default function SpendAnalyserPage() {
         <div className="sa-header">
           <Logo />
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <a className="sa-btn" href={reportUrl(sessionId)} download><DownloadIcon size={15} />&nbsp;PDF report</a>
             <button className="sa-btn" onClick={() => navigate('/spend')}>Upload other statements</button>
             <button className="sa-btn" onClick={() => navigate('/')}>Analyse a card</button>
           </div>

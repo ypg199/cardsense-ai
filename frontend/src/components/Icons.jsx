@@ -88,3 +88,6 @@ export const SparkIcon = make(<>
   <path d="M12 3v4" /><path d="M12 17v4" /><path d="M3 12h4" /><path d="M17 12h4" />
   <path d="m6 6 2.5 2.5" /><path d="m15.5 15.5 2.5 2.5" /><path d="m6 18 2.5-2.5" /><path d="m15.5 8.5 2.5-2.5" />
 </>)
+export const DownloadIcon = make(<>
+  <path d="M12 4v12" /><path d="m7 11 5 5 5-5" /><path d="M4 20h16" />
+</>)
