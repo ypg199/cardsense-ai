@@ -3,9 +3,10 @@ import { useNavigate } from 'react-router-dom'
 import CardSelector from '../components/CardSelector.jsx'
 import PdfDropZone from '../components/PdfDropZone.jsx'
 import PasswordModal from '../components/PasswordModal.jsx'
+import FullScreenLoader, { PARSE_STEPS } from '../components/FullScreenLoader.jsx'
 import { startSession, submitPassword } from '../api.js'
 
-const css = `
+export const uploadCss = `
 .upload-page {
   min-height: 100vh;
   padding: 0 24px 60px;
@@ -160,7 +161,58 @@ const css = `
   animation: spin 800ms linear infinite;
 }
 .loading-msg { color: var(--slate-400); font-size: 14px; }
+
+.mode-switch {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  margin: 28px auto 0;
+  width: fit-content;
+  max-width: 100%;
+  background: var(--navy-900);
+  border: 1px solid var(--navy-700);
+  border-radius: 14px;
+}
+.mode-btn {
+  border: none;
+  background: transparent;
+  color: var(--slate-400);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 500;
+  padding: 10px 18px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all var(--transition);
+  text-align: left;
+}
+.mode-btn small { display: block; font-size: 11px; font-weight: 400; color: var(--slate-400); opacity: 0.85; }
+.mode-btn:hover { color: var(--white); }
+.mode-btn.active { background: var(--navy-700); color: var(--amber-400); }
+.mode-btn:focus-visible { outline: 2px solid var(--amber-500); outline-offset: 2px; }
 `
+const css = uploadCss
+
+/** Switch between the full card analysis and the standalone Spend Analyser. */
+export function ModeSwitch({ active }) {
+  const navigate = useNavigate()
+  const modes = [
+    ['card', '/', '💳 Card analysis', 'Score, quiz and better cards'],
+    ['spend', '/spend', '📈 Spend Analyser', 'Just charts of your spending'],
+  ]
+  return (
+    <div className="mode-switch" role="tablist" aria-label="What do you want to do?">
+      {modes.map(([key, path, label, hint]) => (
+        <button key={key} role="tab" aria-selected={active === key}
+          className={`mode-btn${active === key ? ' active' : ''}`}
+          onClick={() => active !== key && navigate(path)}>
+          {label}
+          <small>{hint}</small>
+        </button>
+      ))}
+    </div>
+  )
+}
 
 export default function UploadPage() {
   const navigate = useNavigate()
@@ -296,6 +348,7 @@ export default function UploadPage() {
           <p className="page-subtitle">
             Upload your statements. We'll score your benefit utilization and show you what you're missing.
           </p>
+          <ModeSwitch active="card" />
         </div>
 
         {/* Step 1: Card Selection */}
@@ -348,17 +401,12 @@ export default function UploadPage() {
           </div>
         )}
 
-        {/* Loading */}
-        {loading ? (
-          <div className="loading-state">
-            <div className="spinner" />
-            <p className="loading-msg">Analysing your statements…</p>
-          </div>
-        ) : (
-          <button className="submit-btn" disabled={!canSubmit} onClick={handleSubmit}>
-            Analyse My Card{selected.length > 1 ? 's' : ''} →
-          </button>
+        {(loading || pwLoading) && (
+          <FullScreenLoader title="Analysing your statements" steps={PARSE_STEPS} stepEvery={8} showTime />
         )}
+        <button className="submit-btn" disabled={!canSubmit || loading} onClick={handleSubmit}>
+          Analyse My Card{selected.length > 1 ? 's' : ''} →
+        </button>
       </div>
     </>
   )

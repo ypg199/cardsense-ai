@@ -170,7 +170,8 @@ class AnalysisState(TypedDict):
     # ── ui_action hint for the frontend ───────────────────────────────────
     # Tells the React frontend which component to render next.
     # "show_upload" | "show_password_input" | "show_loading" |
-    # "show_question" | "show_utilization" | "show_results" | "show_error"
+    # "show_question" | "show_utilization" | "show_results" | "show_analyser" |
+    # "show_error"
     ui_action: str
 
     # ── Aggregate helpers (computed, not stored in MongoDB) ────────────────
@@ -182,3 +183,7 @@ class AnalysisState(TypedDict):
 
     # ── Metadata ─────────────────────────────────────────────────────────
     created_at: str  # ISO-8601 timestamp
+
+    # "full" runs the whole pipeline; "spend" stops after parsing, for the
+    # standalone Spend Analyser (no quiz, cashback score or comparison).
+    mode: str

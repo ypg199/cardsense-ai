@@ -81,6 +81,7 @@ class SessionResponse(BaseModel):
     session_id: str
     status: str
     ui_action: str
+    mode: str = "full"  # "spend" for a standalone Spend Analyser session
     current_card_idx: int
 
     cards: list[CardSummaryOut]

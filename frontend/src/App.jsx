@@ -3,6 +3,7 @@ import UploadPage from './pages/UploadPage.jsx'
 import UtilizationPage from './pages/UtilizationPage.jsx'
 import ResultsPage from './pages/ResultsPage.jsx'
 import SpendAnalyserPage from './pages/SpendAnalyserPage.jsx'
+import SpendUploadPage from './pages/SpendUploadPage.jsx'
 
 const globalStyles = `
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -116,6 +117,7 @@ export default function App() {
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<UploadPage />} />
+          <Route path="/spend" element={<SpendUploadPage />} />
           <Route path="/quiz/:sessionId" element={<UtilizationPage />} />
           <Route path="/results/:sessionId" element={<ResultsPage />} />
           <Route path="/analyser/:sessionId" element={<SpendAnalyserPage />} />
