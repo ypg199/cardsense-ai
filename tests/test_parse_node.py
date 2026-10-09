@@ -6,11 +6,13 @@ All Gemini calls are mocked — no API key required.
 
 from __future__ import annotations
 
+import asyncio
 import json
+import os
 import sys
 import unittest.mock as mock
 
-sys.path.insert(0, "/home/claude/cardsense")
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # ── patch Gemini before any import of parse_node ─────────────────────────────
 MOCK_TRANSACTIONS = [
@@ -357,7 +359,7 @@ def test_node_happy_path():
     ])
 
     with mock.patch("agents.parse_node._call_gemini", return_value=mock_response):
-        result = parse_transactions_node(state)
+        result = asyncio.run(parse_transactions_node(state))
 
     assert result["status"] == "questioning"
     ok("status == 'questioning' after parsing")
@@ -403,7 +405,7 @@ def test_node_multi_month():
         return responses[idx] if idx < len(responses) else "[]"
 
     with mock.patch("agents.parse_node._call_gemini", side_effect=mock_gemini):
-        result = parse_transactions_node(state)
+        result = asyncio.run(parse_transactions_node(state))
 
     assert call_count["n"] == 2
     ok("Gemini called once per month (2 calls)")
@@ -428,7 +430,7 @@ def test_node_empty_pdf_text():
     state = _make_state(card)
 
     with mock.patch("agents.parse_node._call_gemini") as m:
-        result = parse_transactions_node(state)
+        result = asyncio.run(parse_transactions_node(state))
         m.assert_not_called()
 
     assert result["status"] == "questioning"
@@ -457,7 +459,7 @@ def test_node_credits_excluded_from_total():
     ])
 
     with mock.patch("agents.parse_node._call_gemini", return_value=mixed):
-        result = parse_transactions_node(state)
+        result = asyncio.run(parse_transactions_node(state))
 
     assert result["cards"][0]["total_spend"] == 1000.0
     ok("Only debit transactions counted in total_spend")
@@ -489,7 +491,7 @@ def test_node_does_not_touch_other_cards():
     ])
 
     with mock.patch("agents.parse_node._call_gemini", return_value=mock_response):
-        result = parse_transactions_node(state)
+        result = asyncio.run(parse_transactions_node(state))
 
     # card at idx=1 should have transactions
     assert len(result["cards"][1]["transactions"]) == 1

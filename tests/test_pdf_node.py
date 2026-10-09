@@ -5,11 +5,12 @@ Creates real in-memory PDFs using PyMuPDF so tests are self-contained.
 """
 
 import io
+import os
 import sys
 import fitz
 
 # Add project root to path
-sys.path.insert(0, "/home/claude/cardsense")
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from agents.pdf_node import pdf_check_node, _extract_with_pdfplumber, _extract_with_pymupdf, _decrypt_pdf
 from agents.state import AnalysisState, CardState

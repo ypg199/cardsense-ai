@@ -5,7 +5,7 @@ Sources to crawl for Indian credit card data.
 Section 8 of the spec defines these exact sources.
 
 Each entry in SOURCES is a dict:
-  key      — short identifier used in API / Celery tasks
+  key      — short identifier used in API / the crawl task
   url      — base URL to start crawl from
   selector — CSS selector for card link elements
   paginated — whether the source has multiple pages

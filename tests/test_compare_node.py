@@ -8,10 +8,11 @@ from __future__ import annotations
 
 import json
 import asyncio
+import os
 import sys
 import unittest.mock as mock
 
-sys.path.insert(0, "/home/claude/cardsense")
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from agents.compare_node import (
     compare_node,
@@ -592,7 +593,7 @@ def test_node_happy_path():
     state = _make_state([card])
 
     with mock.patch("agents.compare_node._get_embedding", return_value=[0.0] * 768), \
-         mock.patch("agents.compare_node._run_async", return_value=ALT_CARDS[:3]), \
+         mock.patch("agents.compare_node._vector_search_async", return_value=ALT_CARDS[:3]), \
          mock.patch.dict("os.environ", {"GEMINI_API_KEY": "fake-key"}), \
          mock.patch("agents.compare_node._call_gemini_pro", return_value=MOCK_GEMINI_RESPONSE):
         result = asyncio.run(compare_node(state))
@@ -633,7 +634,7 @@ def test_node_vector_search_fallback():
     # Simulate vector search failing → category fallback returns ALT_CARDS
     with mock.patch("agents.compare_node._get_embedding",
                     return_value=[0.0] * 768), \
-         mock.patch("agents.compare_node._run_async", return_value=ALT_CARDS[:2]), \
+         mock.patch("agents.compare_node._vector_search_async", return_value=ALT_CARDS[:2]), \
          mock.patch.dict("os.environ", {"GEMINI_API_KEY": ""}):
         result = asyncio.run(compare_node(state))
 
@@ -655,7 +656,7 @@ def test_node_no_api_key_completes():
     state = _make_state([card])
 
     with mock.patch("agents.compare_node._get_embedding", return_value=[0.0] * 768), \
-         mock.patch("agents.compare_node._run_async", return_value=ALT_CARDS), \
+         mock.patch("agents.compare_node._vector_search_async", return_value=ALT_CARDS), \
          mock.patch.dict("os.environ", {"GEMINI_API_KEY": ""}):
         result = asyncio.run(compare_node(state))
 
@@ -678,7 +679,7 @@ def test_node_multi_card():
     state = _make_state([card1, card2])
 
     with mock.patch("agents.compare_node._get_embedding", return_value=[0.0] * 768), \
-         mock.patch("agents.compare_node._run_async", return_value=ALT_CARDS[:2]), \
+         mock.patch("agents.compare_node._vector_search_async", return_value=ALT_CARDS[:2]), \
          mock.patch.dict("os.environ", {"GEMINI_API_KEY": "fake-key"}), \
          mock.patch("agents.compare_node._call_gemini_pro", return_value=MOCK_GEMINI_RESPONSE):
         result = asyncio.run(compare_node(state))
@@ -709,7 +710,7 @@ def test_node_current_cards_excluded():
 
     # Return all ALT_CARDS including current ones — rule filter should remove them
     with mock.patch("agents.compare_node._get_embedding", return_value=[0.0] * 768), \
-         mock.patch("agents.compare_node._run_async", return_value=ALT_CARDS), \
+         mock.patch("agents.compare_node._vector_search_async", return_value=ALT_CARDS), \
          mock.patch.dict("os.environ", {"GEMINI_API_KEY": ""}):
         result = asyncio.run(compare_node(state))
 

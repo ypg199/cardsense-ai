@@ -10,10 +10,11 @@ from __future__ import annotations
 
 import io
 import json
+import os
 import sys
 import unittest.mock as mock
 
-sys.path.insert(0, "/home/claude/cardsense")
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from fastapi.testclient import TestClient
 
