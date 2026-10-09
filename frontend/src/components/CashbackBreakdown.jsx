@@ -1,4 +1,4 @@
-import { money, catLabel } from '../format.js'
+import { money, catLabel, monthLabel } from '../format.js'
 
 const styles = `
 .breakdown-wrap { display: flex; flex-direction: column; gap: 24px; }
@@ -102,7 +102,7 @@ const styles = `
 }
 
 /* SVG bar chart */
-.trend-chart { width: 100%; overflow: hidden; }
+.trend-chart { width: 100%; max-width: 560px; max-height: 220px; display: block; margin: 0 auto; overflow: hidden; }
 .trend-title {
   font-size: 11px;
   letter-spacing: 0.08em;
@@ -199,7 +199,7 @@ export default function CashbackBreakdown({ cashbackResult, multiMonth }) {
                       rx="3"
                     />
                     <text x={x + barW / 2} y={chartH + 14} textAnchor="middle" fontSize="9" fill="var(--slate-400)">
-                      {m.month.slice(5)}
+                      {monthLabel(m.month)}
                     </text>
                     {barHeight > 16 && (
                       <text x={x + barW / 2} y={y + 12} textAnchor="middle" fontSize="8" fill="rgba(255,255,255,0.8)">

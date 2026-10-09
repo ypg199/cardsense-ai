@@ -49,6 +49,7 @@ const styles = `
 .score-label.average   { background: rgba(249,115,22,0.15); color: var(--orange-400); }
 .score-label.below     { background: rgba(249,115,22,0.10); color: var(--orange-500); }
 .score-label.poor      { background: rgba(239,68,68,0.12); color: var(--red-400); }
+.meter-caption { font-size: 12px; color: var(--slate-400); margin-top: 6px; }
 `
 
 function getColor(score) {
@@ -160,6 +161,7 @@ export default function UtilizationMeter({ score = 0, earnedMonthly = 0 }) {
         </svg>
 
         <span className={`score-label ${labelClass}`}>{labelText}</span>
+        <p className="meter-caption">How much of this card's rewards you're using</p>
 
         {earnedMonthly > 0 && (
           <p className="meter-earned">
