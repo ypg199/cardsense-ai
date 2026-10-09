@@ -417,7 +417,7 @@ async def crawl_urls(urls: list[str]) -> list[dict]:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Job status updater (called from Celery tasks)
+# Job status updater (called from the crawl task)
 # ─────────────────────────────────────────────────────────────────────────────
 
 async def _update_job_status(job_id: str, patch: dict) -> None:

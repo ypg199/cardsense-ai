@@ -7,10 +7,11 @@ All DB calls are mocked — no MongoDB connection required.
 from __future__ import annotations
 
 import asyncio
+import os
 import sys
 import unittest.mock as mock
 
-sys.path.insert(0, "/home/claude/cardsense")
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from agents.cashback_node import (
     calculate_cashback,

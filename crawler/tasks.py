@@ -3,7 +3,7 @@ crawler/tasks.py
 ─────────────────────────────────────────────────────────────────────────────
 On-demand crawl task — called by POST /crawl API endpoint.
 
-Celery and Redis have been removed. The crawler now runs:
+No external task queue is needed. The crawler runs:
   • Once automatically on startup  (docker compose → crawler service)
   • On-demand via POST /crawl      (runs in a background asyncio task)
 

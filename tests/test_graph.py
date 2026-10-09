@@ -16,11 +16,12 @@ All nodes are mocked — no DB, no PDF, no Gemini calls.
 from __future__ import annotations
 
 import asyncio
+import os
 import sys
 import unittest.mock as mock
 from copy import deepcopy
 
-sys.path.insert(0, "/home/claude/cardsense")
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from agents.graph import (
     build_graph,

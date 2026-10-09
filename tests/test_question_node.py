@@ -7,10 +7,11 @@ All DB calls are mocked — no MongoDB connection required.
 from __future__ import annotations
 
 import asyncio
+import os
 import sys
 import unittest.mock as mock
 
-sys.path.insert(0, "/home/claude/cardsense")
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from agents.question_node import (
     _aggregate_spend_by_category,
@@ -441,7 +442,7 @@ def test_node_incremental_answer():
     with mock.patch("agents.question_node._fetch_card_doc", return_value=AXIS_AIRTEL_DOC), \
          mock.patch("agents.question_node._enrich_questions_with_llm",
                     side_effect=lambda *a, **kw: a[2]):
-        r1 = question_gen_node(state)
+        r1 = asyncio.run(question_gen_node(state))
 
     q1 = r1["current_question"]
     assert q1 is not None
@@ -458,7 +459,7 @@ def test_node_incremental_answer():
     with mock.patch("agents.question_node._fetch_card_doc", return_value=AXIS_AIRTEL_DOC), \
          mock.patch("agents.question_node._enrich_questions_with_llm",
                     side_effect=lambda *a, **kw: a[2]):
-        r2 = question_gen_node(updated_state)
+        r2 = asyncio.run(question_gen_node(updated_state))
 
     if r2["current_question"]:
         assert r2["current_question"]["id"] != q1["id"]

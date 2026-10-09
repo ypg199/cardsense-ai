@@ -19,10 +19,11 @@ All DB and Gemini calls mocked — no live connections.
 from __future__ import annotations
 
 import asyncio
+import os
 import sys
 import unittest.mock as mock
 
-sys.path.insert(0, "/home/claude/cardsense")
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 PASS = 0
 FAIL = 0
@@ -439,18 +440,11 @@ def test_compare_node_calls_vector_search():
         "tips": ["Use Axis Airtel for all Zomato orders."]
     }"""
 
-    with mock.patch("agents.compare_node._run_async", side_effect=lambda c: asyncio.run(c) if asyncio.iscoroutine(c) else _mock_vector_search.__wrapped__ if hasattr(_mock_vector_search, '__wrapped__') else MOCK_CARDS_DB), \
-         mock.patch("agents.compare_node._get_embedding", return_value=[0.01] * 768), \
+    with mock.patch("agents.compare_node._get_embedding", return_value=[0.01] * 768), \
          mock.patch("agents.compare_node._vector_search_async", side_effect=_mock_vector_search), \
          mock.patch.dict("os.environ", {"GEMINI_API_KEY": ""}):
-
-        # Patch _run_async to call our mock coroutine
-        async def fake_run_async(coro):
-            return await coro
-
-        with mock.patch("agents.compare_node._run_async", side_effect=lambda c: asyncio.run(c)):
-            from agents.compare_node import compare_node
-            result = compare_node(state)
+        from agents.compare_node import compare_node
+        result = asyncio.run(compare_node(state))
 
     assert result["status"] == "done"
     ok("compare_node completes with status='done'")
