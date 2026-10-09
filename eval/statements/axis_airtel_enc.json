@@ -1,0 +1,132 @@
+{
+  "bank": "Axis Bank",
+  "password": "SAMP0101",
+  "transactions": [
+    {
+      "date": "2026-03-02",
+      "description": "POS 4521 LIFESTYLE INTL",
+      "amount": 3499.06,
+      "transaction_type": "debit",
+      "category": "shopping_offline"
+    },
+    {
+      "date": "2026-03-05",
+      "description": "EMI 3/12 SMARTPHONE PRINCIPAL+INTEREST",
+      "amount": 2416.67,
+      "transaction_type": "debit",
+      "category": "emi"
+    },
+    {
+      "date": "2026-03-06",
+      "description": "RAZ*ZEPTO MARKETPLACE",
+      "amount": 923.0,
+      "transaction_type": "debit",
+      "category": "grocery"
+    },
+    {
+      "date": "2026-03-06",
+      "description": "PYU*AJIO RELIANCE RETAIL",
+      "amount": 1859.06,
+      "transaction_type": "debit",
+      "category": "shopping_online"
+    },
+    {
+      "date": "2026-03-09",
+      "description": "MSEDCL ONLINE PAYMENT",
+      "amount": 2690.48,
+      "transaction_type": "debit",
+      "category": "utility_bills"
+    },
+    {
+      "date": "2026-03-11",
+      "description": "BHARTI AIRTEL LTD",
+      "amount": 1569.0,
+      "transaction_type": "debit",
+      "category": "airtel_recharge"
+    },
+    {
+      "date": "2026-03-12",
+      "description": "TATA POWER MUMBAI",
+      "amount": 2954.34,
+      "transaction_type": "debit",
+      "category": "utility_bills"
+    },
+    {
+      "date": "2026-03-16",
+      "description": "PAYMENT RECEIVED - THANK YOU",
+      "amount": 26000.0,
+      "transaction_type": "credit",
+      "category": "others"
+    },
+    {
+      "date": "2026-03-17",
+      "description": "BBNOW BANGALORE",
+      "amount": 1791.55,
+      "transaction_type": "debit",
+      "category": "grocery"
+    },
+    {
+      "date": "2026-03-17",
+      "description": "MSEDCL ONLINE PAYMENT",
+      "amount": 2188.05,
+      "transaction_type": "debit",
+      "category": "utility_bills"
+    },
+    {
+      "date": "2026-03-19",
+      "description": "REFUND AMAZON PAY INDIA ORDER 402-11",
+      "amount": 899.0,
+      "transaction_type": "refund",
+      "category": "shopping_online"
+    },
+    {
+      "date": "2026-03-22",
+      "description": "CRED RENTPAY HOUSE RENT",
+      "amount": 16818.43,
+      "transaction_type": "debit",
+      "category": "rent"
+    },
+    {
+      "date": "2026-03-24",
+      "description": "GOIBIBO HOTEL BOOKING",
+      "amount": 3632.0,
+      "transaction_type": "debit",
+      "category": "travel_hotels"
+    },
+    {
+      "date": "2026-03-24",
+      "description": "UDEMY ONLINE COURSES",
+      "amount": 7392.86,
+      "transaction_type": "debit",
+      "category": "education"
+    },
+    {
+      "date": "2026-03-25",
+      "description": "BHARTI AIRTEL LTD",
+      "amount": 2545.76,
+      "transaction_type": "debit",
+      "category": "airtel_recharge"
+    },
+    {
+      "date": "2026-03-28",
+      "description": "TATA POWER MUMBAI",
+      "amount": 819.8,
+      "transaction_type": "debit",
+      "category": "utility_bills"
+    },
+    {
+      "date": "2026-03-28",
+      "description": "UDEMY ONLINE COURSES",
+      "amount": 7671.07,
+      "transaction_type": "debit",
+      "category": "education"
+    },
+    {
+      "date": "2026-03-28",
+      "description": "CASHBACK CREDITED",
+      "amount": 547.0,
+      "transaction_type": "credit",
+      "category": "others"
+    }
+  ]
+}

@@ -1,0 +1,132 @@
+{
+  "bank": "Axis Bank",
+  "password": null,
+  "transactions": [
+    {
+      "date": "2026-02-01",
+      "description": "SPOTIFY INDIA",
+      "amount": 1600.0,
+      "transaction_type": "debit",
+      "category": "entertainment"
+    },
+    {
+      "date": "2026-02-01",
+      "description": "MYNTRA DESIGNS PVT LTD",
+      "amount": 235.0,
+      "transaction_type": "debit",
+      "category": "shopping_online"
+    },
+    {
+      "date": "2026-02-05",
+      "description": "MYNTRA DESIGNS PVT LTD",
+      "amount": 1004.48,
+      "transaction_type": "debit",
+      "category": "shopping_online"
+    },
+    {
+      "date": "2026-02-08",
+      "description": "ICICI LOMBARD MOTOR INSURANCE",
+      "amount": 11453.0,
+      "transaction_type": "debit",
+      "category": "insurance"
+    },
+    {
+      "date": "2026-02-08",
+      "description": "INDIGO 6E 2X4KQ",
+      "amount": 7446.16,
+      "transaction_type": "debit",
+      "category": "travel_flights"
+    },
+    {
+      "date": "2026-02-09",
+      "description": "IRCTC E-TICKETING NEW DELHI",
+      "amount": 6342.0,
+      "transaction_type": "debit",
+      "category": "travel_flights"
+    },
+    {
+      "date": "2026-02-10",
+      "description": "BPCL SERVICE STN 2231",
+      "amount": 1968.95,
+      "transaction_type": "debit",
+      "category": "fuel"
+    },
+    {
+      "date": "2026-02-10",
+      "description": "NETFLIX.COM MUMBAI",
+      "amount": 2318.0,
+      "transaction_type": "debit",
+      "category": "entertainment"
+    },
+    {
+      "date": "2026-02-11",
+      "description": "PAYMENT RECEIVED - THANK YOU",
+      "amount": 14000.0,
+      "transaction_type": "credit",
+      "category": "others"
+    },
+    {
+      "date": "2026-02-12",
+      "description": "COURSERA ONLINE COURSE FEE",
+      "amount": 6262.98,
+      "transaction_type": "debit",
+      "category": "education"
+    },
+    {
+      "date": "2026-02-13",
+      "description": "MYNTRA DESIGNS PVT LTD",
+      "amount": 1758.76,
+      "transaction_type": "debit",
+      "category": "shopping_online"
+    },
+    {
+      "date": "2026-02-14",
+      "description": "FLIPKART INTERNET PVT LTD BANGALORE",
+      "amount": 772.79,
+      "transaction_type": "debit",
+      "category": "shopping_online"
+    },
+    {
+      "date": "2026-02-15",
+      "description": "CRED RENTPAY HOUSE RENT",
+      "amount": 16079.0,
+      "transaction_type": "debit",
+      "category": "rent"
+    },
+    {
+      "date": "2026-02-16",
+      "description": "SPOTIFY INDIA",
+      "amount": 2792.0,
+      "transaction_type": "debit",
+      "category": "entertainment"
+    },
+    {
+      "date": "2026-02-22",
+      "description": "BBNOW BANGALORE",
+      "amount": 3396.0,
+      "transaction_type": "debit",
+      "category": "grocery"
+    },
+    {
+      "date": "2026-02-22",
+      "description": "PYU*SWIGGY FOOD BANGALORE",
+      "amount": 1379.86,
+      "transaction_type": "debit",
+      "category": "food_delivery"
+    },
+    {
+      "date": "2026-02-24",
+      "description": "TATA POWER MUMBAI",
+      "amount": 2749.38,
+      "transaction_type": "debit",
+      "category": "utility_bills"
+    },
+    {
+      "date": "2026-02-28",
+      "description": "CASHBACK CREDITED",
+      "amount": 317.0,
+      "transaction_type": "credit",
+      "category": "others"
+    }
+  ]
+}

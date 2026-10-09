@@ -1,0 +1,440 @@
+{
+  "bank": "HDFC Bank",
+  "password": null,
+  "transactions": [
+    {
+      "date": "2026-04-01",
+      "description": "RELIANCE TRENDS ANDHERI",
+      "amount": 265.0,
+      "transaction_type": "debit",
+      "category": "shopping_offline"
+    },
+    {
+      "date": "2026-04-02",
+      "description": "MSEDCL ONLINE PAYMENT",
+      "amount": 2103.24,
+      "transaction_type": "debit",
+      "category": "utility_bills"
+    },
+    {
+      "date": "2026-04-02",
+      "description": "INDIAN OIL FUEL STATION",
+      "amount": 2747.0,
+      "transaction_type": "debit",
+      "category": "fuel"
+    },
+    {
+      "date": "2026-04-03",
+      "description": "POS 4521 LIFESTYLE INTL",
+      "amount": 3217.78,
+      "transaction_type": "debit",
+      "category": "shopping_offline"
+    },
+    {
+      "date": "2026-04-04",
+      "description": "TATA POWER MUMBAI",
+      "amount": 2956.2,
+      "transaction_type": "debit",
+      "category": "utility_bills"
+    },
+    {
+      "date": "2026-04-04",
+      "description": "PYU*AJIO RELIANCE RETAIL",
+      "amount": 358.0,
+      "transaction_type": "debit",
+      "category": "shopping_online"
+    },
+    {
+      "date": "2026-04-04",
+      "description": "COURSERA ONLINE COURSE FEE",
+      "amount": 5128.89,
+      "transaction_type": "debit",
+      "category": "education"
+    },
+    {
+      "date": "2026-04-05",
+      "description": "POS 4521 LIFESTYLE INTL",
+      "amount": 372.83,
+      "transaction_type": "debit",
+      "category": "shopping_offline"
+    },
+    {
+      "date": "2026-04-05",
+      "description": "VIT UNIVERSITY FEE PAYMENT",
+      "amount": 5737.0,
+      "transaction_type": "debit",
+      "category": "education"
+    },
+    {
+      "date": "2026-04-06",
+      "description": "BBNOW BANGALORE",
+      "amount": 1737.0,
+      "transaction_type": "debit",
+      "category": "grocery"
+    },
+    {
+      "date": "2026-04-06",
+      "description": "GOIBIBO HOTEL BOOKING",
+      "amount": 4461.66,
+      "transaction_type": "debit",
+      "category": "travel_hotels"
+    },
+    {
+      "date": "2026-04-07",
+      "description": "BIGBASKET SUPERMARKET GROCERY",
+      "amount": 1620.03,
+      "transaction_type": "debit",
+      "category": "grocery"
+    },
+    {
+      "date": "2026-04-08",
+      "description": "AIR INDIA WEB",
+      "amount": 3170.58,
+      "transaction_type": "debit",
+      "category": "travel_flights"
+    },
+    {
+      "date": "2026-04-08",
+      "description": "GOIBIBO HOTEL BOOKING",
+      "amount": 6989.0,
+      "transaction_type": "debit",
+      "category": "travel_hotels"
+    },
+    {
+      "date": "2026-04-08",
+      "description": "HPCL-COCO KORAMANGALA",
+      "amount": 1608.76,
+      "transaction_type": "debit",
+      "category": "fuel"
+    },
+    {
+      "date": "2026-04-08",
+      "description": "AIRTEL POSTPAID BILL PAYMENT",
+      "amount": 847.0,
+      "transaction_type": "debit",
+      "category": "airtel_recharge"
+    },
+    {
+      "date": "2026-04-08",
+      "description": "COURSERA ONLINE COURSE FEE",
+      "amount": 4663.24,
+      "transaction_type": "debit",
+      "category": "education"
+    },
+    {
+      "date": "2026-04-09",
+      "description": "RAZ*ZEPTO MARKETPLACE",
+      "amount": 3309.0,
+      "transaction_type": "debit",
+      "category": "grocery"
+    },
+    {
+      "date": "2026-04-09",
+      "description": "INDIAN OIL FUEL STATION",
+      "amount": 1997.0,
+      "transaction_type": "debit",
+      "category": "fuel"
+    },
+    {
+      "date": "2026-04-10",
+      "description": "COURSERA ONLINE COURSE FEE",
+      "amount": 7935.0,
+      "transaction_type": "debit",
+      "category": "education"
+    },
+    {
+      "date": "2026-04-10",
+      "description": "INDIGO 6E 2X4KQ",
+      "amount": 7782.0,
+      "transaction_type": "debit",
+      "category": "travel_flights"
+    },
+    {
+      "date": "2026-04-10",
+      "description": "VIT UNIVERSITY FEE PAYMENT",
+      "amount": 7980.0,
+      "transaction_type": "debit",
+      "category": "education"
+    },
+    {
+      "date": "2026-04-10",
+      "description": "PRACTO HEALTH CONSULT",
+      "amount": 1728.62,
+      "transaction_type": "debit",
+      "category": "healthcare"
+    },
+    {
+      "date": "2026-04-11",
+      "description": "PYU*SWIGGY FOOD BANGALORE",
+      "amount": 1125.0,
+      "transaction_type": "debit",
+      "category": "food_delivery"
+    },
+    {
+      "date": "2026-04-12",
+      "description": "POLICYBAZAAR INSURANCE",
+      "amount": 3743.49,
+      "transaction_type": "debit",
+      "category": "insurance"
+    },
+    {
+      "date": "2026-04-12",
+      "description": "UDEMY ONLINE COURSES",
+      "amount": 6728.27,
+      "transaction_type": "debit",
+      "category": "education"
+    },
+    {
+      "date": "2026-04-12",
+      "description": "RELIANCE TRENDS ANDHERI",
+      "amount": 2721.0,
+      "transaction_type": "debit",
+      "category": "shopping_offline"
+    },
+    {
+      "date": "2026-04-13",
+      "description": "RELIANCE TRENDS ANDHERI",
+      "amount": 1591.0,
+      "transaction_type": "debit",
+      "category": "shopping_offline"
+    },
+    {
+      "date": "2026-04-13",
+      "description": "TATA POWER MUMBAI",
+      "amount": 778.51,
+      "transaction_type": "debit",
+      "category": "utility_bills"
+    },
+    {
+      "date": "2026-04-13",
+      "description": "PAYMENT RECEIVED - THANK YOU",
+      "amount": 30000.0,
+      "transaction_type": "credit",
+      "category": "others"
+    },
+    {
+      "date": "2026-04-14",
+      "description": "RAZ*ZEPTO MARKETPLACE",
+      "amount": 2277.31,
+      "transaction_type": "debit",
+      "category": "grocery"
+    },
+    {
+      "date": "2026-04-14",
+      "description": "HPCL-COCO KORAMANGALA",
+      "amount": 2644.61,
+      "transaction_type": "debit",
+      "category": "fuel"
+    },
+    {
+      "date": "2026-04-15",
+      "description": "INDIAN OIL FUEL STATION",
+      "amount": 1013.38,
+      "transaction_type": "debit",
+      "category": "fuel"
+    },
+    {
+      "date": "2026-04-16",
+      "description": "RAZ*ZEPTO MARKETPLACE",
+      "amount": 256.03,
+      "transaction_type": "debit",
+      "category": "grocery"
+    },
+    {
+      "date": "2026-04-17",
+      "description": "AIRTEL PAYMENTS BANK-RECHARGE",
+      "amount": 1357.0,
+      "transaction_type": "debit",
+      "category": "airtel_recharge"
+    },
+    {
+      "date": "2026-04-17",
+      "description": "RAZ*ZEPTO MARKETPLACE",
+      "amount": 2343.35,
+      "transaction_type": "debit",
+      "category": "grocery"
+    },
+    {
+      "date": "2026-04-18",
+      "description": "BIGBASKET SUPERMARKET GROCERY",
+      "amount": 3179.0,
+      "transaction_type": "debit",
+      "category": "grocery"
+    },
+    {
+      "date": "2026-04-18",
+      "description": "WWW AMAZON IN BANGALORE IN",
+      "amount": 3094.0,
+      "transaction_type": "debit",
+      "category": "shopping_online"
+    },
+    {
+      "date": "2026-04-18",
+      "description": "NOBROKER RENT PAYMENT",
+      "amount": 17570.0,
+      "transaction_type": "debit",
+      "category": "rent"
+    },
+    {
+      "date": "2026-04-19",
+      "description": "WWW AMAZON IN BANGALORE IN",
+      "amount": 1367.14,
+      "transaction_type": "debit",
+      "category": "shopping_online"
+    },
+    {
+      "date": "2026-04-19",
+      "description": "POS 4521 LIFESTYLE INTL",
+      "amount": 3468.41,
+      "transaction_type": "debit",
+      "category": "shopping_offline"
+    },
+    {
+      "date": "2026-04-19",
+      "description": "TATA POWER MUMBAI",
+      "amount": 2391.59,
+      "transaction_type": "debit",
+      "category": "utility_bills"
+    },
+    {
+      "date": "2026-04-20",
+      "description": "MMT*MAKEMYTRIP FLIGHTS",
+      "amount": 5302.0,
+      "transaction_type": "debit",
+      "category": "travel_flights"
+    },
+    {
+      "date": "2026-04-20",
+      "description": "PAYTM*BLINKIT COMMERCE",
+      "amount": 3145.18,
+      "transaction_type": "debit",
+      "category": "grocery"
+    },
+    {
+      "date": "2026-04-20",
+      "description": "MMT*MAKEMYTRIP FLIGHTS",
+      "amount": 3253.28,
+      "transaction_type": "debit",
+      "category": "travel_flights"
+    },
+    {
+      "date": "2026-04-21",
+      "description": "NOBROKER RENT PAYMENT",
+      "amount": 22318.95,
+      "transaction_type": "debit",
+      "category": "rent"
+    },
+    {
+      "date": "2026-04-21",
+      "description": "CRED RENTPAY HOUSE RENT",
+      "amount": 22909.0,
+      "transaction_type": "debit",
+      "category": "rent"
+    },
+    {
+      "date": "2026-04-21",
+      "description": "SWIGGY INSTAMART",
+      "amount": 2283.74,
+      "transaction_type": "debit",
+      "category": "grocery"
+    },
+    {
+      "date": "2026-04-22",
+      "description": "MARRIOTT HOTEL PUNE",
+      "amount": 2581.84,
+      "transaction_type": "debit",
+      "category": "travel_hotels"
+    },
+    {
+      "date": "2026-04-22",
+      "description": "RAZ*EATSURE ONLINE",
+      "amount": 2181.83,
+      "transaction_type": "debit",
+      "category": "food_delivery"
+    },
+    {
+      "date": "2026-04-22",
+      "description": "CRED RENTPAY HOUSE RENT",
+      "amount": 15605.0,
+      "transaction_type": "debit",
+      "category": "rent"
+    },
+    {
+      "date": "2026-04-22",
+      "description": "SPOTIFY INDIA",
+      "amount": 1257.65,
+      "transaction_type": "debit",
+      "category": "entertainment"
+    },
+    {
+      "date": "2026-04-23",
+      "description": "PAYU*OYO ROOMS GURGAON",
+      "amount": 3153.0,
+      "transaction_type": "debit",
+      "category": "travel_hotels"
+    },
+    {
+      "date": "2026-04-23",
+      "description": "BIGBASKET SUPERMARKET GROCERY",
+      "amount": 1080.0,
+      "transaction_type": "debit",
+      "category": "grocery"
+    },
+    {
+      "date": "2026-04-26",
+      "description": "IRCTC E-TICKETING NEW DELHI",
+      "amount": 3757.33,
+      "transaction_type": "debit",
+      "category": "travel_flights"
+    },
+    {
+      "date": "2026-04-26",
+      "description": "FLIPKART INTERNET PVT LTD BANGALORE",
+      "amount": 858.0,
+      "transaction_type": "debit",
+      "category": "shopping_online"
+    },
+    {
+      "date": "2026-04-27",
+      "description": "IRCTC E-TICKETING NEW DELHI",
+      "amount": 2546.87,
+      "transaction_type": "debit",
+      "category": "travel_flights"
+    },
+    {
+      "date": "2026-04-27",
+      "description": "GOIBIBO HOTEL BOOKING",
+      "amount": 6224.0,
+      "transaction_type": "debit",
+      "category": "travel_hotels"
+    },
+    {
+      "date": "2026-04-28",
+      "description": "NETFLIX.COM MUMBAI",
+      "amount": 1280.3,
+      "transaction_type": "debit",
+      "category": "entertainment"
+    },
+    {
+      "date": "2026-04-28",
+      "description": "VIT UNIVERSITY FEE PAYMENT",
+      "amount": 4804.42,
+      "transaction_type": "debit",
+      "category": "education"
+    },
+    {
+      "date": "2026-04-28",
+      "description": "IRCTC E-TICKETING NEW DELHI",
+      "amount": 3421.0,
+      "transaction_type": "debit",
+      "category": "travel_flights"
+    },
+    {
+      "date": "2026-04-28",
+      "description": "CASHBACK CREDITED",
+      "amount": 232.0,
+      "transaction_type": "credit",
+      "category": "others"
+    }
+  ]
+}

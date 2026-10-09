@@ -1,0 +1,147 @@
+{
+  "bank": "ICICI Bank",
+  "password": null,
+  "transactions": [
+    {
+      "date": "2026-05-01",
+      "description": "MARRIOTT HOTEL PUNE",
+      "amount": 4367.0,
+      "transaction_type": "debit",
+      "category": "travel_hotels"
+    },
+    {
+      "date": "2026-05-01",
+      "description": "HDFC LIFE INSURANCE PREMIUM",
+      "amount": 6218.8,
+      "transaction_type": "debit",
+      "category": "insurance"
+    },
+    {
+      "date": "2026-05-03",
+      "description": "GOIBIBO HOTEL BOOKING",
+      "amount": 3856.0,
+      "transaction_type": "debit",
+      "category": "travel_hotels"
+    },
+    {
+      "date": "2026-05-05",
+      "description": "WWW AMAZON IN BANGALORE IN",
+      "amount": 3407.0,
+      "transaction_type": "debit",
+      "category": "shopping_online"
+    },
+    {
+      "date": "2026-05-09",
+      "description": "PYU*SWIGGY FOOD BANGALORE",
+      "amount": 3219.76,
+      "transaction_type": "debit",
+      "category": "food_delivery"
+    },
+    {
+      "date": "2026-05-10",
+      "description": "PAYU*OYO ROOMS GURGAON",
+      "amount": 6827.0,
+      "transaction_type": "debit",
+      "category": "travel_hotels"
+    },
+    {
+      "date": "2026-05-11",
+      "description": "PAYMENT RECEIVED - THANK YOU",
+      "amount": 22000.0,
+      "transaction_type": "credit",
+      "category": "others"
+    },
+    {
+      "date": "2026-05-12",
+      "description": "BBPS BESCOM BILLPAY",
+      "amount": 2684.27,
+      "transaction_type": "debit",
+      "category": "utility_bills"
+    },
+    {
+      "date": "2026-05-14",
+      "description": "SPOTIFY AB STOCKHOLM",
+      "amount": 1089.36,
+      "transaction_type": "debit",
+      "category": "entertainment",
+      "intl": "USD 12.99"
+    },
+    {
+      "date": "2026-05-16",
+      "description": "MAHANAGAR GAS LTD",
+      "amount": 2291.0,
+      "transaction_type": "debit",
+      "category": "utility_bills"
+    },
+    {
+      "date": "2026-05-18",
+      "description": "UDEMY ONLINE COURSES",
+      "amount": 4222.38,
+      "transaction_type": "debit",
+      "category": "education"
+    },
+    {
+      "date": "2026-05-19",
+      "description": "SWIGGY INSTAMART",
+      "amount": 194.0,
+      "transaction_type": "debit",
+      "category": "grocery"
+    },
+    {
+      "date": "2026-05-20",
+      "description": "AIR INDIA WEB",
+      "amount": 7322.0,
+      "transaction_type": "debit",
+      "category": "travel_flights"
+    },
+    {
+      "date": "2026-05-22",
+      "description": "ICICI LOMBARD MOTOR INSURANCE",
+      "amount": 6041.07,
+      "transaction_type": "debit",
+      "category": "insurance"
+    },
+    {
+      "date": "2026-05-23",
+      "description": "RAZ*ZEPTO MARKETPLACE",
+      "amount": 3387.99,
+      "transaction_type": "debit",
+      "category": "grocery"
+    },
+    {
+      "date": "2026-05-25",
+      "description": "BIGBASKET SUPERMARKET GROCERY",
+      "amount": 2324.0,
+      "transaction_type": "debit",
+      "category": "grocery"
+    },
+    {
+      "date": "2026-05-25",
+      "description": "COURSERA ONLINE COURSE FEE",
+      "amount": 1967.56,
+      "transaction_type": "debit",
+      "category": "education"
+    },
+    {
+      "date": "2026-05-25",
+      "description": "PAYTM*BLINKIT COMMERCE",
+      "amount": 3366.0,
+      "transaction_type": "debit",
+      "category": "grocery"
+    },
+    {
+      "date": "2026-05-27",
+      "description": "MMT*MAKEMYTRIP FLIGHTS",
+      "amount": 5624.84,
+      "transaction_type": "debit",
+      "category": "travel_flights"
+    },
+    {
+      "date": "2026-05-28",
+      "description": "CASHBACK CREDITED",
+      "amount": 127.0,
+      "transaction_type": "credit",
+      "category": "others"
+    }
+  ]
+}

@@ -14,4 +14,5 @@ ignore = [
 [lint.per-file-ignores]
 "tests/*" = ["S", "B", "E402", "E702", "E712", "E741", "F841"]
 "crawler/*" = ["S311"]  # random user agents and jitter, not cryptography
+"eval/*" = ["S105", "S311"]  # seeded fake data and a documented sample-PDF password
 "db/verify_vector_search.py" = ["E702", "ASYNC230"]  # manual diagnostic script
