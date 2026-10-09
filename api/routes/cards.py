@@ -12,6 +12,7 @@ GET /cards/{card_id}      — single card detail
 from __future__ import annotations
 
 import logging
+import re
 
 from fastapi import APIRouter, HTTPException, Query, status
 
@@ -98,7 +99,7 @@ async def list_cards(
         if card_type:
             query["card_type"] = card_type
         if bank:
-            query["bank"] = {"$regex": bank, "$options": "i"}
+            query["bank"] = {"$regex": re.escape(bank), "$options": "i"}
 
         total = await db["credit_cards"].count_documents(query)
         cursor = db["credit_cards"].find(query, _EXCLUDE_FIELDS).skip(skip).limit(limit)
@@ -109,7 +110,7 @@ async def list_cards(
 
     except Exception as exc:
         logger.error("list_cards error: %s", exc)
-        raise HTTPException(status_code=500, detail=f"Database error: {exc}")
+        raise HTTPException(status_code=500, detail="Could not load cards.")
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -137,7 +138,7 @@ async def search_cards(
             docs = await cursor.to_list(length=20)
         except Exception:
             # Fallback: regex search on name and bank
-            regex = {"$regex": q, "$options": "i"}
+            regex = {"$regex": re.escape(q), "$options": "i"}
             cursor = db["credit_cards"].find(
                 {"$or": [{"name": regex}, {"bank": regex}, {"best_for_tags": regex}]},
                 _EXCLUDE_FIELDS,
@@ -153,7 +154,7 @@ async def search_cards(
 
     except Exception as exc:
         logger.error("search_cards error: %s", exc)
-        raise HTTPException(status_code=500, detail=f"Search error: {exc}")
+        raise HTTPException(status_code=500, detail="Search failed.")
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -179,4 +180,4 @@ async def get_card(card_id: str):
         raise
     except Exception as exc:
         logger.error("get_card error (%s): %s", card_id, exc)
-        raise HTTPException(status_code=500, detail=f"Database error: {exc}")
+        raise HTTPException(status_code=500, detail="Could not load cards.")

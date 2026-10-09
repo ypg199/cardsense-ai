@@ -19,7 +19,6 @@ Features
 from __future__ import annotations
 
 import logging
-import os
 from contextlib import asynccontextmanager
 
 from dotenv import load_dotenv
@@ -62,6 +61,14 @@ async def lifespan(app: FastAPI):
     except Exception as exc:
         logger.warning("MongoDB ping error: %s", exc)
 
+    # Ensure the sessions TTL index exists so statement data expires
+    try:
+        from db.connection import get_db
+        from db.setup_indexes import create_sessions_indexes
+        await create_sessions_indexes(get_db())
+    except Exception as exc:
+        logger.warning("Could not ensure sessions TTL index: %s", exc)
+
     # Pre-warm LangGraph (imports + compilation)
     try:
         from agents.graph import get_compiled_graph
@@ -102,10 +109,9 @@ _cors_origins = [
     "http://127.0.0.1:3000",
     "http://127.0.0.1:5173",
 ]
-# Allow the VITE_API_URL origin too if set
-_vite_origin = os.getenv("VITE_ALLOWED_ORIGIN", "")
-if _vite_origin:
-    _cors_origins.append(_vite_origin)
+# Deployed frontend origins come from ALLOWED_ORIGINS (comma-separated)
+from api.settings import ALLOWED_ORIGINS
+_cors_origins.extend(ALLOWED_ORIGINS)
 
 app.add_middleware(
     CORSMiddleware,
@@ -130,7 +136,7 @@ async def http_exception_handler(request: Request, exc: HTTPException):
 
 @app.exception_handler(Exception)
 async def generic_exception_handler(request: Request, exc: Exception):
-    logger.error("Unhandled exception on %s %s: %s", request.method, request.url, exc)
+    logger.exception("Unhandled exception on %s %s", request.method, request.url.path)
     return JSONResponse(
         status_code=500,
         content={

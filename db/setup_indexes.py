@@ -67,13 +67,16 @@ async def create_credit_cards_indexes(db: AsyncIOMotorDatabase) -> None:
 async def create_sessions_indexes(db: AsyncIOMotorDatabase) -> None:
     col = db["sessions"]
 
-    # TTL: auto-delete sessions after 48 hours
+    # TTL: each session document carries an `expires_at` Date (set on every
+    # save), and MongoDB deletes it once that time passes. TTL indexes only
+    # work on BSON Date fields, which is why `created_at` (an ISO string)
+    # can't be used here.
     await col.create_index(
-        [("created_at", ASCENDING)],
-        name="sessions_ttl_48h",
-        expireAfterSeconds=48 * 60 * 60,
+        [("expires_at", ASCENDING)],
+        name="sessions_expires_at_ttl",
+        expireAfterSeconds=0,
     )
-    logger.info("  [sessions] TTL index (48 h) ✓")
+    logger.info("  [sessions] TTL index on expires_at ✓")
 
     # Quick lookup by status (for admin queries)
     await col.create_index([("status", ASCENDING)], name="sessions_status")

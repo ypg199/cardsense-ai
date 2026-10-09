@@ -231,7 +231,7 @@ def test_root():
 # 2. POST /session/start
 # ─────────────────────────────────────────────────────────────────────────────
 
-def _make_pdf_file(content: bytes = b"fake-pdf") -> tuple:
+def _make_pdf_file(content: bytes = b"%PDF-1.4 fake") -> tuple:
     return ("pdf_files", ("statement.pdf", io.BytesIO(content), "application/pdf"))
 
 
@@ -579,12 +579,17 @@ def test_trigger_crawl():
 
     # crawler.tasks may not exist yet (built in Step 12) — patch both paths
     with mock.patch("db.connection.get_db", return_value=mock_db), \
+         mock.patch("api.settings.ADMIN_API_KEY", "test-admin-key"), \
          mock.patch.dict("sys.modules", {
              "crawler": mock.MagicMock(),
              "crawler.tasks": mock.MagicMock(run_crawl=mock.MagicMock()),
          }):
         try:
-            r = client.post("/crawl", json={"sources": ["cardinsider"]})
+            r = client.post(
+                "/crawl",
+                json={"sources": ["cardinsider"]},
+                headers={"X-Admin-Key": "test-admin-key"},
+            )
             assert r.status_code == 202
             ok("POST /crawl → 202")
             data = r.json()

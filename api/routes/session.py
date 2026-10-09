@@ -16,7 +16,7 @@ from __future__ import annotations
 import logging
 import uuid
 from copy import deepcopy
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Annotated
 
 from fastapi import APIRouter, File, Form, HTTPException, UploadFile, status
@@ -33,6 +33,7 @@ from api.models import (
     SessionResponse,
 )
 from agents.state import AnalysisState, CardState
+from api.settings import MAX_FILES_PER_REQUEST, MAX_UPLOAD_BYTES, MAX_UPLOAD_MB, SESSION_TTL_HOURS
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/session", tags=["session"])
@@ -143,8 +144,14 @@ async def _save_session(state: AnalysisState) -> None:
         # Strip non-serialisable bytes before saving
         doc = deepcopy(state)
         for card in doc.get("cards", []):
-            card["pdf_bytes_list"] = []   # Never persist raw PDF bytes
+            # Passwords are only needed for the request that supplies them.
+            card["pdf_passwords"] = [None] * len(card.get("pdf_passwords") or [])
+            # PDF bytes are only kept while the card waits for a password,
+            # so the next request can decrypt them. Otherwise drop them.
+            if card.get("status") != "pdf_locked":
+                card["pdf_bytes_list"] = []
         doc["_id"] = doc["session_id"]
+        doc["expires_at"] = datetime.now(timezone.utc) + timedelta(hours=SESSION_TTL_HOURS)
         await db["sessions"].replace_one({"_id": doc["_id"]}, doc, upsert=True)
     except Exception as exc:
         logger.warning("Failed to persist session '%s': %s", state.get("session_id"), exc)
@@ -158,6 +165,9 @@ async def _load_session(session_id: str) -> AnalysisState | None:
         doc = await db["sessions"].find_one({"_id": session_id})
         if doc:
             doc["session_id"] = doc.pop("_id", session_id)
+            doc.pop("expires_at", None)
+            for card in doc.get("cards", []):
+                card["pdf_bytes_list"] = [bytes(b) for b in card.get("pdf_bytes_list") or []]
             return doc
         return None
     except Exception as exc:
@@ -170,6 +180,35 @@ def _raise_not_found(session_id: str):
         status_code=status.HTTP_404_NOT_FOUND,
         detail=f"Session '{session_id}' not found.",
     )
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Upload validation
+# ─────────────────────────────────────────────────────────────────────────────
+
+async def _read_pdf_uploads(pdf_files: list[UploadFile]) -> list[bytes]:
+    """Read uploaded PDFs, enforcing count, size and file-type limits."""
+    if len(pdf_files) > MAX_FILES_PER_REQUEST:
+        raise HTTPException(
+            status_code=422,
+            detail=f"Too many files: at most {MAX_FILES_PER_REQUEST} PDFs per request.",
+        )
+
+    contents: list[bytes] = []
+    for upload in pdf_files:
+        data = await upload.read(MAX_UPLOAD_BYTES + 1)
+        if len(data) > MAX_UPLOAD_BYTES:
+            raise HTTPException(
+                status_code=413,
+                detail=f"'{upload.filename}' is larger than {MAX_UPLOAD_MB} MB.",
+            )
+        if not data.lstrip()[:5] == b"%PDF-":
+            raise HTTPException(
+                status_code=422,
+                detail=f"'{upload.filename}' is not a PDF file.",
+            )
+        contents.append(data)
+    return contents
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -264,8 +303,13 @@ async def _run_graph(state: AnalysisState) -> AnalysisState:
             logger.warning("_run_graph: unknown status '%s' — treating as done", entry_status)
 
     except Exception as exc:
-        logger.error("Pipeline error (session=%s): %s", state.get("session_id"), exc)
-        current = {**state, "status": "error", "error": str(exc), "ui_action": "show_error"}
+        logger.exception("Pipeline error (session=%s)", state.get("session_id"))
+        current = {
+            **state,
+            "status": "error",
+            "error": "Something went wrong while analysing your statement. Please try again.",
+            "ui_action": "show_error",
+        }
 
     await _save_session(current)
     return current
@@ -308,10 +352,10 @@ async def start_session(
 
     # Distribute PDFs to cards. Simple strategy: one PDF per card (in order).
     # If more PDFs than cards, assign excess to the last card.
-    for i, (upload, month) in enumerate(zip(pdf_files, month_labels)):
+    pdf_contents = await _read_pdf_uploads(pdf_files)
+    for i, (pdf_data, month) in enumerate(zip(pdf_contents, month_labels)):
         card_idx = min(i, len(card_ids) - 1)
         card_id = card_ids[card_idx]
-        pdf_data = await upload.read()
         pdf_bytes_map[card_id].append((pdf_data, month))
 
     # Look up card names from DB (best-effort)
@@ -492,7 +536,8 @@ async def add_card(
     except Exception:
         pass
 
-    pairs = [(await f.read(), m) for f, m in zip(pdf_files, month_labels)]
+    pdf_contents = await _read_pdf_uploads(pdf_files)
+    pairs = list(zip(pdf_contents, month_labels))
     new_card = CardState(
         card_id=card_id,
         card_name=card_name,
