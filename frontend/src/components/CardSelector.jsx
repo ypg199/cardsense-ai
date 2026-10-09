@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react'
 import { getCards, searchCards } from '../api.js'
+import { CheckIcon, SearchIcon } from './Icons.jsx'
+import { money } from '../format.js'
 
 const styles = `
 .card-selector { display: flex; flex-direction: column; gap: 16px; }
@@ -24,16 +26,26 @@ const styles = `
   left: 14px;
   top: 50%;
   transform: translateY(-50%);
-  font-size: 16px;
+  color: var(--slate-400);
+  display: flex;
   pointer-events: none;
 }
+.search-input:focus-visible { box-shadow: 0 0 0 3px rgba(245,158,11,0.2); }
+.selector-top { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+.selector-top .search-bar { flex: 1 1 260px; }
 .card-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
   gap: 10px;
   max-height: 420px;
   overflow-y: auto;
-  padding-right: 4px;
+  padding: 2px 4px 24px 2px;
+  /* Fade the last row so it's clear the list scrolls */
+  -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 40px), transparent);
+  mask-image: linear-gradient(to bottom, #000 calc(100% - 40px), transparent);
+}
+@media (max-width: 560px) {
+  .card-grid { grid-template-columns: 1fr; max-height: 380px; }
 }
 .card-item {
   background: var(--navy-800);
@@ -44,7 +56,12 @@ const styles = `
   transition: border-color var(--transition), background var(--transition), transform var(--transition);
   position: relative;
   user-select: none;
+  width: 100%;
+  text-align: left;
+  font-family: var(--font-sans);
+  color: inherit;
 }
+.card-item:focus-visible { outline: 2px solid var(--amber-400); outline-offset: 2px; }
 .card-item:hover {
   border-color: var(--navy-500);
   background: var(--navy-700);
@@ -171,18 +188,20 @@ export default function CardSelector({ selected, onToggle }) {
     <>
       <style>{styles}</style>
       <div className="card-selector">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div className="search-bar" style={{ flex: 1 }}>
-            <span className="search-icon">🔍</span>
+        <div className="selector-top">
+          <div className="search-bar">
+            <span className="search-icon"><SearchIcon size={17} /></span>
             <input
               className="search-input"
+              type="search"
+              aria-label="Search cards"
               placeholder="Search cards by name or bank…"
               value={query}
               onChange={e => setQuery(e.target.value)}
             />
           </div>
           {selected.length > 0 && (
-            <span className="selected-count" style={{ marginLeft: 12 }}>
+            <span className="selected-count" aria-live="polite">
               {selected.length} selected
             </span>
           )}
@@ -192,8 +211,7 @@ export default function CardSelector({ selected, onToggle }) {
           <div className="loading-cards">Loading cards…</div>
         ) : cards.length === 0 ? (
           <div className="no-results">
-            No cards found. Try a different search or{' '}
-            <span style={{ color: 'var(--amber-400)' }}>seed the database first</span>.
+            {query.trim() ? `No cards match "${query.trim()}". Try a bank name like HDFC or Axis.` : 'No cards available right now.'}
           </div>
         ) : (
           <div className="card-grid">
@@ -201,12 +219,14 @@ export default function CardSelector({ selected, onToggle }) {
               const id = card._id || card.id
               const isSel = selectedIds.has(id)
               return (
-                <div
+                <button
+                  type="button"
                   key={id}
                   className={`card-item${isSel ? ' selected' : ''}`}
+                  aria-pressed={isSel}
                   onClick={() => onToggle(card)}
                 >
-                  <div className="card-check">{isSel ? '✓' : ''}</div>
+                  <div className="card-check" aria-hidden="true">{isSel && <CheckIcon size={12} strokeWidth={3} />}</div>
                   <div className="card-bank">{card.bank}</div>
                   <div className="card-name">{card.name}</div>
                   <div className="card-tags">
@@ -216,11 +236,11 @@ export default function CardSelector({ selected, onToggle }) {
                   </div>
                   <div className="card-footer">
                     <span className="card-fee">
-                      {card.annual_fee === 0 ? 'Free forever' : `₹${card.annual_fee}/yr`}
+                      {card.annual_fee === 0 ? 'Free forever' : `${money(card.annual_fee)}/yr`}
                     </span>
                     <span className="network-badge">{card.network}</span>
                   </div>
-                </div>
+                </button>
               )
             })}
           </div>

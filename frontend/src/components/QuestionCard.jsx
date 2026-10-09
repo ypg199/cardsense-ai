@@ -1,3 +1,5 @@
+import { CheckIcon, CoinsIcon, XIcon } from './Icons.jsx'
+import { money } from '../format.js'
 import { useState, useEffect } from 'react'
 
 const styles = `
@@ -109,7 +111,6 @@ export default function QuestionCard({ question, onAnswer, loading }) {
 
   if (!question) return null
 
-  const fmt = (n) => n >= 1000 ? `₹${(n/1000).toFixed(1)}k` : `₹${Math.round(n)}`
 
   return (
     <>
@@ -118,7 +119,7 @@ export default function QuestionCard({ question, onAnswer, loading }) {
         <div className="qcard-potential">
           {question.potential_cashback > 0 && (
             <span className="potential-badge">
-              💰 {fmt(question.potential_cashback)} potential
+              <CoinsIcon size={15} /> {money(question.potential_cashback)} potential
             </span>
           )}
         </div>
@@ -127,7 +128,7 @@ export default function QuestionCard({ question, onAnswer, loading }) {
         {question.detected_spend > 0 && (
           <div className="qcard-spend">
             <span className="qcard-spend-dot" />
-            Detected spend this period: <strong className="amount">{fmt(question.detected_spend)}</strong>
+            Detected spend this period: <strong className="amount">{money(question.detected_spend)}</strong>
           </div>
         )}
         <div className="qcard-buttons">
@@ -137,7 +138,7 @@ export default function QuestionCard({ question, onAnswer, loading }) {
             onClick={() => handleAnswer(true)}
             style={answered === true ? { background: 'var(--green-500)', color: 'var(--navy-950)' } : {}}
           >
-            ✓ Yes
+            <CheckIcon size={17} /> Yes
           </button>
           <button
             className="qbtn qbtn-no"
@@ -145,7 +146,7 @@ export default function QuestionCard({ question, onAnswer, loading }) {
             onClick={() => handleAnswer(false)}
             style={answered === false ? { background: 'var(--red-500)', color: 'var(--white)' } : {}}
           >
-            ✕ No
+            <XIcon size={17} /> No
           </button>
         </div>
       </div>

@@ -1,9 +1,10 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import UploadPage from './pages/UploadPage.jsx'
 import UtilizationPage from './pages/UtilizationPage.jsx'
 import ResultsPage from './pages/ResultsPage.jsx'
 import SpendAnalyserPage from './pages/SpendAnalyserPage.jsx'
 import SpendUploadPage from './pages/SpendUploadPage.jsx'
+import { NotFound } from './components/Brand.jsx'
 
 const globalStyles = `
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -77,6 +78,13 @@ const globalStyles = `
   ::-webkit-scrollbar-track { background: var(--navy-900); }
   ::-webkit-scrollbar-thumb { background: var(--navy-600); border-radius: 3px; }
 
+  /* Respect reduced-motion preferences across every page */
+  @media (prefers-reduced-motion: reduce) {
+    *:not(.fsl-ring):not([class*='spinner']), *::before, *::after {
+      animation-duration: 1ms !important; transition-duration: 1ms !important;
+    }
+  }
+
   /* Shared utilities */
   .mono { font-family: var(--font-mono); }
   .amount {
@@ -121,7 +129,7 @@ export default function App() {
           <Route path="/quiz/:sessionId" element={<UtilizationPage />} />
           <Route path="/results/:sessionId" element={<ResultsPage />} />
           <Route path="/analyser/:sessionId" element={<SpendAnalyserPage />} />
-          <Route path="*" element={<Navigate to="/" replace />} />
+          <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
     </>

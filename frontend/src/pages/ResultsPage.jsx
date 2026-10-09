@@ -7,6 +7,9 @@ import { getSessionStatus } from '../api.js'
 import FullScreenLoader, { RESULT_STEPS } from '../components/FullScreenLoader.jsx'
 import { SpendAnalyser } from './SpendAnalyserPage.jsx'
 import Tabs, { AnalyseIcon, ResultsIcon } from '../components/Tabs.jsx'
+import { Logo, LoadFailed } from '../components/Brand.jsx'
+import { ArrowLeftIcon, BulbIcon, ChartIcon, CheckCircleIcon, CoinsIcon, SwapIcon, TargetIcon } from '../components/Icons.jsx'
+import { money } from '../format.js'
 
 const css = `
 .results-page {
@@ -22,13 +25,6 @@ const css = `
   margin-bottom: 40px;
   animation: fadeUp 300ms ease;
 }
-.results-logo {
-  font-size: 13px;
-  font-weight: 600;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--amber-400);
-}
 .new-analysis-btn {
   background: var(--navy-800);
   border: 1px solid var(--navy-600);
@@ -38,8 +34,12 @@ const css = `
   font-size: 13px;
   padding: 9px 18px;
   cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   transition: all var(--transition);
 }
+.new-analysis-btn:focus-visible { outline: 2px solid var(--amber-400); outline-offset: 2px; }
 .new-analysis-btn:hover { border-color: var(--amber-500); color: var(--amber-400); }
 .results-tabs { margin-bottom: 24px; animation: fadeUp 300ms ease; }
 
@@ -107,7 +107,7 @@ const css = `
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 18px;
+  color: var(--amber-400);
   flex-shrink: 0;
 }
 .rs-title { font-size: 17px; font-weight: 600; color: var(--white); }
@@ -123,7 +123,7 @@ const css = `
   padding: 16px;
   animation: fadeUp 200ms ease both;
 }
-.tip-icon { font-size: 20px; flex-shrink: 0; }
+.tip-icon { flex-shrink: 0; color: var(--amber-400); margin-top: 1px; }
 .tip-text { font-size: 13px; color: var(--slate-300); line-height: 1.55; }
 
 .multi-card-tabs {
@@ -163,10 +163,20 @@ const css = `
   animation: spin 800ms linear infinite;
 }
 
-.tip-icons = ['💡', '🎯', '📊', '⚡', '💰']
+@media (max-width: 560px) {
+  .results-page { padding: 24px 16px 60px; }
+  .results-header { margin-bottom: 24px; }
+  .hero-section { padding: 32px 0 24px; }
+  .results-section { padding: 20px 16px; border-radius: var(--radius-lg); }
+  .rs-header { margin-bottom: 18px; }
+}
+.score-label {
+  font-size: 12px; color: var(--slate-300); margin-bottom: 8px; font-weight: 500;
+  max-width: 220px; margin-left: auto; margin-right: auto;
+}
 `
 
-const TIP_ICONS = ['💡', '🎯', '📊', '⚡', '💰']
+const TIP_ICONS = [BulbIcon, TargetIcon, ChartIcon, CoinsIcon]
 
 export default function ResultsPage() {
   const { sessionId } = useParams()
@@ -175,6 +185,7 @@ export default function ResultsPage() {
 
   const [session, setSession] = useState(location.state?.session || null)
   const [loading, setLoading] = useState(!location.state?.session)
+  const [loadError, setLoadError] = useState(null)
   const [activeCard, setActiveCard] = useState(0)
   const [params, setParams] = useSearchParams()
   const tab = params.get('tab') === 'analyse' ? 'analyse' : 'results'
@@ -184,13 +195,13 @@ export default function ResultsPage() {
     if (!session) {
       getSessionStatus(sessionId)
         .then(s => { setSession(s); setLoading(false) })
-        .catch(() => setLoading(false))
+        .catch(e => { setLoadError(e); setLoading(false) })
     }
   }, [sessionId])
 
   if (loading) return <FullScreenLoader title="Loading your results" steps={['Fetching your analysis']} />
 
-  if (!session) return null
+  if (!session) return <LoadFailed error={loadError} />
 
   const { cards, comparison_result , cashback_result} = session
   const card = cards[activeCard] || cards[0]
@@ -205,9 +216,9 @@ export default function ResultsPage() {
       <style>{css}</style>
       <div className="results-page">
         <div className="results-header">
-          <div className="results-logo">💳 CardSense AI</div>
+          <Logo />
           <button className="new-analysis-btn" onClick={() => navigate('/')}>
-            ← New Analysis
+            <ArrowLeftIcon size={15} /> New analysis
           </button>
         </div>
 
@@ -231,7 +242,7 @@ export default function ResultsPage() {
           {/* Hero */}
           <div className="hero-section">
             <div className="hero-badge">
-              📊 Analysis Complete
+              <CheckCircleIcon size={15} /> Analysis complete
             </div>
             <h1 className="hero-title">
               {comp?.verdict === 'Good fit'
@@ -241,19 +252,17 @@ export default function ResultsPage() {
                 : "Room to do better"}
             </h1>
             <p className="hero-subtitle">
-              {comp?.verdict_reason || `You earned ₹${earnedTotal.toFixed(0)} and missed ₹${missedTotal.toFixed(0)} in cashback.`}
+              {comp?.verdict_reason || `You earned ${money(earnedTotal)} and missed ${money(missedTotal)} in cashback.`}
             </p>
 
             {/* Score meters per card */}
             <div className="scores-row">
               {cards.map((c, i) => (
                 <div key={c.card_id} style={{ textAlign: 'center' }}>
-                  <div style={{ fontSize: 11, color: 'var(--slate-400)', marginBottom: 8, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
-                    {c.card_name.split(' ').slice(-2).join(' ')}
-                  </div>
+                  <div className="score-label">{c.card_name}</div>
                   <UtilizationMeter
-                    score={cashback_result?.utilization_score || 0}
-                    earnedMonthly={Object.values(cashback_result?.earned_breakdown || {}).reduce((s, v) => s + v, 0)}
+                    score={(c.cashback_result || cashback_result)?.utilization_score || 0}
+                    earnedMonthly={Object.values((c.cashback_result || cashback_result)?.earned_breakdown || {}).reduce((s, v) => s + v, 0)}
                   />
                 </div>
               ))}
@@ -278,10 +287,10 @@ export default function ResultsPage() {
           {/* Section B: Cashback Breakdown */}
           <div className="results-section" style={{ animationDelay: '80ms' }}>
             <div className="rs-header">
-              <div className="rs-icon">📊</div>
+              <div className="rs-icon"><ChartIcon size={18} /></div>
               <div>
-                <div className="rs-title">Cashback Breakdown</div>
-                <div className="rs-subtitle">{card?.card_name} — Earned vs. Potential</div>
+                <div className="rs-title">Cashback breakdown</div>
+                <div className="rs-subtitle">{card?.card_name}: earned vs. possible</div>
               </div>
             </div>
             <CashbackBreakdown cashbackResult={cr} multiMonth={card?.months?.length > 1} />
@@ -291,9 +300,9 @@ export default function ResultsPage() {
           {comp && (
             <div className="results-section" style={{ animationDelay: '140ms' }}>
               <div className="rs-header">
-                <div className="rs-icon">🔄</div>
+                <div className="rs-icon"><SwapIcon size={18} /></div>
                 <div>
-                  <div className="rs-title">Better Card Alternatives</div>
+                  <div className="rs-title">Better card alternatives</div>
                   <div className="rs-subtitle">Cards that could earn you more based on your spend</div>
                 </div>
               </div>
@@ -305,19 +314,22 @@ export default function ResultsPage() {
           {tips.length > 0 && (
             <div className="results-section" style={{ animationDelay: '200ms' }}>
               <div className="rs-header">
-                <div className="rs-icon">💡</div>
+                <div className="rs-icon"><BulbIcon size={18} /></div>
                 <div>
-                  <div className="rs-title">Actionable Tips</div>
+                  <div className="rs-title">Actionable tips</div>
                   <div className="rs-subtitle">Personalised to your spending pattern</div>
                 </div>
               </div>
               <div className="tips-grid">
-                {tips.map((tip, i) => (
+                {tips.map((tip, i) => {
+                  const TipIcon = TIP_ICONS[i % TIP_ICONS.length]
+                  return (
                   <div key={i} className="tip-card" style={{ animationDelay: `${i * 60}ms` }}>
-                    <span className="tip-icon">{TIP_ICONS[i % TIP_ICONS.length]}</span>
+                    <span className="tip-icon"><TipIcon size={18} /></span>
                     <p className="tip-text">{tip}</p>
                   </div>
-                ))}
+                  )
+                })}
               </div>
             </div>
           )}
