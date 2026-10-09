@@ -1,0 +1,122 @@
+[
+  {
+    "date": "2026-03-02",
+    "merchant": "LIFESTYLE INTL",
+    "amount": 3499.06,
+    "transaction_type": "debit",
+    "category": "shopping_offline",
+    "month": "2026-03"
+  },
+  {
+    "date": "2026-03-05",
+    "merchant": "SMARTPHONE PRINCIPAL+INTEREST",
+    "amount": 2416.67,
+    "transaction_type": "debit",
+    "category": "emi",
+    "month": "2026-03"
+  },
+  {
+    "date": "2026-03-06",
+    "merchant": "ZEPTO MARKETPLACE",
+    "amount": 923.0,
+    "transaction_type": "debit",
+    "category": "grocery",
+    "month": "2026-03"
+  },
+  {
+    "date": "2026-03-06",
+    "merchant": "AJIO RELIANCE RETAIL",
+    "amount": 1859.06,
+    "transaction_type": "debit",
+    "category": "shopping_online",
+    "month": "2026-03"
+  },
+  {
+    "date": "2026-03-09",
+    "merchant": "MSEDCL ONLINE PAYMENT",
+    "amount": 2690.48,
+    "transaction_type": "debit",
+    "category": "utility_bills",
+    "month": "2026-03"
+  },
+  {
+    "date": "2026-03-11",
+    "merchant": "BHARTI AIRTEL LTD",
+    "amount": 1569.0,
+    "transaction_type": "debit",
+    "category": "airtel_recharge",
+    "month": "2026-03"
+  },
+  {
+    "date": "2026-03-12",
+    "merchant": "TATA POWER MUMBAI",
+    "amount": 2954.34,
+    "transaction_type": "debit",
+    "category": "utility_bills",
+    "month": "2026-03"
+  },
+  {
+    "date": "2026-03-17",
+    "merchant": "BANGALORE",
+    "amount": 1791.55,
+    "transaction_type": "debit",
+    "category": "grocery",
+    "month": "2026-03"
+  },
+  {
+    "date": "2026-03-17",
+    "merchant": "MSEDCL ONLINE PAYMENT",
+    "amount": 2188.05,
+    "transaction_type": "debit",
+    "category": "utility_bills",
+    "month": "2026-03"
+  },
+  {
+    "date": "2026-03-22",
+    "merchant": "CRED RENTPAY HOUSE RENT",
+    "amount": 16818.43,
+    "transaction_type": "debit",
+    "category": "rent",
+    "month": "2026-03"
+  },
+  {
+    "date": "2026-03-24",
+    "merchant": "GOIBIBO HOTEL BOOKING",
+    "amount": 3632.0,
+    "transaction_type": "debit",
+    "category": "travel_hotels",
+    "month": "2026-03"
+  },
+  {
+    "date": "2026-03-24",
+    "merchant": "UDEMY ONLINE COURSES",
+    "amount": 7392.86,
+    "transaction_type": "debit",
+    "category": "education",
+    "month": "2026-03"
+  },
+  {
+    "date": "2026-03-25",
+    "merchant": "BHARTI AIRTEL LTD",
+    "amount": 2545.76,
+    "transaction_type": "debit",
+    "category": "airtel_recharge",
+    "month": "2026-03"
+  },
+  {
+    "date": "2026-03-28",
+    "merchant": "TATA POWER MUMBAI",
+    "amount": 819.8,
+    "transaction_type": "debit",
+    "category": "utility_bills",
+    "month": "2026-03"
+  },
+  {
+    "date": "2026-03-28",
+    "merchant": "UDEMY ONLINE COURSES",
+    "amount": 7671.07,
+    "transaction_type": "debit",
+    "category": "education",
+    "month": "2026-03"
+  }
+]

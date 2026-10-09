@@ -1,0 +1,146 @@
+[
+  {
+    "date": "2026-01-02",
+    "merchant": "Eatsure",
+    "amount": 1415.65,
+    "transaction_type": "debit",
+    "category": "food_delivery",
+    "month": "2026-01"
+  },
+  {
+    "date": "2026-01-04",
+    "merchant": "Zomato",
+    "amount": 605.0,
+    "transaction_type": "debit",
+    "category": "food_delivery",
+    "month": "2026-01"
+  },
+  {
+    "date": "2026-01-05",
+    "merchant": "Flipkart",
+    "amount": 1134.54,
+    "transaction_type": "debit",
+    "category": "shopping_online",
+    "month": "2026-01"
+  },
+  {
+    "date": "2026-01-08",
+    "merchant": "Lifestyle",
+    "amount": 1389.35,
+    "transaction_type": "debit",
+    "category": "shopping_offline",
+    "month": "2026-01"
+  },
+  {
+    "date": "2026-01-09",
+    "merchant": "Cred Rentpay",
+    "amount": 17360.0,
+    "transaction_type": "debit",
+    "category": "rent",
+    "month": "2026-01"
+  },
+  {
+    "date": "2026-01-11",
+    "merchant": "Nykaa",
+    "amount": 3019.0,
+    "transaction_type": "debit",
+    "category": "shopping_online",
+    "month": "2026-01"
+  },
+  {
+    "date": "2026-01-13",
+    "merchant": "Lifestyle",
+    "amount": 927.0,
+    "transaction_type": "debit",
+    "category": "shopping_offline",
+    "month": "2026-01"
+  },
+  {
+    "date": "2026-01-13",
+    "merchant": "Amazon",
+    "amount": 2399.0,
+    "transaction_type": "debit",
+    "category": "shopping_online",
+    "month": "2026-01"
+  },
+  {
+    "date": "2026-01-16",
+    "merchant": "Spotify",
+    "amount": 2542.33,
+    "transaction_type": "debit",
+    "category": "entertainment",
+    "month": "2026-01"
+  },
+  {
+    "date": "2026-01-17",
+    "merchant": "Netflix",
+    "amount": 2072.98,
+    "transaction_type": "debit",
+    "category": "entertainment",
+    "month": "2026-01"
+  },
+  {
+    "date": "2026-01-18",
+    "merchant": "Air India",
+    "amount": 3746.34,
+    "transaction_type": "debit",
+    "category": "travel_flights",
+    "month": "2026-01"
+  },
+  {
+    "date": "2026-01-19",
+    "merchant": "Zepto",
+    "amount": 2178.76,
+    "transaction_type": "debit",
+    "category": "grocery",
+    "month": "2026-01"
+  },
+  {
+    "date": "2026-01-21",
+    "merchant": "Marriott Hotel",
+    "amount": 3782.0,
+    "transaction_type": "debit",
+    "category": "travel_hotels",
+    "month": "2026-01"
+  },
+  {
+    "date": "2026-01-22",
+    "merchant": "Practo",
+    "amount": 2759.56,
+    "transaction_type": "debit",
+    "category": "healthcare",
+    "month": "2026-01"
+  },
+  {
+    "date": "2026-01-24",
+    "merchant": "Icici Lombard Insurance",
+    "amount": 11677.0,
+    "transaction_type": "debit",
+    "category": "insurance",
+    "month": "2026-01"
+  },
+  {
+    "date": "2026-01-25",
+    "merchant": "Zomato",
+    "amount": 1159.0,
+    "transaction_type": "debit",
+    "category": "food_delivery",
+    "month": "2026-01"
+  },
+  {
+    "date": "2026-01-28",
+    "merchant": "Tata Power",
+    "amount": 2915.0,
+    "transaction_type": "debit",
+    "category": "utility_bills",
+    "month": "2026-01"
+  },
+  {
+    "date": "2026-01-28",
+    "merchant": "Vit University",
+    "amount": 2075.0,
+    "transaction_type": "debit",
+    "category": "education",
+    "month": "2026-01"
+  }
+]

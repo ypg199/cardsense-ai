@@ -1,0 +1,146 @@
+[
+  {
+    "date": "2026-05-01",
+    "merchant": "MARRIOTT HOTEL",
+    "amount": 4367.0,
+    "transaction_type": "debit",
+    "category": "travel_hotels",
+    "month": "2026-05"
+  },
+  {
+    "date": "2026-05-01",
+    "merchant": "HDFC INSURANCE",
+    "amount": 6218.8,
+    "transaction_type": "debit",
+    "category": "insurance",
+    "month": "2026-05"
+  },
+  {
+    "date": "2026-05-03",
+    "merchant": "GOIBIBO HOTEL",
+    "amount": 3856.0,
+    "transaction_type": "debit",
+    "category": "travel_hotels",
+    "month": "2026-05"
+  },
+  {
+    "date": "2026-05-05",
+    "merchant": "AMAZON",
+    "amount": 3407.0,
+    "transaction_type": "debit",
+    "category": "shopping_online",
+    "month": "2026-05"
+  },
+  {
+    "date": "2026-05-09",
+    "merchant": "SWIGGY",
+    "amount": 3219.76,
+    "transaction_type": "debit",
+    "category": "food_delivery",
+    "month": "2026-05"
+  },
+  {
+    "date": "2026-05-10",
+    "merchant": "OYO",
+    "amount": 6827.0,
+    "transaction_type": "debit",
+    "category": "travel_hotels",
+    "month": "2026-05"
+  },
+  {
+    "date": "2026-05-12",
+    "merchant": "BESCOM",
+    "amount": 2684.27,
+    "transaction_type": "debit",
+    "category": "utility_bills",
+    "month": "2026-05"
+  },
+  {
+    "date": "2026-05-14",
+    "merchant": "SPOTIFY",
+    "amount": 1089.36,
+    "transaction_type": "debit",
+    "category": "entertainment",
+    "month": "2026-05"
+  },
+  {
+    "date": "2026-05-16",
+    "merchant": "MAHANAGAR GAS",
+    "amount": 2291.0,
+    "transaction_type": "debit",
+    "category": "utility_bills",
+    "month": "2026-05"
+  },
+  {
+    "date": "2026-05-18",
+    "merchant": "UDEMY",
+    "amount": 4222.38,
+    "transaction_type": "debit",
+    "category": "education",
+    "month": "2026-05"
+  },
+  {
+    "date": "2026-05-19",
+    "merchant": "SWIGGY",
+    "amount": 194.0,
+    "transaction_type": "debit",
+    "category": "grocery",
+    "month": "2026-05"
+  },
+  {
+    "date": "2026-05-20",
+    "merchant": "AIR INDIA",
+    "amount": 7322.0,
+    "transaction_type": "debit",
+    "category": "travel_flights",
+    "month": "2026-05"
+  },
+  {
+    "date": "2026-05-22",
+    "merchant": "ICICI LOMBARD INSURANCE",
+    "amount": 6041.07,
+    "transaction_type": "debit",
+    "category": "insurance",
+    "month": "2026-05"
+  },
+  {
+    "date": "2026-05-23",
+    "merchant": "ZEPTO",
+    "amount": 3387.99,
+    "transaction_type": "debit",
+    "category": "grocery",
+    "month": "2026-05"
+  },
+  {
+    "date": "2026-05-25",
+    "merchant": "BIGBASKET",
+    "amount": 2324.0,
+    "transaction_type": "debit",
+    "category": "grocery",
+    "month": "2026-05"
+  },
+  {
+    "date": "2026-05-25",
+    "merchant": "COURSERA",
+    "amount": 1967.56,
+    "transaction_type": "debit",
+    "category": "education",
+    "month": "2026-05"
+  },
+  {
+    "date": "2026-05-25",
+    "merchant": "BLINKIT",
+    "amount": 3366.0,
+    "transaction_type": "debit",
+    "category": "grocery",
+    "month": "2026-05"
+  },
+  {
+    "date": "2026-05-27",
+    "merchant": "MAKEMYTRIP",
+    "amount": 5624.84,
+    "transaction_type": "debit",
+    "category": "travel_flights",
+    "month": "2026-05"
+  }
+]
