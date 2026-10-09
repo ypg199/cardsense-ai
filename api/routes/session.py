@@ -25,6 +25,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, File, Form, HTTPException, UploadFile, status
 
+from agents.insights import spend_insights
 from agents.spend_summary import summarise_spend
 from agents.state import AnalysisState, CardState
 from api.models import (
@@ -634,11 +635,13 @@ async def get_spend_summary(session_id: str, card_id: str | None = None):
     cards = state.get("cards", [])
     if card_id is not None and not any(c.get("card_id") == card_id for c in cards):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Card not in this session.")
+    summary = summarise_spend(cards, card_id)
     return SpendSummaryResponse(
         session_id=session_id,
         card_id=card_id,
         sample=bool(state.get("sample", False)),
-        **summarise_spend(cards, card_id),
+        insights=spend_insights(cards, summary, card_id),
+        **summary,
     )
 
 

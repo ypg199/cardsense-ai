@@ -3,13 +3,14 @@ import { useParams, useLocation, useNavigate, useSearchParams } from 'react-rout
 import CashbackBreakdown from '../components/CashbackBreakdown.jsx'
 import CardComparison from '../components/CardComparison.jsx'
 import CardCompareTable from '../components/CardCompareTable.jsx'
+import Insights from '../components/Insights.jsx'
 import UtilizationMeter from '../components/UtilizationMeter.jsx'
-import { getSessionStatus } from '../api.js'
+import { getSessionStatus, getSpendSummary } from '../api.js'
 import FullScreenLoader, { RESULT_STEPS } from '../components/FullScreenLoader.jsx'
 import { SpendAnalyser } from './SpendAnalyserPage.jsx'
 import Tabs, { AnalyseIcon, ResultsIcon } from '../components/Tabs.jsx'
 import { Logo, LoadFailed, SampleBadge } from '../components/Brand.jsx'
-import { ArrowLeftIcon, BulbIcon, CardIcon, ChartIcon, CheckCircleIcon, CoinsIcon, SwapIcon, TargetIcon } from '../components/Icons.jsx'
+import { ArrowLeftIcon, BulbIcon, CardIcon, ChartIcon, CheckCircleIcon, CoinsIcon, SparkIcon, SwapIcon, TargetIcon } from '../components/Icons.jsx'
 import { money } from '../format.js'
 
 const css = `
@@ -116,6 +117,12 @@ const css = `
 .rs-title { font-size: 17px; font-weight: 600; color: var(--white); }
 .rs-subtitle { font-size: 12px; color: var(--slate-400); margin-top: 2px; }
 
+.link-btn {
+  margin-top: 14px; background: none; border: none; padding: 0; cursor: pointer;
+  color: var(--amber-400); font-family: var(--font-sans); font-size: 13px; font-weight: 500;
+}
+.link-btn:hover { text-decoration: underline; }
+.link-btn:focus-visible { outline: 2px solid var(--amber-400); outline-offset: 2px; border-radius: 2px; }
 .tips-grid { display: flex; flex-direction: column; gap: 12px; }
 .tip-card {
   display: flex;
@@ -206,6 +213,12 @@ export default function ResultsPage() {
   const [session, setSession] = useState(location.state?.session || null)
   const [loading, setLoading] = useState(!location.state?.session)
   const [loadError, setLoadError] = useState(null)
+  const [insights, setInsights] = useState([])
+
+  // Spending notes come from the same endpoint as the analyser; optional
+  useEffect(() => {
+    getSpendSummary(sessionId).then(d => setInsights(d.insights || [])).catch(() => {})
+  }, [sessionId])
   const [activeCard, setActiveCard] = useState(0)
   const [params, setParams] = useSearchParams()
   const tab = params.get('tab') === 'analyse' ? 'analyse' : 'results'
@@ -284,6 +297,20 @@ export default function ResultsPage() {
               ))}
             </div>
           </div>
+
+          {insights.length > 0 && (
+            <div className="results-section" style={{ animationDelay: '40ms' }}>
+              <div className="rs-header">
+                <div className="rs-icon"><SparkIcon size={18} /></div>
+                <div>
+                  <div className="rs-title">What stands out</div>
+                  <div className="rs-subtitle">Patterns in your spending across these statements</div>
+                </div>
+              </div>
+              <Insights items={insights} limit={3} />
+              <button className="link-btn" onClick={() => setTab('analyse')}>See all your spending charts</button>
+            </div>
+          )}
 
           {/* Multi-card tabs for breakdown */}
           {cards.length > 1 && (

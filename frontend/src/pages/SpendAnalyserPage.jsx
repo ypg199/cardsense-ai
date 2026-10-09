@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { getSpendSummary } from '../api.js'
 import FullScreenLoader from '../components/FullScreenLoader.jsx'
+import Insights from '../components/Insights.jsx'
 import { Logo, SampleBadge } from '../components/Brand.jsx'
 import { AlertIcon } from '../components/Icons.jsx'
 import { dayLabel } from '../format.js'
@@ -274,6 +275,13 @@ export function SpendAnalyser({ sessionId, showTitle = true }) {
             />
             {topCat && <Kpi text label="Biggest category" value={catLabel(topCat.category)} note={`${money(topCat.total)} · ${Math.round(topCat.share * 100)}% of spend`} />}
           </div>
+
+          {data.insights?.length > 0 && (
+            <section className="sa-section">
+              <div className="sa-section-head"><div className="sa-h">What stands out</div></div>
+              <Insights items={data.insights} />
+            </section>
+          )}
 
           <section className="sa-section">
             <div className="sa-section-head">
