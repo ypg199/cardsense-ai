@@ -127,6 +127,7 @@ def _state_to_response(state: AnalysisState) -> SessionResponse:
             recommendations=recs,
             routing_advice=comp_raw.get("routing_advice", []),
             tips=comp_raw.get("tips", []),
+            comparison=comp_raw.get("comparison"),
         )
 
     return SessionResponse(
