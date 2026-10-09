@@ -11,7 +11,11 @@ Responsibilities
 3. Rule-filter candidates: remove current card(s), cards with incompatible
    card_type for the user's spend pattern.
 4. Send filtered candidates + cashback summary to gemini-2.5-flash for ranking.
-5. Write ComparisonResult to state and advance status to "done".
+5. Reconcile: recompute every alternative's cashback on the user's actual
+   transactions (same calculator as the user's own card), keep only cards
+   that would earn more, and decide the verdict from the numbers so the
+   headline always agrees with the score.
+6. Write ComparisonResult to state and advance status to "done".
 
 Section 9 — Multi-card logic
 ─────────────────────────────
@@ -57,6 +61,7 @@ from typing import Any
 from dotenv import load_dotenv
 from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential
 
+from agents.cashback_node import calculate_cashback
 from agents.embeddings import EMBEDDING_DIMENSIONS, EMBEDDING_MODEL
 from agents.state import AnalysisState, CardRecommendation, CardState, ComparisonResult
 
@@ -233,8 +238,16 @@ def _build_spend_profile_text(cards: list[CardState], top_cats: list[str]) -> st
     return f"Indian credit card user. Top spending categories: {', '.join(parts)}"
 
 
+def _months_covered(card: CardState) -> int:
+    """Number of distinct statement months for a card (at least 1)."""
+    months = {t.get("month") for t in card.get("transactions") or [] if t.get("transaction_type") == "debit"}
+    months.discard(None)
+    return max(len(months) or len(card.get("months") or []), 1)
+
+
 def _total_monthly_spend(cards: list[CardState]) -> float:
-    return sum(c.get("total_spend", 0.0) for c in cards)
+    """Average spend per month, summed across cards."""
+    return sum(c.get("total_spend", 0.0) / _months_covered(c) for c in cards)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -554,8 +567,8 @@ def _rule_based_result(
                 improvement_over_current_monthly=max(
                     0.0, round(est_monthly - cards_summary.get("total_earned", 0), 2)
                 ),
-                why_better=f"Offers better rates for {', '.join(top_cats[:2])} spending.",
-                best_categories=top_cats[:2],
+                why_better="",  # filled in from computed per-category gains by reconcile_result
+                best_categories=[],
                 caveat=f"Annual fee: ₹{c.get('annual_fee', 0)}" if c.get("annual_fee") else None,
             )
         )
@@ -580,6 +593,135 @@ def _rule_based_result(
         recommendations=recommendations,
         routing_advice=routing_advice[:5],
         tips=tips[:5],
+    )
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Reconcile: real numbers for every alternative, verdict from the numbers
+# ─────────────────────────────────────────────────────────────────────────────
+
+# A switch is only worth suggesting if it earns noticeably more each month
+SWITCH_MIN_GAIN_INR = 150
+SWITCH_MIN_GAIN_SHARE = 0.25
+GOOD_FIT_SCORE = 70
+
+
+def _current_monthly_earned(cards: list[CardState]) -> float:
+    """Cashback the user earns per month today, across all their cards."""
+    total = 0.0
+    for card in cards:
+        cr = card.get("cashback_result") or {}
+        total += sum(cr.get("earned_breakdown", {}).values()) / _months_covered(card)
+    return round(total, 2)
+
+
+def _average_score(cards: list[CardState]) -> int:
+    scores = [c["cashback_result"]["utilization_score"] for c in cards if c.get("cashback_result")]
+    return round(sum(scores) / len(scores)) if scores else 0
+
+
+def estimate_card_on_spend(card_doc: dict, cards: list[CardState]) -> dict:
+    """
+    What card_doc would earn on the user's actual transactions, assuming its
+    benefits are used fully. Uses the same calculator (rates, monthly caps) as
+    the user's own card, so the two numbers are comparable.
+    """
+    txns = [t for c in cards for t in c.get("transactions") or [] if t.get("transaction_type") == "debit"]
+    months = len({t.get("month") for t in txns}) or 1
+    doc = {**card_doc, "utilization_questions": []}  # no quiz gating: best case
+    result = calculate_cashback(txns, {}, doc)
+    by_cat = {k: round(v / months, 2) for k, v in result["earned_breakdown"].items()}
+    monthly = round(sum(by_cat.values()), 2)
+    return {"monthly": monthly, "annual": round(monthly * 12, 2), "by_category": by_cat}
+
+
+def _fallback_why(est: dict, current_by_cat: dict[str, float]) -> tuple[str, list[str]]:
+    gains = sorted(
+        ((cat, v - current_by_cat.get(cat, 0.0)) for cat, v in est["by_category"].items()),
+        key=lambda x: x[1],
+        reverse=True,
+    )
+    best = [cat for cat, g in gains if g > 0][:2]
+    if not best:
+        return "Earns more across your overall spending.", []
+    parts = [f"₹{g:,.0f} more a month on {cat.replace('_', ' ')}" for cat, g in gains[:2] if g > 0]
+    return f"On your spending it would earn {' and '.join(parts)}.", best
+
+
+def _decide_verdict(score: int, current_monthly: float, best: CardRecommendation | None) -> tuple[str, str]:
+    gain = best["improvement_over_current_monthly"] if best else 0.0
+    if best and gain >= max(SWITCH_MIN_GAIN_INR, SWITCH_MIN_GAIN_SHARE * current_monthly):
+        lead = (
+            "You're using your card well, but "
+            if score >= GOOD_FIT_SCORE
+            else f"You're getting {score}% of what your card can earn, and "
+        )
+        return (
+            "Switch recommended",
+            f"{lead}{best['card_name']} would earn about ₹{gain:,.0f} more a month on the same spending.",
+        )
+    if score < GOOD_FIT_SCORE:
+        return (
+            "Could do better",
+            f"You're getting {score}% of what your card can earn. Using its bonus categories would add more cashback.",
+        )
+    return (
+        "Good fit",
+        f"You're getting {score}% of your card's potential, about ₹{current_monthly:,.0f} a month, "
+        "and no card in our catalogue earns meaningfully more on your spending.",
+    )
+
+
+def reconcile_result(
+    result: ComparisonResult, cards: list[CardState], candidates: list[dict]
+) -> ComparisonResult:
+    """
+    Replace model-estimated numbers with computed ones and make the verdict
+    follow from them. Keeps the model's explanations where it gave one.
+    """
+    current_monthly = _current_monthly_earned(cards)
+    current_by_cat: dict[str, float] = defaultdict(float)
+    for card in cards:
+        cr = card.get("cashback_result") or {}
+        for cat, v in cr.get("earned_breakdown", {}).items():
+            current_by_cat[cat] += v / _months_covered(card)
+
+    text_by_id = {r["card_id"]: r for r in result.get("recommendations", [])}
+    recs: list[CardRecommendation] = []
+    for doc in candidates:
+        cid = doc.get("_id", "")
+        est = estimate_card_on_spend(doc, cards)
+        gain = round(est["monthly"] - current_monthly, 2)
+        if gain <= 0:
+            continue
+        why, best_cats = _fallback_why(est, current_by_cat)
+        model = text_by_id.get(cid, {})
+        fee = float(doc.get("annual_fee") or 0)
+        recs.append(
+            CardRecommendation(
+                card_id=cid,
+                card_name=doc.get("name") or model.get("card_name", cid),
+                bank=doc.get("bank") or model.get("bank", ""),
+                estimated_monthly_cashback=est["monthly"],
+                estimated_annual_cashback=est["annual"],
+                improvement_over_current_monthly=gain,
+                why_better=model.get("why_better") or why,
+                best_categories=list(model.get("best_categories") or best_cats),
+                caveat=model.get("caveat") or (f"Annual fee: ₹{fee:,.0f}" if fee else None),
+            )
+        )
+    recs.sort(key=lambda r: r["improvement_over_current_monthly"], reverse=True)
+    recs = recs[:3]
+
+    score = _average_score(cards)
+    verdict, reason = _decide_verdict(score, current_monthly, recs[0] if recs else None)
+    return ComparisonResult(
+        verdict=verdict,
+        verdict_reason=reason,
+        card_score=score,
+        recommendations=recs,
+        routing_advice=result.get("routing_advice", []),
+        tips=result.get("tips", []),
     )
 
 
@@ -633,6 +775,9 @@ async def compare_node(state: AnalysisState) -> dict[str, Any]:
     comparison_result = await asyncio.to_thread(
         _rank_with_gemini, cashback_summary, filtered, top_cats, total_spend, routing_advice
     )
+
+    # ── 8. Computed numbers and a verdict that matches the score ──────
+    comparison_result = reconcile_result(comparison_result, cards, filtered)
 
     logger.info(
         "compare_node complete — verdict='%s' score=%d recs=%d",

@@ -172,11 +172,28 @@ const css = `
   .results-section { padding: 20px 16px; border-radius: var(--radius-lg); }
   .rs-header { margin-bottom: 18px; }
 }
-.score-label {
+.meter-card-name {
   font-size: 12px; color: var(--slate-300); margin-bottom: 8px; font-weight: 500;
   max-width: 220px; margin-left: auto; margin-right: auto;
 }
 `
+
+// The headline follows the verdict, which the backend derives from the
+// score and the best alternative, so a high score never reads as a failure.
+function headline(verdict, score) {
+  if (verdict === 'Good fit') return "You're getting good value"
+  if (verdict === 'Switch recommended') {
+    return score >= 70 ? "You're using it well, but a better card exists" : 'Time for a better card'
+  }
+  return 'Room to do better'
+}
+
+function monthlyEarned(cr, months) {
+  if (!cr) return 0
+  const total = Object.values(cr.earned_breakdown || {}).reduce((s, v) => s + v, 0)
+  const n = Math.max(cr.monthly_breakdown?.length || 0, months?.length || 0, 1)
+  return total / n
+}
 
 const TIP_ICONS = [BulbIcon, TargetIcon, ChartIcon, CoinsIcon]
 
@@ -247,11 +264,7 @@ export default function ResultsPage() {
               <CheckCircleIcon size={15} /> Analysis complete
             </div>
             <h1 className="hero-title">
-              {comp?.verdict === 'Good fit'
-                ? "You're getting good value"
-                : comp?.verdict === 'Switch recommended'
-                ? "Time for a better card"
-                : "Room to do better"}
+              {headline(comp?.verdict, comp?.card_score ?? cashback_result?.utilization_score ?? 0)}
             </h1>
             <p className="hero-subtitle">
               {comp?.verdict_reason || `You earned ${money(earnedTotal)} and missed ${money(missedTotal)} in cashback.`}
@@ -261,10 +274,10 @@ export default function ResultsPage() {
             <div className="scores-row">
               {cards.map((c, i) => (
                 <div key={c.card_id} style={{ textAlign: 'center' }}>
-                  <div className="score-label">{c.card_name}</div>
+                  <div className="meter-card-name">{c.card_name}</div>
                   <UtilizationMeter
                     score={(c.cashback_result || cashback_result)?.utilization_score || 0}
-                    earnedMonthly={Object.values((c.cashback_result || cashback_result)?.earned_breakdown || {}).reduce((s, v) => s + v, 0)}
+                    earnedMonthly={monthlyEarned(c.cashback_result || cashback_result, c.months)}
                   />
                 </div>
               ))}
