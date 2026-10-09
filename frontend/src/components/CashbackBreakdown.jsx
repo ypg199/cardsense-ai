@@ -1,5 +1,6 @@
 const styles = `
 .breakdown-wrap { display: flex; flex-direction: column; gap: 24px; }
+.breakdown-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 .breakdown-table { width: 100%; border-collapse: collapse; }
 .breakdown-table th {
   font-size: 10px;
@@ -209,6 +210,7 @@ export default function CashbackBreakdown({ cashbackResult, multiMonth }) {
         )}
 
         {/* Category table */}
+        <div className="breakdown-scroll">
         <table className="breakdown-table">
           <thead>
             <tr>
@@ -255,6 +257,7 @@ export default function CashbackBreakdown({ cashbackResult, multiMonth }) {
             </tr>
           </tbody>
         </table>
+        </div>
 
         <p style={{ fontSize: 13, color: 'var(--slate-400)', textAlign: 'center' }}>
           You earned <strong style={{ color: 'var(--green-400)', fontFamily: 'var(--font-mono)' }}>₹{totalEarned.toFixed(0)}</strong> out of a possible{' '}

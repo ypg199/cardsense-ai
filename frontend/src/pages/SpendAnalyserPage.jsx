@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { getSpendSummary } from '../api.js'
+import FullScreenLoader from '../components/FullScreenLoader.jsx'
 import {
   BarList, CompareChart, Legend, MonthlyChart, TipRows,
   catLabel, compactMoney, money, monthLabel,
@@ -117,6 +118,28 @@ function pctChange(a, b) {
 export default function SpendAnalyserPage() {
   const { sessionId } = useParams()
   const navigate = useNavigate()
+  return (
+    <div className="sa-root">
+      <style>{css}</style>
+      <div className="sa-page">
+        <div className="sa-header">
+          <div className="sa-logo">💳 CardSense AI</div>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <button className="sa-btn" onClick={() => navigate('/spend')}>Upload other statements</button>
+            <button className="sa-btn" onClick={() => navigate('/')}>Analyse a card</button>
+          </div>
+        </div>
+        <SpendAnalyser sessionId={sessionId} />
+      </div>
+    </div>
+  )
+}
+
+/**
+ * The analyser itself, used on its own page (standalone flow) and inside
+ * the Analyse tab of the results page.
+ */
+export function SpendAnalyser({ sessionId, showTitle = true }) {
 
   const [cardId, setCardId] = useState(null)
   const [data, setData] = useState(null)
@@ -153,8 +176,13 @@ export default function SpendAnalyserPage() {
     return { series: hasOther ? [...top, 'other_group'] : top, colorOf: color }
   }, [overall])
 
-  if (error) return <Shell navigate={navigate} sessionId={sessionId}><div className="sa-empty">{error}</div></Shell>
-  if (!data) return <Shell navigate={navigate} sessionId={sessionId}><div className="sa-empty">Loading your spending…</div></Shell>
+  if (error) return <Frame><div className="sa-empty">{error}</div></Frame>
+  if (!data) return (
+    <Frame>
+      <div className="sa-empty" />
+      <FullScreenLoader title="Crunching your spending" steps={['Adding up spend per month', 'Grouping by category and merchant']} stepEvery={2} delay={250} />
+    </Frame>
+  )
 
   const months = data.monthly
   const byMonth = Object.fromEntries(months.map(m => [m.month, m]))
@@ -177,8 +205,8 @@ export default function SpendAnalyserPage() {
   const tableCats = series.filter(s => s !== 'other_group')
 
   return (
-    <Shell navigate={navigate} sessionId={sessionId}>
-      <h1 className="sa-title">Spend Analyser</h1>
+    <Frame>
+      {showTitle && <h1 className="sa-title">Spend Analyser</h1>}
       <p className="sa-sub">
         {data.transactions} purchases across {months.length} month{months.length === 1 ? '' : 's'}
         {data.refunds > 0 && ` · ${money(data.refunds)} refunded`}
@@ -358,24 +386,15 @@ export default function SpendAnalyserPage() {
           )}
         </>
       )}
-    </Shell>
+    </Frame>
   )
 }
 
-function Shell({ children, navigate, sessionId }) {
+function Frame({ children }) {
   return (
     <div className="sa-root">
       <style>{css}</style>
-      <div className="sa-page">
-        <div className="sa-header">
-          <div className="sa-logo">💳 CardSense AI</div>
-          <div style={{ display: 'flex', gap: 8 }}>
-            <button className="sa-btn" onClick={() => navigate(`/results/${sessionId}`)}>← Results</button>
-            <button className="sa-btn" onClick={() => navigate('/')}>New analysis</button>
-          </div>
-        </div>
-        {children}
-      </div>
+      {children}
     </div>
   )
 }
