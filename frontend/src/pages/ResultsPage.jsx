@@ -6,6 +6,7 @@ import UtilizationMeter from '../components/UtilizationMeter.jsx'
 import { getSessionStatus } from '../api.js'
 import FullScreenLoader, { RESULT_STEPS } from '../components/FullScreenLoader.jsx'
 import { SpendAnalyser } from './SpendAnalyserPage.jsx'
+import Tabs, { AnalyseIcon, ResultsIcon } from '../components/Tabs.jsx'
 
 const css = `
 .results-page {
@@ -40,32 +41,7 @@ const css = `
   transition: all var(--transition);
 }
 .new-analysis-btn:hover { border-color: var(--amber-500); color: var(--amber-400); }
-.view-tabs {
-  display: flex;
-  gap: 4px;
-  padding: 4px;
-  background: var(--navy-900);
-  border: 1px solid var(--navy-700);
-  border-radius: 14px;
-  width: fit-content;
-  margin: 0 auto 8px;
-  animation: fadeUp 300ms ease;
-}
-.view-tab {
-  border: none;
-  background: transparent;
-  color: var(--slate-400);
-  font-family: var(--font-sans);
-  font-size: 14px;
-  font-weight: 500;
-  padding: 10px 22px;
-  border-radius: 10px;
-  cursor: pointer;
-  transition: all var(--transition);
-}
-.view-tab:hover { color: var(--white); }
-.view-tab.active { background: var(--navy-700); color: var(--amber-400); box-shadow: 0 1px 0 rgba(255,255,255,0.04) inset; }
-.view-tab:focus-visible { outline: 2px solid var(--amber-500); outline-offset: 2px; }
+.results-tabs { margin-bottom: 24px; animation: fadeUp 300ms ease; }
 
 .hero-section {
   text-align: center;
@@ -235,18 +211,16 @@ export default function ResultsPage() {
           </button>
         </div>
 
-        <div className="view-tabs" role="tablist" aria-label="Results views">
-          {[['results', '📊 Results'], ['analyse', '📈 Analyse spending']].map(([key, label]) => (
-            <button
-              key={key}
-              role="tab"
-              aria-selected={tab === key}
-              className={`view-tab${tab === key ? ' active' : ''}`}
-              onClick={() => setTab(key)}
-            >
-              {label}
-            </button>
-          ))}
+        <div className="results-tabs">
+          <Tabs
+            label="Results views"
+            value={tab}
+            onChange={setTab}
+            items={[
+              { key: 'results', label: 'Results', icon: ResultsIcon },
+              { key: 'analyse', label: 'Analyse spending', icon: AnalyseIcon },
+            ]}
+          />
         </div>
 
         {tab === 'analyse' ? (
