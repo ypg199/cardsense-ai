@@ -384,7 +384,7 @@ def test_crawl_url_success():
                 "crawler.card_crawler._generate_embedding", return_value=([0.1] * 768, "embedding text")
             ),
             mock.patch("crawler.card_crawler._upsert_card", return_value=True),
-            mock.patch("crawler.card_crawler._find_unchanged_card", return_value=None),
+            mock.patch("crawler.card_crawler._find_stored_card", return_value=None),
             mock.patch("asyncio.sleep", return_value=None),
         ):
             from crawler.card_crawler import crawl_url

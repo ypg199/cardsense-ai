@@ -203,7 +203,15 @@ def test_crawl_url_skips_gemini_when_page_unchanged():
     gemini = mock.MagicMock()
     with (
         mock.patch.object(
-            cc, "_find_unchanged_card", mock.AsyncMock(return_value={"_id": "axis-flipkart", "name": "F"})
+            cc,
+            "_find_stored_card",
+            mock.AsyncMock(
+                return_value={
+                    "_id": "axis-flipkart",
+                    "name": "F",
+                    "content_hash": cc._page_hash(cc._clean_html(PAGE_HTML)),
+                }
+            ),
         ),
         mock.patch.object(cc, "_touch_card", mock.AsyncMock()) as touch,
         mock.patch.object(cc, "_call_gemini_flash", gemini),
@@ -220,7 +228,7 @@ def test_crawl_url_keeps_existing_vector_when_embedding_fails():
     browser, _ = _browser_returning(PAGE_HTML)
     upsert = mock.AsyncMock(return_value=True)
     with (
-        mock.patch.object(cc, "_find_unchanged_card", mock.AsyncMock(return_value=None)),
+        mock.patch.object(cc, "_find_stored_card", mock.AsyncMock(return_value=None)),
         mock.patch.object(cc, "_call_gemini_flash", return_value=GOOD_CARD),
         mock.patch.object(cc, "_generate_embedding", return_value=([], "text")),
         mock.patch.object(cc, "_upsert_card", upsert),
@@ -238,7 +246,7 @@ def test_crawl_url_reports_invalid_gemini_output():
     bad = {"name": "Card", "bank": "Axis Bank", "benefits": [{"category": "lounge", "rate": 0.1}]}
     upsert = mock.AsyncMock()
     with (
-        mock.patch.object(cc, "_find_unchanged_card", mock.AsyncMock(return_value=None)),
+        mock.patch.object(cc, "_find_stored_card", mock.AsyncMock(return_value=None)),
         mock.patch.object(cc, "_call_gemini_flash", return_value=bad),
         mock.patch.object(cc, "_upsert_card", upsert),
         mock.patch("asyncio.sleep", mock.AsyncMock()),
@@ -398,7 +406,7 @@ def test_page_without_a_card_is_skipped_not_failed():
     browser, _ = _browser_returning(PAGE_HTML)
     upsert = mock.AsyncMock()
     with (
-        mock.patch.object(cc, "_find_unchanged_card", mock.AsyncMock(return_value=None)),
+        mock.patch.object(cc, "_find_stored_card", mock.AsyncMock(return_value=None)),
         mock.patch.object(cc, "_call_gemini_flash", return_value={"name": None, "bank": "HDFC Bank"}),
         mock.patch.object(cc, "_upsert_card", upsert),
         mock.patch("asyncio.sleep", mock.AsyncMock()),

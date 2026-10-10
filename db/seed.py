@@ -15,6 +15,8 @@ import asyncio
 import logging
 from datetime import UTC, datetime
 
+from db.card_keys import card_key
+
 logging.basicConfig(level=logging.INFO, format="%(asctime)s  %(levelname)-8s  %(message)s")
 logger = logging.getLogger(__name__)
 
@@ -385,16 +387,15 @@ async def seed_cards() -> None:
 
     # Cards the crawler has refreshed from the bank's site carry a content_hash;
     # leave those alone so seeding never overwrites live data with sample data.
-    crawled_ids = {
-        doc["_id"]
-        async for doc in col.find(
-            {"_id": {"$in": [c["_id"] for c in SEED_CARDS]}, "content_hash": {"$exists": True}},
-            {"_id": 1},
-        )
-    }
+    # A crawled card can sit under another id (kept from an earlier crawl of
+    # its page), so match on the card's key too, or seeding would add it twice.
+    crawled_keys: set[str] = set()
+    async for doc in col.find({"content_hash": {"$exists": True}}, {"_id": 1, "bank": 1, "name": 1}):
+        crawled_keys.add(doc["_id"])
+        crawled_keys.add(card_key(doc.get("bank", ""), doc.get("name", "")))
 
     for card in SEED_CARDS:
-        if card["_id"] in crawled_ids:
+        if card["_id"] in crawled_keys or card_key(card["bank"], card["name"]) in crawled_keys:
             logger.info("  Skipped: %s (crawled data is newer)", card["name"])
             skipped += 1
             continue

@@ -38,7 +38,6 @@ import random
 import re
 from datetime import UTC, datetime
 from typing import Any
-from urllib.parse import urljoin, urlsplit, urlunsplit
 
 from bs4 import BeautifulSoup
 from dotenv import load_dotenv
@@ -46,6 +45,7 @@ from tenacity import retry, retry_if_not_exception_type, stop_after_attempt, wai
 
 from agents.embeddings import EMBEDDING_DIMENSIONS, EMBEDDING_MODEL
 from agents.parse_node import VALID_CATEGORIES
+from db.card_keys import card_key, normalize_url
 
 load_dotenv()
 logger = logging.getLogger(__name__)
@@ -175,25 +175,8 @@ Page content: {page_content}"""
 # Slug generator
 # ─────────────────────────────────────────────────────────────────────────────
 
-_SLUG_FILLER_WORDS = {"bank", "card", "credit", "the", "of"}
-
-
-def _make_slug(bank: str, name: str) -> str:
-    """
-    Generate a short, stable id: "<bank>-<card words>". Truncated to 80 chars.
-
-    The bank's own words and filler like "Credit Card" are dropped from the
-    card name, so "Flipkart Axis Bank Credit Card" by "Axis Bank" becomes
-    "axis-flipkart" (the same id as the seed card, which it then replaces).
-    """
-
-    def words(text: str) -> list[str]:
-        return [w for w in re.split(r"[^a-z0-9]+", text.lower()) if w]
-
-    bank_words = [w for w in words(bank) if w not in _SLUG_FILLER_WORDS]
-    name_words = [w for w in words(name) if w not in _SLUG_FILLER_WORDS and w not in bank_words]
-    parts = (bank_words[:1] or words(bank)[:1]) + (name_words or words(name))
-    return "-".join(parts)[:80].strip("-")
+# card_key() lives in db/card_keys.py so the seed and duplicate checks share it
+_make_slug = card_key
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -237,10 +220,7 @@ def _page_hash(page_text: str) -> str:
     return hashlib.sha256(page_text.encode("utf-8")).hexdigest()
 
 
-def _normalize_url(href: str, base_url: str) -> str:
-    """Absolute URL without query string, fragment or trailing slash."""
-    parts = urlsplit(urljoin(base_url, href))
-    return urlunsplit((parts.scheme, parts.netloc.lower(), parts.path.rstrip("/"), "", ""))
+_normalize_url = normalize_url
 
 
 def discover_card_links(hrefs: list[str], base_url: str, link_pattern: str) -> list[str]:
@@ -507,15 +487,27 @@ async def _upsert_card(card_doc: dict) -> bool:
         return False
 
 
-async def _find_unchanged_card(url: str, content_hash: str) -> dict | None:
-    """Return the stored card crawled from this URL if its page text is unchanged."""
+def _url_variants(url: str) -> list[str]:
+    """The URL as given plus its normalised form, with and without a trailing slash."""
+    clean = _normalize_url(url, url)
+    return list(dict.fromkeys([url, clean, clean + "/"]))
+
+
+async def _find_stored_card(url: str) -> dict | None:
+    """
+    Return the stored card crawled from this URL, if any. Its _id is reused
+    when the page is re-crawled, so a card whose extracted name changes
+    (or that an older crawler stored under another id) is updated in place
+    rather than saved a second time.
+    """
     try:
         from db.connection import get_db
 
         db = get_db()
         return await db["credit_cards"].find_one(
-            {"source_url": url, "content_hash": content_hash},
-            {"_id": 1, "name": 1},
+            {"source_url": {"$in": _url_variants(url)}},
+            {"_id": 1, "name": 1, "content_hash": 1},
+            sort=[("last_crawled", -1)],
         )
     except Exception as exc:
         logger.warning("Could not check stored card for %s: %s", url, exc)
@@ -628,8 +620,8 @@ async def crawl_url(url: str, browser=None) -> dict[str, Any]:
 
     # Skip Gemini when the page hasn't changed since the last crawl
     content_hash = _page_hash(page_text)
-    stored = await _find_unchanged_card(url, content_hash)
-    if stored:
+    stored = await _find_stored_card(url)
+    if stored and stored.get("content_hash") == content_hash:
         await _touch_card(stored["_id"])
         logger.info("Unchanged: %s (%s)", stored.get("name"), stored["_id"])
         return _result(True, stored.get("name"), stored["_id"], unchanged=True)
@@ -651,7 +643,9 @@ async def crawl_url(url: str, browser=None) -> dict[str, Any]:
         logger.error("Failed: %s — %s", url, exc)
         return _result(False, error=str(exc))
 
-    slug = _make_slug(card["bank"], card["name"])
+    # Keep the id of the card already stored from this page, so a re-crawl
+    # never leaves the old record behind as a duplicate
+    slug = stored["_id"] if stored else _make_slug(card["bank"], card["name"])
     embedding, embedding_text = await asyncio.to_thread(_generate_embedding, card)
 
     doc = {
