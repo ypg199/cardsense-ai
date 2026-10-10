@@ -60,10 +60,13 @@ MOCK_TRANSACTIONS = [
     },
 ]
 
+import pytest
+
 from agents.parse_node import (
     PDF_TEXT_CHAR_LIMIT,
     TRANSACTION_PARSE_PROMPT,
     VALID_CATEGORIES,
+    GeminiUnavailableError,
     _clean_gemini_json,
     _normalise_transaction,
     _parse_transactions_from_text,
@@ -385,10 +388,9 @@ def test_parse_transactions_gemini_failure():
     print("\n[8] _parse_transactions_from_text — Gemini raises exception")
 
     with mock.patch("agents.parse_node._call_gemini", side_effect=Exception("API Error")):
-        txns = _parse_transactions_from_text("some text", "2024-01")
-
-    assert txns == []
-    ok("Gemini failure returns empty list (no crash)")
+        with pytest.raises(GeminiUnavailableError):
+            _parse_transactions_from_text("some text", "2024-01")
+    ok("Gemini failure raises GeminiUnavailableError instead of an empty result")
 
 
 def test_parse_transactions_bad_json():
@@ -647,6 +649,16 @@ def test_node_does_not_touch_other_cards():
     # card at idx=0 should be untouched
     assert result["cards"][0]["transactions"] == []
     ok("Inactive card (idx=0) untouched")
+
+
+def test_node_reports_error_when_gemini_is_unreachable():
+    """An invalid key or outage must not turn into an empty '0 purchases' result."""
+    state = _make_state(_make_card("=== STATEMENT: 2024-01 ===\n10 Jan ZOMATO 450.00 Debit"))
+    with mock.patch("agents.parse_node._call_gemini", side_effect=Exception("API key not valid")):
+        result = asyncio.run(parse_transactions_node(state))
+    assert result["status"] == "error"
+    assert result["ui_action"] == "show_error"
+    assert "AI service" in result["error"]
 
 
 # ─────────────────────────────────────────────────────────────────────────────

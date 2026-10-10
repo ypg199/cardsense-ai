@@ -117,6 +117,10 @@ class GeminiNotConfiguredError(RuntimeError):
     """Raised when GEMINI_API_KEY is missing, so parsing can't run at all."""
 
 
+class GeminiUnavailableError(RuntimeError):
+    """Raised when every Gemini call for a statement failed (bad key, quota, outage)."""
+
+
 def _get_llm():
     """Return a ChatGoogleGenerativeAI instance for gemini-2.5-flash."""
     from langchain_google_genai import ChatGoogleGenerativeAI
@@ -248,12 +252,12 @@ def _chunk_text(text: str, limit: int = PDF_TEXT_CHAR_LIMIT) -> list[str]:
 JSON_ATTEMPTS = 2  # a malformed or off-topic response gets one more try
 
 
-def _parse_chunk(chunk: str, month_fallback: str) -> list[Transaction]:
+def _parse_chunk(chunk: str, month_fallback: str) -> list[Transaction] | None:
     """
     Parse one part of a statement. A response that isn't a JSON list is
     retried once (the benchmark caught Gemini occasionally returning broken
     or unrelated output, which used to drop the whole statement). Returns []
-    if Gemini still fails.
+    if Gemini still answers badly, and None if Gemini could not be reached.
     """
     raw_list = None
     for attempt in range(1, JSON_ATTEMPTS + 1):
@@ -263,7 +267,7 @@ def _parse_chunk(chunk: str, month_fallback: str) -> list[Transaction]:
             raise
         except Exception as exc:
             logger.error("Gemini call failed after retries: %s", exc)
-            return []
+            return None
 
         cleaned = _clean_gemini_json(raw_response)
         try:
@@ -298,9 +302,10 @@ def _parse_transactions_from_text(pdf_text: str, month_fallback: str) -> list[Tr
     Send pdf_text to Gemini (in parts when it is longer than
     PDF_TEXT_CHAR_LIMIT) and parse the JSON responses into Transaction dicts.
     A part that fails is skipped and the rest are kept. Raises
-    GeminiNotConfiguredError only when no API key is configured, since every
-    statement would then parse to nothing and the user would get a
-    meaningless score.
+    GeminiNotConfiguredError when no API key is configured, and
+    GeminiUnavailableError when no Gemini call succeeded at all (an invalid
+    key, exhausted quota or outage), since the statement would otherwise
+    parse to nothing and the user would get an empty, meaningless result.
     """
     if not pdf_text.strip():
         logger.warning("pdf_text is empty — skipping Gemini call")
@@ -308,8 +313,14 @@ def _parse_transactions_from_text(pdf_text: str, month_fallback: str) -> list[Tr
 
     chunks = _chunk_text(pdf_text)
     transactions: list[Transaction] = []
+    reached = False
     for chunk in chunks:
-        transactions.extend(_parse_chunk(chunk, month_fallback))
+        parsed = _parse_chunk(chunk, month_fallback)
+        if parsed is not None:
+            reached = True
+            transactions.extend(parsed)
+    if not reached:
+        raise GeminiUnavailableError("every Gemini call for this statement failed")
 
     logger.info(
         "Parsed %d transactions from statement (month=%s, parts=%d)",
@@ -406,6 +417,17 @@ async def parse_transactions_node(state: AnalysisState) -> dict[str, Any]:
                 "status": "error",
                 "ui_action": "show_error",
                 "error": "Statement analysis is not available right now: the AI service is not configured.",
+            }
+        except GeminiUnavailableError:
+            logger.error("Gemini failed for every part of card_idx=%d month=%s", card_idx, month_label)
+            card["status"] = "error"
+            cards[card_idx] = card
+            return {
+                "cards": cards,
+                "status": "error",
+                "ui_action": "show_error",
+                "error": "We couldn't read the transactions in your statement because the AI service "
+                "didn't respond. Please try again in a minute.",
             }
         # Ensure every transaction carries the correct month label
         for txn in txns:

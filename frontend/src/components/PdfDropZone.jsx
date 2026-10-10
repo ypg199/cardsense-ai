@@ -99,9 +99,15 @@ const styles = `
 }
 `
 
+const MONTH = '(0[1-9]|1[0-2])'
+
 function guessMonth(filename) {
-  const match = filename.match(/(\d{4})[-_]?(\d{2})/)
-  if (match) return `${match[1]}-${match[2]}`
+  // DD-MM-YYYY, as in Axis Bank's "Axis_07-03-2026-19-04-19.pdf" downloads
+  const dmy = filename.match(new RegExp(`(?<!\\d)\\d{2}[-_.]${MONTH}[-_.](20\\d{2})(?!\\d)`))
+  if (dmy) return `${dmy[2]}-${dmy[1]}`
+  // YYYY-MM or YYYYMM, as in "hdfc_2024-01.pdf"
+  const ym = filename.match(new RegExp(`(?<!\\d)(20\\d{2})[-_]?${MONTH}(?!\\d)`))
+  if (ym) return `${ym[1]}-${ym[2]}`
   const now = new Date()
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
 }
