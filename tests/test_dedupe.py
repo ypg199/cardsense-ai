@@ -147,3 +147,25 @@ def test_seed_skips_card_crawled_under_another_id():
     written = {c.args[0]["_id"] for c in col.update_one.await_args_list}
     assert "icici-amazon" not in written
     assert "axis-flipkart" in written
+
+
+# ── --apply keeps a backup that --restore puts back ────────────────────────
+
+
+def test_apply_backup_can_be_restored(tmp_path):
+    import mongomock
+
+    from db.dedupe_cards import backup_records, restore_records
+
+    col = mongomock.MongoClient().cardsense.credit_cards
+    col.insert_many(
+        [
+            card("icici-amazon", "Amazon Pay ICICI Card", "ICICI Bank", benefits=[{"rate": 0.05}]),
+            card("icici-amazon-pay", "Amazon Pay ICICI Credit Card", "ICICI Bank", content_hash="h"),
+        ]
+    )
+    path = backup_records(col, ["icici-amazon"], tmp_path)
+    col.delete_many({"_id": "icici-amazon"})
+    assert restore_records(col, path) == 1
+    assert col.find_one({"_id": "icici-amazon"})["benefits"] == [{"rate": 0.05}]
+    assert col.count_documents({}) == 2

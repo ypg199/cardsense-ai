@@ -25,7 +25,7 @@ The live setup:
    ```
 
    Or crawl straight into Atlas with `MONGODB_URI="mongodb+srv://…" python -m crawler.run`.
-   Check for cards stored twice with `MONGODB_URI="mongodb+srv://…" python -m db.dedupe_cards` (report only; add `--apply` to delete the extra copies).
+   Check for cards stored twice with `MONGODB_URI="mongodb+srv://…" python -m db.dedupe_cards` (report only; `--apply` saves the records it deletes to `backups/` first, and `--restore <file>` puts them back).
 6. **Atlas Search → Create Search Index → Vector Search (JSON editor)** on `cardsense.credit_cards`, named `credit_cards_embedding_index`:
 
    ```json

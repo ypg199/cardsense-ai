@@ -15,7 +15,8 @@ are listed for a look but never removed.
 
 Usage:
     python -m db.dedupe_cards                 # report only, changes nothing
-    python -m db.dedupe_cards --apply         # delete the extra copies
+    python -m db.dedupe_cards --apply         # back up, then delete the extra copies
+    python -m db.dedupe_cards --restore backups/dedupe-<time>.json   # put them back
     python -m db.dedupe_cards --uri "mongodb+srv://..."   # default: MONGODB_URI
 ─────────────────────────────────────────────────────────────────────────────
 """
@@ -25,13 +26,16 @@ from __future__ import annotations
 import argparse
 import os
 from collections import defaultdict
+from datetime import UTC, datetime
 from itertools import combinations
+from pathlib import Path
 
 from dotenv import load_dotenv
 
 from db.card_keys import bank_key, card_key
 
 COLLECTION = "credit_cards"
+BACKUP_DIR = Path("backups")
 FIELDS = {
     "_id": 1,
     "name": 1,
@@ -143,18 +147,43 @@ def report(docs: list[dict], groups: list[dict], lookalikes: list[tuple[dict, di
     return "\n".join(lines)
 
 
+def backup_records(col, ids: list, backup_dir: Path = BACKUP_DIR) -> Path:
+    """Write the full records about to be deleted to a timestamped JSON file."""
+    from bson import json_util
+
+    backup_dir.mkdir(parents=True, exist_ok=True)
+    path = backup_dir / f"dedupe-{datetime.now(UTC).strftime('%Y%m%d-%H%M%S')}.json"
+    docs = list(col.find({"_id": {"$in": ids}}))
+    path.write_text(json_util.dumps(docs, indent=1), encoding="utf-8")
+    return path
+
+
+def restore_records(col, path: Path) -> int:
+    """Put back every record from a backup file; existing records with the same id are replaced."""
+    from bson import json_util
+
+    docs = json_util.loads(Path(path).read_text(encoding="utf-8"))
+    for d in docs:
+        col.replace_one({"_id": d["_id"]}, d, upsert=True)
+    return len(docs)
+
+
 def main() -> None:
     load_dotenv()
     parser = argparse.ArgumentParser(description="Find and remove duplicate credit cards")
     parser.add_argument("--uri", default=os.getenv("MONGODB_URI", "mongodb://localhost:27017"))
     parser.add_argument("--db", default=os.getenv("MONGODB_DB_NAME", "cardsense"))
-    parser.add_argument("--apply", action="store_true", help="Delete the duplicate records")
+    parser.add_argument("--apply", action="store_true", help="Back up, then delete the duplicate records")
+    parser.add_argument("--restore", metavar="FILE", help="Put back the records saved in a backup file")
     args = parser.parse_args()
 
     from pymongo import MongoClient
 
     with MongoClient(args.uri, serverSelectionTimeoutMS=10_000) as client:
         col = client[args.db][COLLECTION]
+        if args.restore:
+            print(f"Restored {restore_records(col, Path(args.restore))} records from {args.restore}.")
+            return
         docs = list(col.find({}, FIELDS))
         groups = find_duplicates(docs)
         print(f"Database: {args.uri.split('@')[-1]} / {args.db}\n")
@@ -163,8 +192,10 @@ def main() -> None:
         if not ids:
             return
         if args.apply:
+            path = backup_records(col, ids)
             deleted = col.delete_many({"_id": {"$in": ids}}).deleted_count
-            print(f"\nDeleted {deleted} duplicate records.")
+            print(f"\nSaved the records to {path}, then deleted {deleted} duplicate records.")
+            print(f"Undo with: python -m db.dedupe_cards --restore {path}")
         else:
             print(
                 f"\nNothing changed. Run again with --apply to delete the {len(ids)} records marked remove."
