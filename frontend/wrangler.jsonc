@@ -1,9 +1,10 @@
-// Cloudflare Workers static-assets config for the frontend.
+// Cloudflare Workers static-assets config for the frontend. The name must
+// match the Worker in the Cloudflare dashboard.
 // Cloudflare builds with `npm run build` (root directory: frontend) and then
 // runs `npx wrangler deploy`, which serves ./dist. Unknown paths fall back to
 // index.html so React Router handles deep links like /analyser/<id>.
 {
-  "name": "cardsense",
+  "name": "cardsense-ai",
   "compatibility_date": "2026-10-01",
   "assets": {
     "directory": "./dist",
