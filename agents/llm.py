@@ -15,4 +15,4 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-GEMINI_MODEL: str = os.getenv("GEMINI_MODEL", "gemini-3.5-flash-lite")
+GEMINI_MODEL: str = os.getenv("GEMINI_MODEL", "gemini-3.1-flash-lite")
