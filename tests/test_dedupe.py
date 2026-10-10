@@ -57,12 +57,13 @@ def test_same_card_under_two_ids_is_grouped_and_best_record_kept():
     assert [d["_id"] for d in groups[0]["remove"]] == ["axis-bank-airtel-credit-card"]
 
 
-def test_same_page_with_different_names_is_grouped():
-    url = "https://www.hdfc.bank.in/credit-cards/millennia-credit-card"
-    a = card("hdfc-millennia", "Millennia", "HDFC Bank", source_url=url, content_hash="x")
-    b = card("hdfc-millenia-cc", "Millenia CC", "HDFC Bank", source_url=url + "/?utm=1")
-    groups = find_duplicates([a, b])
-    assert len(groups) == 1 and groups[0]["keep"]["_id"] == "hdfc-millennia"
+def test_different_cards_from_one_page_are_listed_not_removed():
+    # An older crawler saved several cards from one listing page
+    url = "https://www.sbicard.com/en/personal/credit-cards.html"
+    a = card("sbi-elite", "SBI Card ELITE", "SBI Card", source_url=url)
+    b = card("sbi-prime", "SBI Card PRIME", "SBI Card", source_url=url + "/")
+    assert find_duplicates([a, b]) == []
+    assert [(x["_id"], y["_id"]) for x, y in find_lookalikes([a, b])] == [("sbi-elite", "sbi-prime")]
 
 
 def test_seed_amazon_card_matches_crawled_amazon_pay_card():
