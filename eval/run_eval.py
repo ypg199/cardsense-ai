@@ -26,6 +26,7 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
+from agents.llm import GEMINI_MODEL
 from agents.parse_node import _parse_transactions_from_text
 from agents.pdf_node import _decrypt_pdf, _extract_text
 from eval.scoring import StatementScore, score_statement, summarise
@@ -33,7 +34,7 @@ from eval.scoring import StatementScore, score_statement, summarise
 EVAL_DIR = Path(__file__).parent
 STATEMENTS = EVAL_DIR / "statements"
 PREDICTIONS = EVAL_DIR / "predictions"
-MODEL = "gemini-2.5-flash"
+MODEL = GEMINI_MODEL
 
 
 def parse_statement(pdf_path: Path, truth: dict) -> list[dict]:
