@@ -54,6 +54,20 @@ def test_missing_key_is_not_retried():
     assert time.monotonic() - start < 1.5
 
 
-def test_other_gemini_failures_still_degrade_to_empty():
+def test_gemini_unreachable_for_whole_statement_raises():
+    # An invalid key, exhausted quota or outage used to come back as "0 purchases"
     with mock.patch.object(parse_node, "_call_gemini", side_effect=RuntimeError("quota")):
-        assert parse_node._parse_transactions_from_text("ZOMATO 450", "2024-01") == []
+        with pytest.raises(parse_node.GeminiUnavailableError):
+            parse_node._parse_transactions_from_text("ZOMATO 450", "2024-01")
+
+
+def test_one_failed_part_keeps_the_rest():
+    good = '[{"date": "2024-01-02", "merchant": "SWIGGY", "amount": 300, "category": "food_delivery"}]'
+    text = "\n".join(["ZOMATO 450"] * 2000)  # long enough to be sent in several parts
+    parts = len(parse_node._chunk_text(text))
+    assert parts > 1
+    with mock.patch.object(
+        parse_node, "_call_gemini", side_effect=[RuntimeError("quota")] + [good] * (parts - 1)
+    ):
+        txns = parse_node._parse_transactions_from_text(text, "2024-01")
+    assert len(txns) == parts - 1
