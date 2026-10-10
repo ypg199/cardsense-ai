@@ -563,6 +563,28 @@ def test_create_checkpointer_no_uri():
     ok("create_checkpointer returns None without MONGODB_URI")
 
 
+def test_create_checkpointer_returns_a_saver_the_graph_accepts():
+    print("\n[14b] create_checkpointer returns a real saver, not a context manager")
+    import os
+
+    from langgraph.checkpoint.base import BaseCheckpointSaver
+    from langgraph.checkpoint.mongodb import MongoDBSaver
+
+    from agents.graph import build_graph, create_checkpointer
+
+    # Skip the saver's index creation, which needs a live MongoDB
+    with (
+        mock.patch.dict(os.environ, {"MONGODB_URI": "mongodb://example.invalid:27017"}),
+        mock.patch.object(
+            MongoDBSaver, "__init__", lambda self, client, **kw: BaseCheckpointSaver.__init__(self)
+        ),
+    ):
+        cp = create_checkpointer()
+    assert isinstance(cp, BaseCheckpointSaver)
+    build_graph(checkpointer=cp)
+    ok("create_checkpointer output compiles into the graph")
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # 10. Full integration node sequence check
 # ─────────────────────────────────────────────────────────────────────────────
@@ -666,6 +688,7 @@ if __name__ == "__main__":
     test_graph_edges()
     test_helper_imports()
     test_create_checkpointer_no_uri()
+    test_create_checkpointer_returns_a_saver_the_graph_accepts()
     test_node_call_order()
 
     print()

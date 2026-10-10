@@ -244,9 +244,12 @@ def create_checkpointer() -> Any:
 
     try:
         from langgraph.checkpoint.mongodb import MongoDBSaver
+        from pymongo import MongoClient
 
-        checkpointer = MongoDBSaver.from_conn_string(
-            conn_string=uri,
+        # MongoDBSaver.from_conn_string is a context manager, not a saver, so
+        # build the saver around a long-lived client instead
+        checkpointer = MongoDBSaver(
+            MongoClient(uri, serverSelectionTimeoutMS=10_000),
             db_name=db_name,
             checkpoint_collection_name="lg_checkpoints",
             writes_collection_name="lg_checkpoint_writes",
