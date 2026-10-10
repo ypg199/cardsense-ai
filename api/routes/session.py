@@ -24,7 +24,7 @@ from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Annotated
 
-from fastapi import APIRouter, File, Form, HTTPException, Response, UploadFile, status
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Response, UploadFile, status
 
 from agents.insights import spend_insights
 from agents.spend_summary import summarise_spend
@@ -42,6 +42,7 @@ from api.models import (
     SessionResponse,
     SpendSummaryResponse,
 )
+from api.rate_limit import check_rate_limit
 from api.settings import MAX_FILES_PER_REQUEST, MAX_UPLOAD_BYTES, MAX_UPLOAD_MB, SESSION_TTL_HOURS
 
 logger = logging.getLogger(__name__)
@@ -342,7 +343,12 @@ async def _run_graph(state: AnalysisState) -> AnalysisState:
 # ─────────────────────────────────────────────────────────────────────────────
 
 
-@router.post("/start", response_model=SessionResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/start",
+    response_model=SessionResponse,
+    dependencies=[Depends(check_rate_limit)],
+    status_code=status.HTTP_201_CREATED,
+)
 async def start_session(
     card_ids: Annotated[list[str], Form()],
     pdf_files: Annotated[list[UploadFile], File()],
@@ -458,7 +464,12 @@ def _load_sample() -> dict:
     return json.loads(SAMPLE_PATH.read_text())
 
 
-@router.post("/sample", response_model=SessionResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/sample",
+    response_model=SessionResponse,
+    dependencies=[Depends(check_rate_limit)],
+    status_code=status.HTTP_201_CREATED,
+)
 async def start_sample_session(body: SampleRequest | None = None):
     """
     Start a session on the built-in sample statements (four months of a
@@ -677,7 +688,9 @@ async def get_report(session_id: str):
 # ─────────────────────────────────────────────────────────────────────────────
 
 
-@router.post("/{session_id}/add_card", response_model=SessionResponse)
+@router.post(
+    "/{session_id}/add_card", response_model=SessionResponse, dependencies=[Depends(check_rate_limit)]
+)
 async def add_card(
     session_id: str,
     card_id: Annotated[str, Form()],
