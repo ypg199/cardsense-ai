@@ -4,7 +4,7 @@
 // runs `npx wrangler deploy`, which serves ./dist. Unknown paths fall back to
 // index.html so React Router handles deep links like /analyser/<id>.
 {
-  "name": "cardsense-ai",
+  "name": "frontend",
   "compatibility_date": "2026-10-01",
   "assets": {
     "directory": "./dist",
