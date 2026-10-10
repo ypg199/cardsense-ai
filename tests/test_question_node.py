@@ -13,6 +13,8 @@ import unittest.mock as mock
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+from langchain_core.messages import AIMessage
+
 from agents.question_node import (
     GENERAL_QUESTIONS,
     MAX_QUESTIONS_PER_CARD,
@@ -672,7 +674,7 @@ def test_llm_rephrased_question_for_same_category_is_dropped():
             "is_general": False,
         }
     ]
-    reply = mock.Mock(
+    reply = AIMessage(
         content='[{"id": "q_food_delivery_axis", "category": "food_delivery", "text": "Food apps?", '
         '"potential_cashback": 60}, {"id": "q_fuel", "category": "fuel", "text": "Fuel?", '
         '"potential_cashback": 10}]'

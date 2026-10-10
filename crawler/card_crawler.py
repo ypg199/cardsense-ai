@@ -44,6 +44,7 @@ from dotenv import load_dotenv
 from tenacity import retry, retry_if_not_exception_type, stop_after_attempt, wait_exponential
 
 from agents.embeddings import EMBEDDING_DIMENSIONS, EMBEDDING_MODEL
+from agents.llm import GEMINI_MODEL
 from agents.parse_node import VALID_CATEGORIES
 from db.card_keys import card_key, normalize_url
 
@@ -274,7 +275,7 @@ def _call_gemini_flash(page_content: str) -> dict:
         raise CrawlerConfigError("GEMINI_API_KEY not set")
 
     llm = ChatGoogleGenerativeAI(
-        model="gemini-2.5-flash",
+        model=GEMINI_MODEL,
         google_api_key=api_key,
         temperature=0,
     )
@@ -283,7 +284,7 @@ def _call_gemini_flash(page_content: str) -> dict:
         categories=", ".join(sorted(VALID_CATEGORIES)),
     )
     response = llm.invoke(prompt)
-    raw = response.content
+    raw = response.text
 
     # Strip markdown fences
     cleaned = raw.replace("```json", "").replace("```", "").strip()

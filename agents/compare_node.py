@@ -10,7 +10,7 @@ Responsibilities
    on credit_cards collection to retrieve top 10 candidates.
 3. Rule-filter candidates: remove current card(s), cards with incompatible
    card_type for the user's spend pattern.
-4. Send filtered candidates + cashback summary to gemini-2.5-flash for ranking.
+4. Send filtered candidates + cashback summary to Gemini for ranking.
 5. Reconcile: recompute every alternative's cashback on the user's actual
    transactions (same calculator as the user's own card), keep only cards
    that would earn more, and decide the verdict from the numbers so the
@@ -63,6 +63,7 @@ from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_ex
 
 from agents.cashback_node import _fetch_card_doc, calculate_cashback
 from agents.embeddings import EMBEDDING_DIMENSIONS, EMBEDDING_MODEL
+from agents.llm import GEMINI_MODEL
 from agents.state import (
     AnalysisState,
     CardRecommendation,
@@ -416,11 +417,11 @@ def _call_gemini_pro(prompt: str) -> str:
     from langchain_google_genai import ChatGoogleGenerativeAI
 
     llm = ChatGoogleGenerativeAI(
-        model="gemini-2.5-flash",
+        model=GEMINI_MODEL,
         google_api_key=os.getenv("GEMINI_API_KEY", ""),
         temperature=0,
     )
-    return llm.invoke(prompt).content
+    return llm.invoke(prompt).text
 
 
 def _rank_with_gemini(
@@ -808,7 +809,7 @@ def reconcile_result(
 async def compare_node(state: AnalysisState) -> dict[str, Any]:
     """
     LangGraph node — compare user's cards against the database and generate
-    recommendations.  Uses gemini-2.5-flash for the final ranking step.
+    recommendations.  Uses Gemini (GEMINI_MODEL) for the final ranking step.
 
     Returns a dict of state fields to update.
     """

@@ -6,7 +6,7 @@ Node 2: parse_transactions_node
 Responsibilities
 ────────────────
 1. Take the extracted pdf_text for the current card.
-2. Send (up to 10 000 chars) to gemini-2.5-flash with the exact prompt
+2. Send (up to 10 000 chars) to Gemini (agents.llm.GEMINI_MODEL) with the exact prompt
    defined in Section 11 (TRANSACTION_PARSE_PROMPT).
 3. Parse the returned JSON array into a list of Transaction dicts.
 4. Attach the source month label to each transaction.
@@ -43,6 +43,7 @@ from typing import Any
 from dotenv import load_dotenv
 from tenacity import retry, retry_if_not_exception_type, stop_after_attempt, wait_exponential
 
+from agents.llm import GEMINI_MODEL
 from agents.state import AnalysisState, CardState, Transaction
 
 load_dotenv()
@@ -122,14 +123,14 @@ class GeminiUnavailableError(RuntimeError):
 
 
 def _get_llm():
-    """Return a ChatGoogleGenerativeAI instance for gemini-2.5-flash."""
+    """Return a ChatGoogleGenerativeAI instance for GEMINI_MODEL."""
     from langchain_google_genai import ChatGoogleGenerativeAI
 
     api_key = os.getenv("GEMINI_API_KEY", "")
     if not api_key:
         raise GeminiNotConfiguredError("GEMINI_API_KEY is not set")
     return ChatGoogleGenerativeAI(
-        model="gemini-2.5-flash",
+        model=GEMINI_MODEL,
         google_api_key=api_key,
         temperature=0,
         # JSON mode: the model must return syntactically valid JSON
@@ -220,7 +221,8 @@ def _call_gemini(pdf_text: str) -> str:
     truncated = pdf_text[:PDF_TEXT_CHAR_LIMIT]
     prompt = TRANSACTION_PARSE_PROMPT.format(pdf_text=truncated)
     response = llm.invoke(prompt)
-    return response.content
+    # .text joins the text blocks; newer models return content as a list of blocks
+    return response.text
 
 
 def _chunk_text(text: str, limit: int = PDF_TEXT_CHAR_LIMIT) -> list[str]:

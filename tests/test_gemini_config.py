@@ -71,3 +71,20 @@ def test_one_failed_part_keeps_the_rest():
     ):
         txns = parse_node._parse_transactions_from_text(text, "2024-01")
     assert len(txns) == parts - 1
+
+
+def test_block_list_responses_are_read_as_text():
+    # Newer Gemini models return content as a list of blocks, not a string
+    from langchain_core.messages import AIMessage
+
+    reply = AIMessage(content=[{"type": "text", "text": "[]", "extras": {"signature": "x"}}])
+    fake = mock.MagicMock()
+    fake.return_value.invoke.return_value = reply
+    with (
+        mock.patch.dict("os.environ", {"GEMINI_API_KEY": "k"}),
+        mock.patch.dict(
+            "sys.modules", {"langchain_google_genai": mock.MagicMock(ChatGoogleGenerativeAI=fake)}
+        ),
+    ):
+        assert parse_node._call_gemini("ZOMATO 450") == "[]"
+    assert fake.call_args.kwargs["model"] == parse_node.GEMINI_MODEL

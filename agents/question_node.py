@@ -49,6 +49,7 @@ from typing import Any
 
 from dotenv import load_dotenv
 
+from agents.llm import GEMINI_MODEL
 from agents.state import AnalysisState, CardState, Question, Transaction
 
 load_dotenv()
@@ -324,12 +325,12 @@ def _enrich_questions_with_llm(
         )
 
         llm = ChatGoogleGenerativeAI(
-            model="gemini-2.5-flash",
+            model=GEMINI_MODEL,
             google_api_key=api_key,
             temperature=0,
         )
         response = llm.invoke(prompt)
-        raw = response.content.replace("```json", "").replace("```", "").strip()
+        raw = response.text.replace("```json", "").replace("```", "").strip()
 
         # Extract JSON array
         match = _re.search(r"\[.*\]", raw, _re.DOTALL)

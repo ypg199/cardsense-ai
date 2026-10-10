@@ -136,7 +136,7 @@ Statements are sensitive, so the defaults are conservative:
 | Layer | Technology |
 |---|---|
 | Backend | Python 3.12, FastAPI, Pydantic, Motor (async MongoDB) |
-| AI | Gemini 2.5 Flash via LangChain (parsing, questions, ranking), gemini-embedding-001 (768-dim vectors) |
+| AI | Gemini Flash (`GEMINI_MODEL`, default gemini-3.8-flash) via LangChain (parsing, questions, ranking), gemini-embedding-001 (768-dim vectors) |
 | Data | MongoDB Atlas with Vector Search, TTL indexes |
 | PDF | pdfplumber, PyMuPDF (fallback extraction and decryption) |
 | Crawler | Playwright (Chromium) |
@@ -164,6 +164,7 @@ cp .env.example .env
 | `MONGODB_URI` | Atlas connection string | required |
 | `MONGODB_DB_NAME` | Database name | `cardsense` |
 | `GEMINI_API_KEY` | Gemini API key | required |
+| `GEMINI_MODEL` | Gemini chat model | `gemini-3.8-flash` |
 | `ADMIN_API_KEY` | Enables the `/crawl` endpoints | unset (disabled) |
 | `MAX_UPLOAD_MB` | Max size per PDF | `10` |
 | `MAX_FILES_PER_REQUEST` | Max PDFs per upload | `12` |

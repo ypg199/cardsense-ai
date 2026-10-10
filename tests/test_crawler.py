@@ -263,7 +263,7 @@ def test_call_gemini_flash_success():
     mock_response = json.dumps(MOCK_CARD_RESPONSE)
 
     mock_llm_instance = mock.MagicMock()
-    mock_llm_instance.invoke.return_value.content = mock_response
+    mock_llm_instance.invoke.return_value.text = mock_response
     MockLLM = mock.MagicMock(return_value=mock_llm_instance)
 
     with (
@@ -292,7 +292,7 @@ def test_call_gemini_flash_fenced():
     fenced = "```json\n" + json.dumps(MOCK_CARD_RESPONSE) + "\n```"
 
     mock_llm_instance = mock.MagicMock()
-    mock_llm_instance.invoke.return_value.content = fenced
+    mock_llm_instance.invoke.return_value.text = fenced
     MockLLM = mock.MagicMock(return_value=mock_llm_instance)
 
     with (
