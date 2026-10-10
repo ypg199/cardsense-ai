@@ -85,6 +85,8 @@ Then in Cloudflare DNS add `CNAME api → ghs.googlehosted.com` with the proxy *
 
 Every push to `main` redeploys, and pull requests get preview URLs on `*.cardsense.pages.dev`, which the API already accepts through `ALLOWED_ORIGIN_REGEX`. If the Pages project ends up with a different name, update that regex in `deploy/cloudrun.env.yaml`.
 
+**If Cloudflare creates a Worker instead of a Pages project** (its newer Git import does this), that works too: keep root directory `frontend`, build command `npm run build` and deploy command `npx wrangler deploy`, and add `VITE_API_URL` under *Settings → Build → Variables and secrets*. `frontend/wrangler.jsonc` tells wrangler to serve `dist` with single-page-app fallback. Add the domain under *Settings → Domains & Routes → Add → Custom domain*.
+
 There is no `404.html`, so Pages serves `index.html` for unknown paths and React Router handles deep links such as `/analyser/<id>`. Security and cache headers are in `frontend/public/_headers`.
 
 ## Alternative: Render (no credit card)
@@ -102,4 +104,4 @@ curl https://api.card-sense.app/health          # {"status":"ok",...}
 curl -s https://api.card-sense.app/cards | head  # the card catalogue
 ```
 
-Then open https://card-sense.app and try **Use sample statements**.
+Then open https://card-sense.app and try **Try it with sample data**.
