@@ -12,11 +12,11 @@
 CardSense reads Indian credit card statement PDFs (including password-protected ones), extracts every transaction with an LLM, asks a few targeted questions about how you use the card, and scores your benefit utilization from 0 to 100. It then searches a database of cards by vector similarity and ranks better-fitting alternatives for your actual spending.
 
 <p align="center">
-  <img src="docs/demo.gif" alt="Demo: uploading four months of statements, answering the quiz, viewing results, switching to the Analyse spending tab, then using the standalone Spend Analyser" width="820">
+  <img src="docs/demo.gif" alt="Demo: starting from the built-in sample statements, a loading screen with a credit card fact, answering the quiz, the results with smart insights and the card comparison table, switching to light mode, and the Analyse spending tab" width="820">
 </p>
 
 <p align="center">
-  <img src="docs/screenshots/results.png" alt="Results page with Results and Analyse spending tabs: utilization score, cashback breakdown by category, and card recommendations" width="720">
+  <img src="docs/screenshots/results.png" alt="Results page: verdict headline, utilization score, smart insights and the cashback breakdown, with PDF report and theme buttons in the header" width="640">
 </p>
 
 > The demo and screenshots use generated sample statements, not real financial data.
@@ -62,6 +62,14 @@ The benchmark has already paid for itself: it caught long statements silently lo
 | Analyse spending tab | Standalone Spend Analyser |
 |---|---|
 | ![Analyse spending tab: monthly spend by category with a month selected for comparison](docs/screenshots/analyser.png) | ![Standalone Spend Analyser upload page, reached from the switch on the home page](docs/screenshots/spend.png) |
+
+| Your card vs the alternatives | Light mode |
+|---|---|
+| ![Comparison table: cashback per category for your card and three alternatives, with annual fees and net value per year](docs/screenshots/comparison.png) | ![Results page in light mode](docs/screenshots/light.png) |
+
+| PDF report | Loading screen |
+|---|---|
+| ![First page of the downloadable PDF report: verdict, headline numbers, insights and the comparison table](docs/screenshots/report.png) | ![Loading screen showing a "Did you know?" credit card fact](docs/screenshots/loader.png) |
 
 ## Architecture
 
