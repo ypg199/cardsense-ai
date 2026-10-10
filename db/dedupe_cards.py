@@ -3,14 +3,15 @@ db/dedupe_cards.py
 ─────────────────────────────────────────────────────────────────────────────
 Find credit cards stored more than once and, if asked, remove the extra copies.
 
-Two records count as the same card when they were crawled from the same page
-or their bank and name give the same card key ("Axis Bank" / "Flipkart Axis
-Bank Credit Card" and "Axis" / "Flipkart" are both "axis-flipkart"). In each
+Two records count as the same card when their bank and name give the same
+card key ("Axis Bank" / "Flipkart Axis Bank Credit Card" and "Axis" /
+"Flipkart" are both "axis-flipkart"). In each
 group the most complete record is kept: crawled from the bank's site, with an
 embedding, the most benefits, crawled most recently.
 
 Names that only look alike (one name's words all appear in the other's, e.g.
-"Regalia" and "Regalia Gold") are listed for a look but never removed.
+"Regalia" and "Regalia Gold") and different names stored from the same page
+are listed for a look but never removed.
 
 Usage:
     python -m db.dedupe_cards                 # report only, changes nothing
@@ -28,7 +29,7 @@ from itertools import combinations
 
 from dotenv import load_dotenv
 
-from db.card_keys import bank_key, card_key, normalize_url
+from db.card_keys import bank_key, card_key
 
 COLLECTION = "credit_cards"
 FIELDS = {
@@ -58,58 +59,52 @@ def _rank(doc: dict) -> tuple:
 
 def find_duplicates(docs: list[dict]) -> list[dict]:
     """
-    Group records describing the same card. Returns one entry per group of two
+    Group records with the same card key. Returns one entry per group of two
     or more: {"key", "keep": doc, "remove": [doc, ...]}, keepers ranked first.
     """
-    parent = {d["_id"]: d["_id"] for d in docs}
-
-    def find(x):
-        while parent[x] != x:
-            parent[x] = parent[parent[x]]
-            x = parent[x]
-        return x
-
-    def union(a, b):
-        parent[find(a)] = find(b)
-
-    first_by: dict[str, str] = {}
-    for d in docs:
-        keys = [f"key:{card_key(d.get('bank', ''), d.get('name', ''))}"]
-        if d.get("source_url"):
-            keys.append(f"url:{normalize_url(d['source_url'])}")
-        for k in keys:
-            if k in first_by:
-                union(d["_id"], first_by[k])
-            else:
-                first_by[k] = d["_id"]
-
     groups: dict[str, list[dict]] = defaultdict(list)
     for d in docs:
-        groups[find(d["_id"])].append(d)
+        groups[card_key(d.get("bank", ""), d.get("name", ""))].append(d)
 
     result = []
-    for members in groups.values():
+    for key, members in sorted(groups.items()):
         if len(members) < 2:
             continue
         members.sort(key=_rank, reverse=True)
-        keep = members[0]
-        result.append(
-            {"key": card_key(keep.get("bank", ""), keep.get("name", "")), "keep": keep, "remove": members[1:]}
-        )
-    result.sort(key=lambda g: g["key"])
+        result.append({"key": key, "keep": members[0], "remove": members[1:]})
     return result
 
 
+def _page(url: str) -> str:
+    """A page address compared as stored, ignoring only a trailing slash."""
+    return (url or "").strip().rstrip("/").lower()
+
+
 def find_lookalikes(docs: list[dict]) -> list[tuple[dict, dict]]:
-    """Pairs at the same bank where one card key's words are all in the other's."""
+    """
+    Pairs worth a look but never removed: cards at the same bank where one card
+    key's words are all in the other's, and cards with different keys stored
+    from the same page (an older crawler could save several cards per page).
+    """
     by_bank: dict[str, list[tuple[set[str], dict]]] = defaultdict(list)
+    by_page: dict[str, list[dict]] = defaultdict(list)
     for d in docs:
         key = card_key(d.get("bank", ""), d.get("name", ""))
         by_bank[bank_key(d.get("bank", ""))].append((set(key.split("-")[1:]), d))
+        if d.get("source_url"):
+            by_page[_page(d["source_url"])].append(d)
     pairs = []
     for cards in by_bank.values():
         for (wa, a), (wb, b) in combinations(cards, 2):
             if wa and wb and wa != wb and (wa < wb or wb < wa):
+                pairs.append((a, b))
+    seen = {(a["_id"], b["_id"]) for a, b in pairs}
+    for cards in by_page.values():
+        for a, b in combinations(cards, 2):
+            same_key = card_key(a.get("bank", ""), a.get("name", "")) == card_key(
+                b.get("bank", ""), b.get("name", "")
+            )
+            if not same_key and (a["_id"], b["_id"]) not in seen:
                 pairs.append((a, b))
     return pairs
 
@@ -140,7 +135,9 @@ def report(docs: list[dict], groups: list[dict], lookalikes: list[tuple[dict, di
         lines.append("No duplicates found.")
         lines.append("")
     if lookalikes:
-        lines.append("Similar names, probably different cards (never removed, check by eye):")
+        lines.append(
+            "Worth a look, never removed (similar names, or different cards saved from the same page):"
+        )
         for a, b in lookalikes:
             lines.append(f"  {a.get('name')}  ~  {b.get('name')}   ({a['_id']} / {b['_id']})")
     return "\n".join(lines)
