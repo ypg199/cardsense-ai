@@ -3,7 +3,7 @@
 [![CI](https://github.com/ypg199/cardsense-ai/actions/workflows/ci.yml/badge.svg)](https://github.com/ypg199/cardsense-ai/actions/workflows/ci.yml)
 ![Python](https://img.shields.io/badge/python-3.12-blue)
 ![React](https://img.shields.io/badge/react-18-61dafb)
-![Tests](https://img.shields.io/badge/tests-258%20passing-brightgreen)
+![Tests](https://img.shields.io/badge/tests-259%20passing-brightgreen)
 [![Extraction accuracy](https://img.shields.io/badge/transactions%20found-100%25-brightgreen)](eval/RESULTS.md)
 [![Category accuracy](https://img.shields.io/badge/category%20accuracy-99.3%25-brightgreen)](eval/RESULTS.md)
 
@@ -196,7 +196,7 @@ docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
 docker compose exec api python -m crawler.run --seed-only   # 5 sample cards
 docker compose exec api python -m crawler.run               # crawl Axis, HDFC, ICICI and SBI (needs GEMINI_API_KEY)
 docker compose exec api python -m crawler.run --sources axis hdfc   # selected banks only
-docker compose exec api python -m db.dedupe_cards           # list cards stored twice (add --apply to remove)
+docker compose exec api python -m db.dedupe_cards           # list cards stored twice (--apply backs up, then removes)
 ```
 
 The crawler finds each bank's card pages from its listing page (scrolling it so lazily loaded cards appear), skips pages that haven't changed since the last run, and only stores benefits whose category and rate pass validation. Category, FAQ and help pages are reported as skipped, not failed. Re-running it is cheap, and a re-crawled page updates the card it saved before rather than adding a second copy.
@@ -245,7 +245,7 @@ cd frontend && npm install && npm run dev
 
 ## Testing and CI
 
-All 258 tests run offline. Gemini, MongoDB and Playwright are mocked, so no keys or services are needed.
+All 259 tests run offline. Gemini, MongoDB and Playwright are mocked, so no keys or services are needed.
 
 ```bash
 pytest                                  # full suite with coverage config
