@@ -1,0 +1,26 @@
+# Render Blueprint: the no-credit-card alternative to Cloud Run for the API.
+# The free plan sleeps after 15 idle minutes, so the first request after a
+# quiet spell takes 30-60 seconds. See docs/DEPLOY.md.
+services:
+  - type: web
+    name: cardsense-api
+    runtime: docker
+    dockerfilePath: ./docker/Dockerfile.api
+    dockerContext: .
+    plan: free
+    region: singapore
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: MONGODB_URI
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: MONGODB_DB_NAME
+        value: cardsense
+      - key: ALLOWED_ORIGINS
+        value: https://card-sense.app,https://www.card-sense.app
+      - key: ALLOWED_ORIGIN_REGEX
+        value: ^https://([a-z0-9-]+\.)?cardsense\.pages\.dev$
+      - key: RATE_LIMIT_PER_HOUR
+        value: "20"

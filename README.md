@@ -3,7 +3,7 @@
 [![CI](https://github.com/ypg199/cardsense-ai/actions/workflows/ci.yml/badge.svg)](https://github.com/ypg199/cardsense-ai/actions/workflows/ci.yml)
 ![Python](https://img.shields.io/badge/python-3.12-blue)
 ![React](https://img.shields.io/badge/react-18-61dafb)
-![Tests](https://img.shields.io/badge/tests-247%20passing-brightgreen)
+![Tests](https://img.shields.io/badge/tests-250%20passing-brightgreen)
 [![Extraction accuracy](https://img.shields.io/badge/transactions%20found-100%25-brightgreen)](eval/RESULTS.md)
 [![Category accuracy](https://img.shields.io/badge/category%20accuracy-99.3%25-brightgreen)](eval/RESULTS.md)
 
@@ -142,7 +142,7 @@ Statements are sensitive, so the defaults are conservative:
 | Crawler | Playwright (Chromium) |
 | Frontend | React 18, Vite, React Router |
 | Tooling | pytest, pytest-cov, ruff, GitHub Actions |
-| Deployment | Multi-stage Docker builds, nginx, Docker Compose |
+| Deployment | Docker, Google Cloud Run, Cloudflare Pages, Docker Compose |
 
 ## Getting started
 
@@ -169,6 +169,8 @@ cp .env.example .env
 | `MAX_FILES_PER_REQUEST` | Max PDFs per upload | `12` |
 | `SESSION_TTL_HOURS` | Session lifetime | `24` |
 | `ALLOWED_ORIGINS` | Extra CORS origins for a deployed frontend, comma-separated | localhost only |
+| `ALLOWED_ORIGIN_REGEX` | Regex for extra CORS origins, such as preview deploys | unset |
+| `RATE_LIMIT_PER_HOUR` | Analyses each client may start per hour (`0` = no limit) | `0` |
 
 ### 2. Run
 
@@ -206,6 +208,10 @@ Then create a vector search index named `credit_cards_embedding_index` on `cards
 }
 ```
 
+### Deploying
+
+To host it on your own domain with Cloudflare Pages (frontend), Google Cloud Run (API) and MongoDB Atlas, follow [docs/DEPLOY.md](docs/DEPLOY.md). A Render blueprint is included as a no-credit-card alternative.
+
 ### Without Docker
 
 ```bash
@@ -238,7 +244,7 @@ cd frontend && npm install && npm run dev
 
 ## Testing and CI
 
-All 247 tests run offline. Gemini, MongoDB and Playwright are mocked, so no keys or services are needed.
+All 250 tests run offline. Gemini, MongoDB and Playwright are mocked, so no keys or services are needed.
 
 ```bash
 pytest                                  # full suite with coverage config
@@ -254,9 +260,10 @@ Every push and pull request runs GitHub Actions: lint and format checks, the tes
 agents/      Pipeline nodes (pdf, parse, question, cashback, compare), shared state, embeddings
 api/         FastAPI app, settings, Pydantic models, routes (session, cards, crawl)
 crawler/     Playwright crawler, bank sources, one-shot runner
-db/          Motor connection, index setup (TTL and lookups), seed data
+db/          Motor connection, index setup (TTL and lookups), seed data, card copy to Atlas
 frontend/    React 18 + Vite app (upload, quiz, results with an Analyse tab, standalone Spend Analyser)
 docker/      Production Dockerfiles and nginx template
+deploy/      Cloud Run deploy script, Cloud Build config and service environment
 eval/        Extraction accuracy benchmark: synthetic statements, scorer, results
 tests/       pytest suites and a sample statement fixture
 ```

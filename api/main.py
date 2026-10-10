@@ -9,7 +9,7 @@ Start with:
 Features
 ────────
 - Lifespan context: DB ping on startup, graph pre-warm, graceful shutdown
-- CORS for React dev server (localhost:3000 / localhost:5173)
+- CORS for the React dev server plus deployed origins from the environment
 - Global exception handlers (HTTP 422 / 404 / 500)
 - All routers mounted: /session, /cards, /crawl
 - Health check at GET /health
@@ -30,7 +30,7 @@ from fastapi.responses import JSONResponse
 from api.routes.cards import router as cards_router
 from api.routes.crawl import router as crawl_router
 from api.routes.session import router as session_router
-from api.settings import ALLOWED_ORIGINS
+from api.settings import ALLOWED_ORIGIN_REGEX, ALLOWED_ORIGINS
 
 load_dotenv()
 
@@ -129,6 +129,7 @@ _cors_origins.extend(ALLOWED_ORIGINS)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=_cors_origins,
+    allow_origin_regex=ALLOWED_ORIGIN_REGEX,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -145,6 +146,7 @@ async def http_exception_handler(request: Request, exc: HTTPException):
     return JSONResponse(
         status_code=exc.status_code,
         content={"detail": exc.detail, "status_code": exc.status_code},
+        headers=exc.headers,
     )
 
 

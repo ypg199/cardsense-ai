@@ -1,0 +1,11 @@
+# Builds the API image with Cloud Build and pushes it to Artifact Registry.
+# Used by deploy/cloudrun.sh; _IMAGE is passed in from there.
+steps:
+  - name: gcr.io/cloud-builders/docker
+    args: ["build", "-f", "docker/Dockerfile.api", "-t", "${_IMAGE}", "."]
+images:
+  - "${_IMAGE}"
+substitutions:
+  _IMAGE: ""
+options:
+  logging: CLOUD_LOGGING_ONLY
