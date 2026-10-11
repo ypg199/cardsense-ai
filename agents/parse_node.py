@@ -105,6 +105,12 @@ Auto-rules:
   EMI deductions → emi
   Cashback credit lines → transaction_type='credit', category='others'
 
+Only rows from the statement's transaction list count: each one has its own
+date and amount on the row. Ignore every other table or figure, such as a
+schedule of charges or fee table (card names with annual or renewal fees),
+interest rates, reward point summaries, offers, credit limits and the amount
+due. Never invent a date. If this text has no transaction rows, return [].
+
 Statement text (may be one part of a longer statement):
 {pdf_text}"""
 
@@ -299,6 +305,64 @@ def _parse_chunk(chunk: str, month_fallback: str) -> list[Transaction] | None:
     return transactions
 
 
+_MONTH_NAME = (
+    r"(?:jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|june?|july?|aug(?:ust)?"
+    r"|sep(?:t(?:ember)?)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)"
+)
+# The date formats Indian issuers print on transaction rows: 05/02/2026,
+# 05-02-26, 05.02.2026, 2026-02-05, 05 Feb 26, 05-Feb-2026, Feb 05, 2026.
+_DATE_RE = re.compile(
+    r"(?<!\d)\d{1,2}[/.-]\d{1,2}[/.-]\d{2,4}(?!\d)"
+    r"|(?<!\d)\d{4}-\d{2}-\d{2}(?!\d)"
+    rf"|(?<!\d)\d{{1,2}}[\s-]?{_MONTH_NAME}\b"
+    rf"|\b{_MONTH_NAME}\s+\d{{1,2}},?\s+\d{{2,4}}(?!\d)",
+    re.IGNORECASE,
+)
+_ROW_WINDOW = 2  # a wrapped row can print its date up to two lines above the amount
+
+
+def _amount_re(amount: float) -> re.Pattern[str]:
+    """Match an amount as printed once commas are removed: 9999, 9999.00, 2370.4, 2370.40."""
+    whole, paise = divmod(round(amount * 100), 100)
+    fraction = r"(?:\.0{1,2})?" if paise == 0 else rf"\.{paise // 10}{paise % 10 if paise % 10 else '0?'}"
+    return re.compile(rf"(?<!\d)(?<!\d\.){whole}{fraction}(?![\d])")
+
+
+def _drop_rows_without_a_dated_line(transactions: list[Transaction], text: str) -> list[Transaction]:
+    """
+    Keep only rows whose amount appears on a line with a date (or just below
+    one, for wrapped rows). Statements often carry tables that aren't spending,
+    like SBI's schedule of charges listing every card with its annual fee, and
+    Gemini sometimes returns those as purchases with a made-up date. Their
+    lines have amounts but no dates, so they are dropped here.
+
+    Text with no dated lines at all is a layout we don't recognise, so nothing
+    is dropped; nor is anything when every row would go.
+    """
+    lines = [line.replace(",", "") for line in text.splitlines()]
+    dated = [bool(_DATE_RE.search(line)) for line in lines]
+    if not transactions or not any(dated):
+        return transactions
+
+    def on_dated_line(txn: Transaction) -> bool:
+        pattern = _amount_re(txn["amount"])
+        return any(
+            pattern.search(line) and any(dated[max(0, i - _ROW_WINDOW) : i + 1])
+            for i, line in enumerate(lines)
+        )
+
+    kept = [t for t in transactions if on_dated_line(t)]
+    if not kept:
+        logger.warning("No parsed row matched a dated line; keeping all %d rows", len(transactions))
+        return transactions
+    if len(kept) < len(transactions):
+        logger.info(
+            "Dropped %d rows that aren't on a dated statement line (e.g. a fee table)",
+            len(transactions) - len(kept),
+        )
+    return kept
+
+
 def _parse_transactions_from_text(pdf_text: str, month_fallback: str) -> list[Transaction]:
     """
     Send pdf_text to Gemini (in parts when it is longer than
@@ -323,6 +387,7 @@ def _parse_transactions_from_text(pdf_text: str, month_fallback: str) -> list[Tr
             transactions.extend(parsed)
     if not reached:
         raise GeminiUnavailableError("every Gemini call for this statement failed")
+    transactions = _drop_rows_without_a_dated_line(transactions, pdf_text)
 
     logger.info(
         "Parsed %d transactions from statement (month=%s, parts=%d)",
