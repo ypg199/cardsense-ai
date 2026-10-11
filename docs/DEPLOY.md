@@ -4,7 +4,7 @@ The live setup:
 
 | Piece | Where | URL |
 |---|---|---|
-| Frontend (React build) | Cloudflare Pages | https://card-sense.app |
+| Frontend (React build) | Cloudflare Workers (static assets), Worker `cardsense-ai` | https://card-sense.app |
 | API (FastAPI, `docker/Dockerfile.api`) | Google Cloud Run, `asia-southeast1` | https://api.card-sense.app |
 | Database | MongoDB Atlas free tier (M0) | — |
 | DNS | Cloudflare | — |
@@ -63,31 +63,34 @@ gcloud beta run domain-mappings create --service cardsense-api \
   --domain api.card-sense.app --region asia-southeast1
 ```
 
-Then in Cloudflare DNS add `CNAME api → ghs.googlehosted.com` with the proxy **off** (grey cloud), so Google can issue the certificate. It can take a few minutes to an hour to go live.
+Then in Cloudflare DNS add `CNAME api → ghs.googlehosted.com` with the proxy **off** (grey cloud), so Google can issue the certificate. It usually takes a few minutes to an hour, and Google keeps retrying until the record resolves. Until `https://api.card-sense.app/health` answers, point the frontend's `VITE_API_URL` at the service's own `*.run.app` URL (shown at the end of `deploy/cloudrun.sh`) and switch it once the certificate is issued.
 
 `asia-southeast1` was picked because Cloud Run domain mappings are not offered in every region (Mumbai is one of the gaps).
 
-## 3. Frontend: Cloudflare Pages
+## 3. Frontend: Cloudflare Workers
+
+The frontend is a Cloudflare Worker that only serves static assets. `frontend/wrangler.jsonc` tells wrangler to serve `dist` and to fall back to `index.html` for unknown paths, so React Router handles deep links such as `/analyser/<id>`. Its `name` (`cardsense-ai`) must match the Worker's name in the dashboard.
 
 1. Move DNS to Cloudflare: add `card-sense.app` as a site on the free plan, then at the registrar replace the nameservers with the two Cloudflare gives you.
-2. **Workers & Pages → Create → Pages → Connect to Git**, pick `ypg199/cardsense-ai`, and name the project `cardsense`:
+2. **Workers & Pages → Create → Import a repository**, pick `ypg199/cardsense-ai`, and name the Worker `cardsense-ai`:
 
    | Setting | Value |
    |---|---|
    | Production branch | `main` |
    | Root directory | `frontend` |
    | Build command | `npm run build` |
-   | Build output directory | `dist` |
-   | Environment variable `VITE_API_URL` | `https://api.card-sense.app` |
-   | Environment variable `NODE_VERSION` | `20` |
+   | Deploy command | `npx wrangler deploy` |
+   | Build variable `VITE_API_URL` | `https://api.card-sense.app` (or the `*.run.app` URL until that domain is live) |
+   | Build variable `NODE_VERSION` | `20` |
 
-3. **Custom domains**: add `card-sense.app` (and `www.card-sense.app` if wanted).
+   Build variables go under *Settings → Build → Variables and secrets*. `VITE_API_URL` is baked into the bundle at build time, so changing it needs a new build (*Deployments → Retry*, or push to `main`).
+3. **Settings → Domains & Routes → Add → Custom domain**: add `card-sense.app` (and `www.card-sense.app` if wanted).
 
-Every push to `main` redeploys, and pull requests get preview URLs on `*.cardsense.pages.dev`, which the API already accepts through `ALLOWED_ORIGIN_REGEX`. If the Pages project ends up with a different name, update that regex in `deploy/cloudrun.env.yaml`.
+Every push to `main` rebuilds and redeploys. Security and cache headers are in `frontend/public/_headers`, which Workers static assets apply as they are.
 
-**If Cloudflare creates a Worker instead of a Pages project** (its newer Git import does this), that works too: keep root directory `frontend`, build command `npm run build` and deploy command `npx wrangler deploy`, and add `VITE_API_URL` under *Settings → Build → Variables and secrets*. `frontend/wrangler.jsonc` tells wrangler to serve `dist` with single-page-app fallback; its `name` (`cardsense-ai`) must match the Worker's name. Add the domain under *Settings → Domains & Routes → Add → Custom domain*.
+The API's CORS settings (`ALLOWED_ORIGINS` and `ALLOWED_ORIGIN_REGEX` in `deploy/cloudrun.env.yaml`) must include the frontend's domain. If you name the Worker differently or want preview URLs to reach the API, adjust them there.
 
-There is no `404.html`, so Pages serves `index.html` for unknown paths and React Router handles deep links such as `/analyser/<id>`. Security and cache headers are in `frontend/public/_headers`.
+**Cloudflare Pages works too**: root directory `frontend`, build command `npm run build`, output directory `dist`, and the same `VITE_API_URL`. The default `ALLOWED_ORIGIN_REGEX` already accepts `*.cardsense.pages.dev` previews.
 
 ## Alternative: Render (no credit card)
 

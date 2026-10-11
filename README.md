@@ -3,11 +3,14 @@
 [![CI](https://github.com/ypg199/cardsense-ai/actions/workflows/ci.yml/badge.svg)](https://github.com/ypg199/cardsense-ai/actions/workflows/ci.yml)
 ![Python](https://img.shields.io/badge/python-3.12-blue)
 ![React](https://img.shields.io/badge/react-18-61dafb)
-![Tests](https://img.shields.io/badge/tests-259%20passing-brightgreen)
+![Tests](https://img.shields.io/badge/tests-263%20passing-brightgreen)
+[![Live demo](https://img.shields.io/badge/live%20demo-card--sense.app-7c3aed)](https://card-sense.app)
 [![Extraction accuracy](https://img.shields.io/badge/transactions%20found-100%25-brightgreen)](eval/RESULTS.md)
 [![Category accuracy](https://img.shields.io/badge/category%20accuracy-99.3%25-brightgreen)](eval/RESULTS.md)
 
 **Upload your credit card statements, find out how much cashback you're leaving on the table, and see which card would earn you more.**
+
+<p align="center"><strong>🚀 Live demo: <a href="https://card-sense.app">card-sense.app</a></strong><br>Click <em>Try it with sample data</em> to run the whole flow without uploading anything.</p>
 
 CardSense reads Indian credit card statement PDFs (including password-protected ones), extracts every transaction with an LLM, asks a few targeted questions about how you use the card, and scores your benefit utilization from 0 to 100. It then searches a database of cards by vector similarity and ranks better-fitting alternatives for your actual spending.
 
@@ -25,7 +28,9 @@ CardSense reads Indian credit card statement PDFs (including password-protected 
 
 Statement parsing is measured against 7 synthetic statements from **Axis, HDFC, ICICI and SBI** with known ground truth: 325 spending transactions covering password-protected PDFs, multi-page and 180-row statements, wrapped lines, foreign-currency rows, EMIs and refunds. Each statement is parsed 3 times with the real model.
 
-| Metric | Result |
+The full benchmark below was run with `gemini-2.5-flash`. The app now defaults to `gemini-3.1-flash-lite` (Google stopped offering 2.5 Flash to new API keys); a spot check on one statement with it found 100% of transactions with 98.9% of categories correct, and the full 3-run benchmark has not been repeated on it yet.
+
+| Metric | Result (`gemini-2.5-flash`) |
 |---|---|
 | Spending transactions found (recall) | **100%** |
 | Extracted rows that are real (precision) | **100%** |
@@ -88,7 +93,7 @@ flowchart LR
     end
 
     P <--> M[(MongoDB Atlas<br/>sessions, cards, vectors)]
-    B -.-> G[Gemini 2.5 Flash]
+    B -.-> G[Gemini Flash<br/>GEMINI_MODEL]
     E -.-> G
     E -.-> V[gemini-embedding-001]
     CR[Playwright crawler] --> M
@@ -100,7 +105,7 @@ The pipeline is a set of small, independently tested nodes that each read and re
 
 1. **Upload.** Pick your card(s) and drop statement PDFs. Files are checked for the `%PDF-` signature, size and count before anything else runs.
 2. **Extract.** `pdfplumber` pulls the text, with PyMuPDF as a fallback. If the PDF is encrypted, the session pauses and the UI asks for the password.
-3. **Parse.** Gemini 2.5 Flash converts the text into typed transactions (date, merchant, amount, category). Output is validated and unknown categories fall back to `others`.
+3. **Parse.** Gemini (the model set by `GEMINI_MODEL`) converts the text into typed transactions (date, merchant, amount, category). Output is validated and unknown categories fall back to `others`.
 4. **Quiz.** For each reward category, CardSense either confirms usage from the statement or asks a yes/no question.
 5. **Score.** Cashback is computed per category from the card's reward rules, then:
 
@@ -142,7 +147,7 @@ Statements are sensitive, so the defaults are conservative:
 | Crawler | Playwright (Chromium) |
 | Frontend | React 18, Vite, React Router |
 | Tooling | pytest, pytest-cov, ruff, GitHub Actions |
-| Deployment | Docker, Google Cloud Run, Cloudflare Pages, Docker Compose |
+| Deployment | Cloudflare Workers (frontend), Google Cloud Run with Secret Manager (API), MongoDB Atlas, Docker, Docker Compose |
 
 ## Getting started
 
@@ -212,7 +217,7 @@ Then create a vector search index named `credit_cards_embedding_index` on `cards
 
 ### Deploying
 
-To host it on your own domain with Cloudflare Pages (frontend), Google Cloud Run (API) and MongoDB Atlas, follow [docs/DEPLOY.md](docs/DEPLOY.md). A Render blueprint is included as a no-credit-card alternative.
+The live site runs the React build as a Cloudflare Worker (static assets with SPA fallback, configured in `frontend/wrangler.jsonc`), the API on Google Cloud Run (`deploy/cloudrun.sh`, with secrets in Secret Manager) and the data on MongoDB Atlas. To host your own copy, follow [docs/DEPLOY.md](docs/DEPLOY.md). A Render blueprint is included as a no-credit-card alternative.
 
 ### Without Docker
 
@@ -246,7 +251,7 @@ cd frontend && npm install && npm run dev
 
 ## Testing and CI
 
-All 259 tests run offline. Gemini, MongoDB and Playwright are mocked, so no keys or services are needed.
+All 263 tests run offline. Gemini, MongoDB and Playwright are mocked, so no keys or services are needed.
 
 ```bash
 pytest                                  # full suite with coverage config
