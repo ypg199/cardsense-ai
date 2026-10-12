@@ -3,6 +3,7 @@
  *
  *  variant="primary"   icon above the label, short rounded indicator
  *  variant="secondary" text only, indicator spans the whole tab
+ *  variant="segmented" two big options with an icon, title and hint
  *
  * Both sit on a full-width divider. Arrow keys move between tabs.
  */
@@ -32,6 +33,32 @@ const css = `
 .tabs-secondary .tab.active { color: var(--white); }
 .tabs-secondary .tab.active::after { background: var(--amber-400); }
 .tab-hint { font-size: 11px; font-weight: 400; color: var(--slate-400); margin-top: 2px; }
+
+/* segmented: two big options in a pill track, each with an icon, title and hint */
+.tabs-segmented {
+  gap: 6px; padding: 6px; border: 1px solid var(--navy-600); border-radius: var(--radius-lg);
+  background: var(--navy-900);
+}
+.tabs-segmented .tab {
+  flex-direction: row; justify-content: flex-start; gap: 12px; text-align: left;
+  padding: 12px 16px; border-radius: var(--radius-md); min-height: 64px; color: var(--slate-300);
+}
+.tabs-segmented .tab::after { display: none; }
+.tabs-segmented .tab.active {
+  color: var(--white); background: rgba(245,158,11,0.12); box-shadow: inset 0 0 0 1px rgba(245,158,11,0.45);
+}
+.tabs-segmented .tab-icon { width: 26px; height: 26px; flex-shrink: 0; color: var(--slate-400); }
+.tabs-segmented .tab.active .tab-icon { color: var(--amber-400); }
+.tabs-segmented .tab-text { display: flex; flex-direction: column; }
+.tabs-segmented .tab-label { font-size: 15px; font-weight: 600; }
+.tabs-segmented .tab-hint { font-size: 12px; margin-top: 1px; }
+@media (max-width: 560px) {
+  .tabs-segmented .tab { padding: 10px; gap: 8px; }
+  .tabs-segmented .tab-icon { width: 22px; height: 22px; }
+  .tabs-segmented .tab-label { font-size: 14px; }
+  .tabs-segmented .tab-hint { display: none; }
+  .tabs-segmented .tab { min-height: 52px; justify-content: center; }
+}
 `
 
 export default function Tabs({ items, value, onChange, variant = 'primary', label }) {
@@ -60,9 +87,18 @@ export default function Tabs({ items, value, onChange, variant = 'primary', labe
               className={`tab${active ? ' active' : ''}`}
               onClick={() => onChange(it.key)}
             >
-              {variant === 'primary' && it.icon}
-              <span>{it.label}</span>
-              {it.hint && <span className="tab-hint">{it.hint}</span>}
+              {(variant === 'primary' || variant === 'segmented') && it.icon}
+              {variant === 'segmented' ? (
+                <span className="tab-text">
+                  <span className="tab-label">{it.label}</span>
+                  {it.hint && <span className="tab-hint">{it.hint}</span>}
+                </span>
+              ) : (
+                <>
+                  <span>{it.label}</span>
+                  {it.hint && <span className="tab-hint">{it.hint}</span>}
+                </>
+              )}
             </button>
           )
         })}

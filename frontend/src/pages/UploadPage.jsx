@@ -174,9 +174,10 @@ export const uploadCss = `
 .spend-only-btn:hover:not(:disabled) { border-color: var(--amber-400); }
 .spend-only-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 .spend-only-btn:focus-visible, .submit-btn:focus-visible { outline: 2px solid var(--amber-400); outline-offset: 2px; }
-@media (max-width: 560px) {
+/* Phone: one button per page; the bottom tabs reach the Spend Analyser */
+@media (max-width: 720px) {
   .submit-row { grid-template-columns: 1fr; }
-  .spend-only-btn { padding: 16px 24px; }
+  .submit-row > div:last-child { display: none; }
 }
 .own-anchor { scroll-margin-top: 16px; }
 `

@@ -47,6 +47,13 @@ const css = `
 .new-analysis-btn:focus-visible { outline: 2px solid var(--amber-400); outline-offset: 2px; }
 .new-analysis-btn:hover { border-color: var(--amber-500); color: var(--amber-400); }
 .results-tabs { margin-bottom: 24px; animation: fadeUp 300ms ease; }
+/* Desktop: the view switch stays in reach under the top nav while scrolling */
+@media (min-width: 721px) {
+  .results-tabs {
+    position: sticky; top: 59px; z-index: 30; padding: 10px 0;
+    background: var(--navy-950);
+  }
+}
 
 .hero-section {
   text-align: center;
@@ -264,11 +271,17 @@ export default function ResultsPage() {
         <div className="results-tabs">
           <Tabs
             label="Results views"
+            variant="segmented"
             value={tab}
-            onChange={setTab}
+            onChange={key => {
+              setTab(key)
+              // Start the other view from its top, not halfway down this one
+              const top = document.querySelector('.results-tabs')?.offsetTop || 0
+              if (window.scrollY > top) window.scrollTo({ top: Math.max(0, top - 80) })
+            }}
             items={[
-              { key: 'results', label: 'Results', icon: ResultsIcon },
-              { key: 'analyse', label: 'Analyse spending', icon: AnalyseIcon },
+              { key: 'results', label: 'Your card report', hint: 'Score, missed cashback, better cards', icon: ResultsIcon },
+              { key: 'analyse', label: 'Your spending', hint: 'Monthly charts and top merchants', icon: AnalyseIcon },
             ]}
           />
         </div>
