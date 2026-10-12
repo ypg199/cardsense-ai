@@ -5,7 +5,7 @@ import PasswordModal from '../components/PasswordModal.jsx'
 import FullScreenLoader, { PARSE_STEPS } from '../components/FullScreenLoader.jsx'
 import { startSample, startSession, submitPassword } from '../api.js'
 import SampleBanner from '../components/SampleBanner.jsx'
-import { ModeLink, uploadCss } from './UploadPage.jsx'
+import { uploadCss } from './UploadPage.jsx'
 import { Logo } from '../components/Brand.jsx'
 import { AlertIcon, ArrowRightIcon } from '../components/Icons.jsx'
 
@@ -117,7 +117,7 @@ export default function SpendUploadPage() {
 
       <div className="upload-page">
         <div className="page-header">
-          <div className="logo-mark"><Logo pill /></div>
+          <div className="logo-mark page-brand"><Logo pill /></div>
           <h1 className="page-title">
             See where your<br />
             money <em>goes</em>
@@ -150,7 +150,6 @@ export default function SpendUploadPage() {
           Show my spending <ArrowRightIcon size={18} />
         </button>
         {files.length === 0 && !loading && <p className="submit-hint">Add at least one PDF statement to continue.</p>}
-        <ModeLink to="/" text="Want a score and a better card too?" cta="Try the full card analysis" />
       </div>
     </>
   )

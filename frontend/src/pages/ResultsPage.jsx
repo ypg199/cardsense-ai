@@ -250,7 +250,7 @@ export default function ResultsPage() {
       <style>{css}</style>
       <div className="results-page">
         <div className="results-header">
-          <div><Logo />{session.sample && <SampleBadge />}</div>
+          <div><Logo className="page-brand" />{session.sample && <SampleBadge />}</div>
           <div className="results-actions">
             <a className="new-analysis-btn" href={reportUrl(sessionId)} download>
               <DownloadIcon size={15} /> PDF report

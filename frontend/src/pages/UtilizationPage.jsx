@@ -288,7 +288,7 @@ export default function UtilizationPage() {
       )}
       <div className="util-page">
         <div className="util-header">
-          <div><Logo />{session.sample && <SampleBadge />}</div>
+          <div><Logo className="page-brand" />{session.sample && <SampleBadge />}</div>
           <div className="util-progress-wrap">
             <span className="mono" style={{ fontSize: 12 }}>{questions_answered}/{questions_total} done</span>
             <div className="progress-track" role="progressbar" aria-label="Quiz progress" aria-valuemin={0} aria-valuemax={questions_total} aria-valuenow={questions_answered}>

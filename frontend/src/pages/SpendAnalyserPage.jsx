@@ -149,7 +149,7 @@ export default function SpendAnalyserPage() {
       <style>{css}</style>
       <div className="sa-page">
         <div className="sa-header">
-          <Logo />
+          <Logo className="page-brand" />
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             <a className="sa-btn" href={reportUrl(sessionId)} download><DownloadIcon size={15} />&nbsp;PDF report</a>
             <button className="sa-btn" onClick={() => navigate('/spend')}>Upload other statements</button>

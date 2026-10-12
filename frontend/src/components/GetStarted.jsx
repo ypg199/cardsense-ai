@@ -3,7 +3,6 @@
  * sample statements, or the visitor's own statement, plus a short
  * "how it works" strip so first-time visitors know what they need and get.
  */
-import { Link } from 'react-router-dom'
 import { ArrowRightIcon, FileIcon } from './Icons.jsx'
 import { SAMPLE_MONTHS } from './SampleBanner.jsx'
 
@@ -37,9 +36,6 @@ const css = `
 }
 .gs-own:hover { border-color: var(--amber-400); }
 .gs-demo:focus-visible, .gs-own:focus-visible { outline: 2px solid var(--amber-400); outline-offset: 2px; }
-.gs-spend { font-size: 13px; color: var(--slate-400); margin-top: 14px; }
-.gs-spend a { color: var(--amber-400); font-weight: 600; text-decoration: none; }
-.gs-spend a:hover { text-decoration: underline; }
 .gs-note { font-size: 12px; color: var(--slate-400); margin-top: 10px; }
 .gs-note a { color: var(--slate-300); text-decoration: underline; text-underline-offset: 2px; }
 .gs-note a:hover { color: var(--amber-400); }
@@ -84,9 +80,6 @@ export default function GetStarted({ onDemo, disabled, ownTarget = 'own-statemen
           Use my own statement ↓
         </a>
       </div>
-      <p className="gs-spend">
-        Just want charts of your spending? <Link to="/spend">Open the Spend Analyser →</Link>
-      </p>
       <p className="gs-note">
         The demo uses four months of a made-up HDFC Millennia statement. You can also download
         the sample PDFs (
