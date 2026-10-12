@@ -10,7 +10,7 @@
 
 **Upload your credit card statements, find out how much cashback you're leaving on the table, and see which card would earn you more.**
 
-<p align="center"><strong>🚀 Live demo: <a href="https://card-sense.app">card-sense.app</a></strong><br>Click <em>Try it with sample data</em> to run the whole flow without uploading anything.</p>
+<p align="center"><strong>🚀 Live demo: <a href="https://card-sense.app">card-sense.app</a></strong><br>Click <em>Try a demo, no upload needed</em> to run the whole flow without uploading anything.</p>
 
 CardSense reads Indian credit card statement PDFs (including password-protected ones), extracts every transaction with an LLM, asks a few targeted questions about how you use the card, and scores your benefit utilization from 0 to 100. It then searches a database of cards by vector similarity and ranks better-fitting alternatives for your actual spending.
 
@@ -55,7 +55,7 @@ The benchmark has already paid for itself: it caught long statements silently lo
 - **Something to read while you wait.** The slower loading screens rotate short credit card facts and the odd pun.
 - **Side-by-side card comparison.** Your card next to the top alternatives, each priced with the same cashback calculator on your actual monthly spending, category by category, with annual fees and net value per year.
 - **Card recommendations.** MongoDB Atlas Vector Search finds similar cards, a rule filter removes poor fits, and Gemini ranks the rest with a plain-language explanation and routing advice.
-- **Try it with sample data.** One click runs the whole flow on four months of a made-up HDFC Millennia statement, with no upload needed. The same statements can be downloaded as PDFs to try the real upload path. Sample sessions are clearly marked.
+- **Try a demo, no upload needed.** One click runs the whole flow on four months of a made-up HDFC Millennia statement, with no upload needed. The same statements can be downloaded as PDFs to try the real upload path. Sample sessions are clearly marked.
 - **Card data crawler.** A Playwright crawler discovers card pages on Axis, HDFC, ICICI and SBI sites, extracts reward terms with Gemini, validates them against the categories the statement parser uses, and stores them with embeddings. Unchanged pages are skipped.
 
 ## Screenshots
@@ -66,7 +66,7 @@ The benchmark has already paid for itself: it caught long statements silently lo
 
 | Analyse spending tab | Standalone Spend Analyser |
 |---|---|
-| ![Analyse spending tab: monthly spend by category with a month selected for comparison](docs/screenshots/analyser.png) | ![Standalone Spend Analyser upload page, reached from the switch on the home page](docs/screenshots/spend.png) |
+| ![Analyse spending tab: monthly spend by category with a month selected for comparison](docs/screenshots/analyser.png) | ![Standalone Spend Analyser upload page, reached from the link under the home page form](docs/screenshots/spend.png) |
 
 | Your card vs the alternatives | Light mode |
 |---|---|
