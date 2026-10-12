@@ -149,7 +149,7 @@ export default function PdfDropZone({ cardName, files, onFilesChange }) {
         className={`dropzone${dragOver ? ' drag-over' : ''}`}
         role="button"
         tabIndex={0}
-        aria-label={`Add PDF statements for ${cardName}`}
+        aria-label={cardName ? `Add PDF statements for ${cardName}` : 'Add PDF statements'}
         onClick={() => inputRef.current?.click()}
         onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); inputRef.current?.click() } }}
         onDragOver={e => { e.preventDefault(); setDragOver(true) }}
@@ -158,7 +158,7 @@ export default function PdfDropZone({ cardName, files, onFilesChange }) {
       >
         <span className="dropzone-icon"><UploadIcon size={22} /></span>
         <p className="dropzone-label">
-          Drop PDFs for <strong>{cardName}</strong> here<br />
+          {cardName ? <>Drop PDFs for <strong>{cardName}</strong> here</> : 'Drop your PDF statements here'}<br />
           or click to browse. One file per month, as many months as you like.
         </p>
         <input

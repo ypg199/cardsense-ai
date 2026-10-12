@@ -5,7 +5,7 @@ import PasswordModal from '../components/PasswordModal.jsx'
 import FullScreenLoader, { PARSE_STEPS } from '../components/FullScreenLoader.jsx'
 import { startSample, startSession, submitPassword } from '../api.js'
 import SampleBanner from '../components/SampleBanner.jsx'
-import { ModeSwitch, uploadCss } from './UploadPage.jsx'
+import { ModeLink, uploadCss } from './UploadPage.jsx'
 import { Logo } from '../components/Brand.jsx'
 import { AlertIcon, ArrowRightIcon } from '../components/Icons.jsx'
 
@@ -125,8 +125,7 @@ export default function SpendUploadPage() {
           <p className="page-subtitle">
             Drop in statements from any card. You'll get monthly trends, month-by-month comparisons and your top merchants.
           </p>
-          <ModeSwitch active="spend" />
-          <SampleBanner onTry={handleSample} disabled={loading} label="See sample spending" />
+          <SampleBanner onTry={handleSample} disabled={loading} label="Try a demo, no upload needed" />
         </div>
 
         <div className="section" style={{ animationDelay: '50ms' }}>
@@ -142,7 +141,7 @@ export default function SpendUploadPage() {
             <div className="spend-point"><strong>Compare months</strong>Any two months side by side</div>
             <div className="spend-point"><strong>Top merchants</strong>Where most of the money went</div>
           </div>
-          <PdfDropZone cardName="Your statements" files={files} onFilesChange={setFiles} />
+          <PdfDropZone files={files} onFilesChange={setFiles} />
         </div>
 
         {error && <div className="error-banner" role="alert" style={{ marginBottom: 16 }}><AlertIcon size={16} /> {error}</div>}
@@ -151,6 +150,7 @@ export default function SpendUploadPage() {
           Show my spending <ArrowRightIcon size={18} />
         </button>
         {files.length === 0 && !loading && <p className="submit-hint">Add at least one PDF statement to continue.</p>}
+        <ModeLink to="/" text="Want a score and a better card too?" cta="Try the full card analysis" />
       </div>
     </>
   )

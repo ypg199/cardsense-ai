@@ -1,12 +1,11 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import CardSelector from '../components/CardSelector.jsx'
 import PdfDropZone from '../components/PdfDropZone.jsx'
 import PasswordModal from '../components/PasswordModal.jsx'
-import Tabs from '../components/Tabs.jsx'
 import FullScreenLoader, { PARSE_STEPS } from '../components/FullScreenLoader.jsx'
 import { startSample, startSession, submitPassword } from '../api.js'
-import SampleBanner from '../components/SampleBanner.jsx'
+import GetStarted from '../components/GetStarted.jsx'
 import { Logo } from '../components/Brand.jsx'
 import { AlertIcon, ArrowRightIcon } from '../components/Icons.jsx'
 
@@ -124,7 +123,9 @@ export const uploadCss = `
   align-items: center;
   justify-content: center;
   gap: 10px;
-  animation: fadeUp 400ms ease both;
+  /* backwards, not both: a held final keyframe would pin opacity at 1
+     and hide the :disabled style below */
+  animation: fadeUp 400ms ease backwards;
   animation-delay: 200ms;
 }
 .submit-btn:hover:not(:disabled) {
@@ -163,26 +164,19 @@ export const uploadCss = `
 }
 .loading-msg { color: var(--slate-400); font-size: 14px; }
 
-.mode-switch { margin: 32px auto 0; max-width: 560px; }
+.mode-link { text-align: center; font-size: 13px; color: var(--slate-400); margin-top: 28px; }
+.mode-link a { color: var(--amber-400); font-weight: 600; text-decoration: none; }
+.mode-link a:hover { text-decoration: underline; }
+.own-anchor { scroll-margin-top: 16px; }
 `
 const css = uploadCss
 
-/** Switch between the full card analysis and the standalone Spend Analyser. */
-export function ModeSwitch({ active }) {
-  const navigate = useNavigate()
+/** A quiet link to the other mode, shown under each upload form. */
+export function ModeLink({ to, text, cta }) {
   return (
-    <div className="mode-switch">
-      <Tabs
-        variant="secondary"
-        label="What do you want to do?"
-        value={active}
-        onChange={key => key !== active && navigate(key === 'spend' ? '/spend' : '/')}
-        items={[
-          { key: 'card', label: 'Card analysis', hint: 'Score, quiz and better cards' },
-          { key: 'spend', label: 'Spend Analyser', hint: 'Just charts of your spending' },
-        ]}
-      />
-    </div>
+    <p className="mode-link">
+      {text} <Link to={to}>{cta} →</Link>
+    </p>
   )
 }
 
@@ -331,14 +325,14 @@ export default function UploadPage() {
             you're using your <em>card</em>
           </h1>
           <p className="page-subtitle">
-            Upload your statements. We'll score your benefit utilization and show you what you're missing.
+            Upload a credit card statement and in about two minutes see how much of your card's
+            cashback you're actually getting, what you're missing, and which card would pay you more.
           </p>
-          <ModeSwitch active="card" />
-          <SampleBanner onTry={handleSample} disabled={loading || sampleLoading} />
+          <GetStarted onDemo={handleSample} disabled={loading || sampleLoading} />
         </div>
 
         {/* Step 1: Card Selection */}
-        <div className="section" style={{ animationDelay: '50ms' }}>
+        <div id="own-statement" className="section own-anchor" style={{ animationDelay: '50ms' }}>
           <div className="section-header">
             <span className="section-step">1</span>
             <div>
@@ -393,14 +387,17 @@ export default function UploadPage() {
         {(loading || pwLoading) && (
           <FullScreenLoader title="Analysing your statements" steps={PARSE_STEPS} stepEvery={8} showTime trivia />
         )}
-        <button className="submit-btn" disabled={!canSubmit || loading} onClick={handleSubmit}>
-          Analyse my card{selected.length > 1 ? 's' : ''} <ArrowRightIcon size={18} />
-        </button>
-        {!canSubmit && !loading && (
-          <p className="submit-hint">
-            {selected.length === 0 ? 'Pick your card above to get started.' : 'Add at least one PDF statement for each card.'}
-          </p>
+        {selected.length > 0 && (
+          <>
+            <button className="submit-btn" disabled={!canSubmit || loading} onClick={handleSubmit}>
+              Analyse my card{selected.length > 1 ? 's' : ''} <ArrowRightIcon size={18} />
+            </button>
+            {!canSubmit && !loading && (
+              <p className="submit-hint">Add at least one PDF statement for each card.</p>
+            )}
+          </>
         )}
+        <ModeLink to="/spend" text="Only want charts of your spending?" cta="Open the Spend Analyser" />
       </div>
     </>
   )

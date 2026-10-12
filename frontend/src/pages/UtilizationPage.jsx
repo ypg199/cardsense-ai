@@ -14,6 +14,12 @@ const css = `
   margin: 0 auto;
   padding: 32px 24px 60px;
 }
+.demo-note {
+  font-size: 13px; color: var(--slate-300); margin: -12px 0 20px;
+  padding: 10px 14px; border-radius: var(--radius-md);
+  background: rgba(96,165,250,0.08); border: 1px solid rgba(96,165,250,0.25);
+}
+.demo-note strong { color: var(--blue-400); }
 .util-header {
   display: flex;
   align-items: center;
@@ -284,12 +290,18 @@ export default function UtilizationPage() {
         <div className="util-header">
           <div><Logo />{session.sample && <SampleBadge />}</div>
           <div className="util-progress-wrap">
-            <span className="mono" style={{ fontSize: 12 }}>{questions_answered}/{questions_total}</span>
+            <span className="mono" style={{ fontSize: 12 }}>{questions_answered}/{questions_total} done</span>
             <div className="progress-track" role="progressbar" aria-label="Quiz progress" aria-valuemin={0} aria-valuemax={questions_total} aria-valuenow={questions_answered}>
               <div className="progress-fill" style={{ width: `${progress}%` }} />
             </div>
           </div>
         </div>
+
+        {session.sample && (
+          <p className="demo-note" role="note">
+            <strong>Demo:</strong> you're answering as a made-up HDFC Millennia cardholder. Any answer works.
+          </p>
+        )}
 
         {/* Multi-card tabs */}
         {cards.length > 1 && (
