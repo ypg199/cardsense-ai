@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import CardSelector from '../components/CardSelector.jsx'
 import PdfDropZone from '../components/PdfDropZone.jsx'
 import PasswordModal from '../components/PasswordModal.jsx'
@@ -7,7 +7,7 @@ import FullScreenLoader, { PARSE_STEPS } from '../components/FullScreenLoader.js
 import { startSample, startSession, submitPassword } from '../api.js'
 import GetStarted from '../components/GetStarted.jsx'
 import { Logo } from '../components/Brand.jsx'
-import { AlertIcon, ArrowRightIcon } from '../components/Icons.jsx'
+import { AlertIcon, ArrowRightIcon, ChartIcon } from '../components/Icons.jsx'
 
 export const uploadCss = `
 .upload-page {
@@ -164,21 +164,24 @@ export const uploadCss = `
 }
 .loading-msg { color: var(--slate-400); font-size: 14px; }
 
-.mode-link { text-align: center; font-size: 13px; color: var(--slate-400); margin-top: 28px; }
-.mode-link a { color: var(--amber-400); font-weight: 600; text-decoration: none; }
-.mode-link a:hover { text-decoration: underline; }
+.submit-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.spend-only-btn {
+  width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px;
+  background: var(--navy-800); border: 1px solid var(--navy-600); border-radius: var(--radius-md);
+  color: var(--white); font-family: var(--font-sans); font-size: 16px; font-weight: 700;
+  letter-spacing: 0.02em; padding: 18px 24px; cursor: pointer; transition: all var(--transition);
+}
+.spend-only-btn:hover:not(:disabled) { border-color: var(--amber-400); }
+.spend-only-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.spend-only-btn:focus-visible, .submit-btn:focus-visible { outline: 2px solid var(--amber-400); outline-offset: 2px; }
+/* Phone: one button per page; the bottom tabs reach the Spend Analyser */
+@media (max-width: 720px) {
+  .submit-row { grid-template-columns: 1fr; }
+  .submit-row > div:last-child { display: none; }
+}
 .own-anchor { scroll-margin-top: 16px; }
 `
 const css = uploadCss
-
-/** A quiet link to the other mode, shown under each upload form. */
-export function ModeLink({ to, text, cta }) {
-  return (
-    <p className="mode-link">
-      {text} <Link to={to}>{cta} →</Link>
-    </p>
-  )
-}
 
 export default function UploadPage() {
   const navigate = useNavigate()
@@ -206,13 +209,15 @@ export default function UploadPage() {
     setFileMap(m => ({ ...m, [cardId]: files }))
   }
 
-  async function handleSubmit() {
+  async function handleSubmit(mode = 'full') {
     setError(null)
     const hasFiles = selected.every(c => (fileMap[(c._id || c.id)] || []).length > 0)
     if (!hasFiles) { setError('Please upload at least one PDF for each selected card.'); return }
 
     setLoading(true)
     const fd = new FormData()
+    // Spend mode reads the same statements but goes straight to the charts
+    if (mode === 'spend') fd.append('mode', 'spend')
     const pdfFiles = []
     const months = []
     const cardIds = []
@@ -269,6 +274,10 @@ export default function UploadPage() {
       navigate(`/quiz/${resp.session_id}`, { state: { session: resp } })
       return
     }
+    if (resp.ui_action === 'show_analyser') {
+      navigate(`/analyser/${resp.session_id}`)
+      return
+    }
     if (resp.ui_action === 'show_results') {
       navigate(`/results/${resp.session_id}`, { state: { session: resp } })
       return
@@ -319,7 +328,7 @@ export default function UploadPage() {
 
       <div className="upload-page">
         <div className="page-header">
-          <div className="logo-mark"><Logo pill /></div>
+          <div className="logo-mark page-brand"><Logo pill /></div>
           <h1 className="page-title">
             Know exactly how well<br />
             you're using your <em>card</em>
@@ -389,15 +398,25 @@ export default function UploadPage() {
         )}
         {selected.length > 0 && (
           <>
-            <button className="submit-btn" disabled={!canSubmit || loading} onClick={handleSubmit}>
-              Analyse my card{selected.length > 1 ? 's' : ''} <ArrowRightIcon size={18} />
-            </button>
+            <div className="submit-row">
+              <div>
+                <button className="submit-btn" disabled={!canSubmit || loading} onClick={() => handleSubmit('full')}>
+                  Analyse my card{selected.length > 1 ? 's' : ''} <ArrowRightIcon size={18} />
+                </button>
+                <p className="submit-hint">Score, missed cashback and a better card</p>
+              </div>
+              <div>
+                <button className="spend-only-btn" disabled={!canSubmit || loading} onClick={() => handleSubmit('spend')}>
+                  <ChartIcon size={18} /> Just show my spending
+                </button>
+                <p className="submit-hint">Charts only, no quiz</p>
+              </div>
+            </div>
             {!canSubmit && !loading && (
               <p className="submit-hint">Add at least one PDF statement for each card.</p>
             )}
           </>
         )}
-        <ModeLink to="/spend" text="Only want charts of your spending?" cta="Open the Spend Analyser" />
       </div>
     </>
   )

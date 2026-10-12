@@ -5,6 +5,7 @@ import ResultsPage from './pages/ResultsPage.jsx'
 import SpendAnalyserPage from './pages/SpendAnalyserPage.jsx'
 import SpendUploadPage from './pages/SpendUploadPage.jsx'
 import { NotFound } from './components/Brand.jsx'
+import AppNav from './components/AppNav.jsx'
 
 const globalStyles = `
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -192,6 +193,7 @@ export default function App() {
     <>
       <style>{globalStyles}</style>
       <BrowserRouter>
+        <AppNav />
         <Routes>
           <Route path="/" element={<UploadPage />} />
           <Route path="/spend" element={<SpendUploadPage />} />

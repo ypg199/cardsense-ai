@@ -50,11 +50,11 @@ const css = `
 .btn-primary:focus-visible, .btn-ghost:focus-visible { outline: 2px solid var(--amber-400); outline-offset: 2px; }
 `
 
-export function Logo({ pill = false }) {
+export function Logo({ pill = false, className = '' }) {
   return (
     <>
       <style>{css}</style>
-      <span className="brand-row">
+      <span className={`brand-row${className ? ` ${className}` : ''}`}>
         <Link to="/" className={`brand${pill ? ' brand-pill' : ''}`} aria-label="CardSense AI home">
           <CardIcon size={16} /> CardSense AI
         </Link>
@@ -78,7 +78,7 @@ export function StatePage({ code, title, text, actions }) {
     <>
       <style>{css}</style>
       <main className="state-page">
-        <Logo />
+        <Logo className="page-brand" />
         <div className="state-icon"><AlertIcon size={26} /></div>
         {code && <div className="state-code">{code}</div>}
         <h1 className="state-title">{title}</h1>
